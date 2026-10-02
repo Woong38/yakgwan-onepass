@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+</head>
+<body>
+<title>약관 원패스 체험판</title>
+<style>
+/* Layout: 상단 업무 4단계 스텝퍼 → 좌측 해당 단계 입력, 우측 고정 미리보기(대비표·전문·공문·보고서·안내문·시행문·점검). 문서는 항상 종이색. */
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --fg:#1b2330; --muted:#5d6878; --line:#d5dbe4;
+  --accent:#1f3f73; --accent-soft:#e3eaf5; --warn:#9a5b00; --warn-soft:#fbf1e1; --ok:#1d6b45; --ok-soft:#e2f2e9; --err:#a4262c; --err-soft:#fbe6e7;
+  --paper:#ffffff; --ink:#111111; --ins:#b3261e;
+  --ui:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+  --doc:"Batang","바탕","HCR Batang","Nanum Myeongjo","AppleMyungjo",serif;
+  --mono:ui-monospace,"D2Coding",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171f; --panel:#1a212c; --fg:#e4e8ee; --muted:#9aa6b6; --line:#2e3846;
+  --accent:#8fb0e6; --accent-soft:#223149; --warn:#e2ad5c; --warn-soft:#3a2d17; --ok:#7ccaa0; --ok-soft:#173226; --err:#f08a8f; --err-soft:#3d1c1f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171f; --panel:#1a212c; --fg:#e4e8ee; --muted:#9aa6b6; --line:#2e3846;
+  --accent:#8fb0e6; --accent-soft:#223149; --warn:#e2ad5c; --warn-soft:#3a2d17; --ok:#7ccaa0; --ok-soft:#173226; --err:#f08a8f; --err-soft:#3d1c1f; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:14px/1.55 var(--ui);margin:0}
+.wrap{padding-inline:16px;padding-block:14px 40px;max-width:1540px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:6px 12px;border-bottom:2px solid var(--accent);margin-bottom:12px}
+.brand{display:flex;flex-direction:column}
+.brand b{font-size:19px;letter-spacing:-.02em;color:var(--accent)}
+.brand span{font-size:12px;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;color:var(--fg);padding:8px 13px;font:inherit;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel);font-weight:600}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:14px}
+@media (max-width:640px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.steps button{font:inherit;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;gap:1px;min-width:0}
+.steps button small{color:var(--muted);font-size:11.5px}
+.steps button b{font-size:13.5px}
+.steps button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+.steps .k{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
+@media (max-width:1000px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+section.step{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+section.step h2{margin:0;font-size:15px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+label.f>span{font-weight:600}
+label.f>span .auto{font-weight:400;color:var(--accent)}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:62px}
+textarea.code{font-family:var(--doc);font-size:13px;line-height:1.6}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;border:1px solid var(--accent);background:var(--panel);color:var(--accent);padding:6px 12px;border-radius:5px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.btn.pri{background:var(--accent);color:var(--panel)}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tog{display:flex;gap:6px;align-items:center;font-size:13px}
+.tog input{width:auto}
+.checks{display:flex;flex-direction:column;gap:6px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+.checks input{width:auto;margin-top:3px}
+.checks .grp{font-size:12px;font-weight:700;color:var(--muted);margin-top:4px}
+.verdict{border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:13px}
+.verdict b{font-size:15px}
+.verdict.post{background:var(--ok-soft);color:var(--ok)}
+.verdict.pre{background:var(--warn-soft);color:var(--warn)}
+.verdict .d{color:var(--fg)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:560px){.two{grid-template-columns:minmax(0,1fr)}}
+.cmp{display:flex;flex-direction:column;gap:10px}
+.cmp-row{border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.cmp-row .hd{grid-column:1/-1;display:flex;gap:8px;align-items:center}
+.cmp-row .hd input{flex:1}
+@media (max-width:560px){.cmp-row{grid-template-columns:minmax(0,1fr)}}
+details.more{border:1px dashed var(--line);border-radius:6px;padding:8px 10px}
+details.more summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--accent)}
+.hist{width:100%;border-collapse:collapse;font-size:13px}
+.hist td,.hist th{border:1px solid var(--line);padding:4px}
+.hist th{background:var(--accent-soft);font-weight:600}
+.hist input{padding:4px 6px}
+.tblwrap{overflow-x:auto}
+.preview{position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px);display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (max-width:1000px){.preview{position:static}}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.tabs .seg button{padding:6px 10px;font-size:12.5px}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--err);color:var(--panel);font-size:11px;text-align:center;margin-left:3px}
+.badge.w{background:var(--warn)}
+.badge.o{background:var(--ok)}
+.stage{background:var(--line);border-radius:8px;padding:14px;max-height:calc(100vh - 170px);overflow:auto}
+@media (max-width:1000px){.stage{max-height:none}}
+.note{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:9}
+.testbar{background:var(--accent-soft);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.testbar b{color:var(--accent);margin-right:6px}
+.guide{margin:0;padding-left:1.4em;display:flex;flex-wrap:wrap;gap:2px 22px;color:var(--muted);font-size:12.5px}
+.env{font-size:12px;padding:8px 10px;border-radius:6px;background:var(--accent-soft);color:var(--fg)}
+.chk{background:var(--panel);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.chk h3{margin:0;font-size:14px}
+.chk ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.chk li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;align-items:start;font-size:13px}
+.chk .lv{font-size:11px;font-weight:700;text-align:center;border-radius:4px;padding:1px 0}
+.lv.err{background:var(--err-soft);color:var(--err)}
+.lv.warn{background:var(--warn-soft);color:var(--warn)}
+.lv.ok{background:var(--ok-soft);color:var(--ok)}
+.tl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.tl td{border-bottom:1px solid var(--line);padding:6px 4px}
+.tl td:first-child{color:var(--muted);width:40%}
+.tl tr.now td{color:var(--accent);font-weight:600}
+/* 문서(종이) */
+.page{background:var(--paper);color:var(--ink);font-family:var(--doc);font-size:13.5px;line-height:1.75;padding:40px 44px;margin:0 auto 14px;max-width:780px;box-shadow:0 1px 4px rgba(0,0,0,.18);overflow-wrap:anywhere}
+@media (max-width:560px){.page{padding:24px 16px}}
+.page table{border-collapse:collapse;width:100%}
+.page .ins{color:var(--ins);text-decoration:underline}
+.page .del{text-decoration:underline}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  header.top,.steps,.col.inputs,.tabs,.note,.env,.chk{display:none!important}
+  .grid{display:block}.stage{background:none;padding:0;max-height:none;overflow:visible}
+  .page{box-shadow:none;margin:0;page-break-after:always;max-width:none}
+  body{background:#fff}
+}
+</style>
+
+<div class="wrap">
+<div class="testbar" role="note">
+  <div><b>체험판</b> 외부 테스트용 페이지다. 모든 약관·은행명·문서번호는 가상이며, 입력 내용은 이 브라우저에만 남는다. 실제 약관이나 고객 정보는 넣지 않는다.</div>
+  <div class="bar"><span class="note">예시 불러오기</span>
+    <button type="button" class="btn sm" data-demo="bank">은행 · 정기예금 특약</button>
+    <button type="button" class="btn sm" data-demo="efin">전자금융 · 이용약관</button>
+    <button type="button" class="btn sm" data-demo="card">여신 · 체크카드 약관</button>
+  </div>
+  <ol class="guide"><li>예시를 고른다</li><li>STEP 1에서 변경 전문을 고쳐 본다</li><li>대비표·점검 탭 변화를 확인한다</li><li>Word 저장 또는 문서 복사로 결과물을 받는다</li></ol>
+</div>
+<header class="top">
+  <div class="brand"><b>약관 보고서 작성기</b><span>약관 개정 → 대비표·전문 → 금감원 보고(신고) → 시행문, 한 번 입력으로 끝까지</span></div>
+  <div class="seg" id="areaSeg" role="group" aria-label="적용 서식">
+    <button type="button" data-area="bank" aria-pressed="true">은행업 <small>(제105호)</small></button>
+    <button type="button" data-area="efin" aria-pressed="false">전자금융 <small>(별지7)</small></button>
+    <button type="button" data-area="card" aria-pressed="false">여신전문 <small>(별지14)</small></button>
+  </div>
+</header>
+
+<nav class="steps" id="steps" aria-label="업무 단계">
+  <button type="button" data-step="1" aria-pressed="true"><span class="k">STEP 1</span><b>약관 개정</b><small>현행·변경 전문 입력</small></button>
+  <button type="button" data-step="2" aria-pressed="false"><span class="k">STEP 2</span><b>대비표·전문</b><small>변경 조문 자동 추출</small></button>
+  <button type="button" data-step="3" aria-pressed="false"><span class="k">STEP 3</span><b>금감원 보고(신고)</b><small>판정·기한·공문·보고서</small></button>
+  <button type="button" data-step="4" aria-pressed="false"><span class="k">STEP 4</span><b>시행문·안내문</b><small>영업점 시행·고객 안내</small></button>
+</nav>
+
+<div class="grid">
+<div class="col inputs">
+  <div class="env" id="envNote" hidden>이 화면은 미리보기다. Word 저장·인쇄·작성본 저장은 HTML 파일을 내려받아 사내 PC 브라우저로 열면 동작한다. '문서 복사' 후 한글·Word 붙여넣기는 여기서도 된다.</div>
+
+  <!-- STEP 1 -->
+  <div data-panel="1" class="col">
+  <section class="step">
+    <h2>기본 정보</h2>
+    <div class="row">
+      <label class="f"><span>약관(상품)명</span><input id="name" data-k="name"></label>
+      <label class="f"><span>구분</span><select id="kind" data-k="kind"><option value="변경">변경</option><option value="제정">제정</option></select></label>
+      <label class="f"><span>시행(예정)일</span><input type="date" id="effDate" data-k="effDate"></label>
+      <label class="f" data-areas="efin,card"><span id="launchLbl">서비스 개시일</span><input type="date" id="launchDate" data-k="launchDate"></label>
+    </div>
+  </section>
+  <section class="step">
+    <h2>약관 전문</h2>
+    <p class="hint">Word(.docx)·한글(.hwpx)·텍스트 파일을 올리거나 붙여넣는다. 한글 .hwp는 '다른 이름으로 저장 → .hwpx'로 바꿔 올린다. 변경 전문은 현행을 복사한 뒤 고치면 대비표가 따라 바뀐다.</p>
+    <div class="two">
+      <div class="col" style="gap:6px">
+        <label class="f"><span>현행 약관 전문</span><textarea id="oldText" data-k="oldText" class="code" rows="14"></textarea></label>
+        <div class="bar"><label class="btn sm" for="upOld">파일 올리기</label><input type="file" id="upOld" accept=".docx,.hwpx,.txt" hidden><span class="note" id="upOldMsg"></span></div>
+      </div>
+      <div class="col" style="gap:6px">
+        <label class="f"><span>변경 약관 전문</span><textarea id="newText" data-k="newText" class="code" rows="14"></textarea></label>
+        <div class="bar"><label class="btn sm" for="upNew">파일 올리기</label><input type="file" id="upNew" accept=".docx,.hwpx,.txt" hidden><button type="button" class="btn sm" id="copyOld">현행 복사해 편집 시작</button><button type="button" class="btn sm" id="addBuchik">부칙 추가</button></div>
+      </div>
+    </div>
+    <label class="tog"><input type="checkbox" id="autoSync">전문을 고치면 대비표 자동 갱신</label>
+  </section>
+  </div>
+
+  <!-- STEP 2 -->
+  <div data-panel="2" class="col" hidden>
+  <section class="step">
+    <h2>신구조문 대비표</h2>
+    <p class="hint">바뀐 조만 행으로 만든다. 변경 부분은 양쪽 밑줄, 바뀌지 않은 항은 '(생 략)'·'(현행과 같음)'으로 줄인다.</p>
+    <div class="bar">
+      <button type="button" class="btn pri" id="bulkRun">전문에서 다시 추출</button>
+      <label class="tog"><input type="checkbox" id="omitSame">변경 없는 항 생략</label>
+      <span class="note" id="bulkMsg"></span>
+    </div>
+    <div class="cmp" id="cmpList"></div>
+    <div class="bar"><button type="button" class="btn" id="addRow">조문 행 직접 추가</button></div>
+    <p class="hint">행을 직접 고치면 자동 갱신이 꺼진다. 다시 켜려면 '전문에서 다시 추출'을 누른다.</p>
+  </section>
+  </div>
+
+  <!-- STEP 3 -->
+  <div data-panel="3" class="col" hidden>
+  <section class="step">
+    <h2>사전신고·사후보고 판정</h2>
+    <div class="checks" id="judge">
+      <div class="grp">사전신고 사유</div>
+      <label><input type="checkbox" id="j_new" data-j="new">기존 금융서비스와 차별성 있는 내용을 포함한다</label>
+      <label><input type="checkbox" id="j_cut" data-j="cut">이용자 권리를 축소하거나 의무를 확대한다</label>
+      <div class="grp">사후보고 예외 (사전신고 사유가 있어도 사후보고)</div>
+      <label><input type="checkbox" id="j_same" data-j="same">기보고·신고된 약관과 동일·유사하다</label>
+      <label><input type="checkbox" id="j_law" data-j="law">법령 제·개정에 따른다</label>
+      <label><input type="checkbox" id="j_order" data-j="order">금융위원회 명령 또는 변경권고에 따른다</label>
+      <label><input type="checkbox" id="j_std" data-j="std">표준약관 제정·변경에 따른다</label>
+    </div>
+    <label class="f" id="simWrap"><span>기보고된 동일·유사 약관명</span><input id="similarName" data-k="similarName"></label>
+    <div id="verdict" class="verdict post"></div>
+    <details class="more">
+      <summary>제출기한 기준·휴일 설정</summary>
+      <div class="row" style="margin-top:8px">
+        <label class="f"><span>사후보고: 시행일 후</span><input type="number" id="postDays" min="1" data-k="postDays"></label>
+        <label class="f"><span>사전신고: 시행예정일 전</span><input type="number" id="preN" min="1" data-k="preN"></label>
+        <label class="f"><span>사전신고 단위</span><select id="preUnit" data-k="preUnit"><option value="bd">영업일</option><option value="cd">일</option></select></label>
+      </div>
+      <label class="f"><span>휴일 목록 (YYYY-MM-DD)</span><textarea id="holidays" data-k="holidays" rows="3"></textarea></label>
+      <p class="hint">기본값: 사후 10일 이내(은행법 제52조제1항), 사전 10영업일 전(금융위 규정변경예고). 전자금융업자 매뉴얼은 사전 45일 전을 제시한다. 휴일 목록은 가정값이다.</p>
+    </details>
+  </section>
+  <section class="step">
+    <h2>공문 정보</h2>
+    <div class="row">
+      <label class="f"><span>문서번호</span><input id="docNo" data-k="docNo"></label>
+      <label class="f"><span>발신일자</span><input type="date" id="sendDate" data-k="sendDate"></label>
+      <label class="f"><span>참조</span><input id="ref" data-k="ref"></label>
+    </div>
+    <div class="row">
+      <label class="f"><span>작성자</span><input id="author" data-k="author"></label>
+      <label class="f"><span>직위</span><input id="position" data-k="position"></label>
+      <label class="f"><span>전화번호</span><input id="phone" data-k="phone"></label>
+      <label class="f"><span>발신명의</span><input id="signer" data-k="signer"></label>
+    </div>
+    <div class="bar">
+      <label class="f" style="flex:1"><span>제목 표기</span><select id="titleMode" data-k="titleMode"><option value="resolved">해당 구분만 표기 (예: 약관 변경보고)</option><option value="form">서식 원문 유지 (약관 제정(변경)보고(신고))</option></select></label>
+      <label class="tog"><input type="checkbox" id="showHeader">서식 머리표기(근거 세칙·서식번호) 포함</label>
+    </div>
+  </section>
+  <section class="step">
+    <h2>보고(신고)서 항목</h2>
+    <p class="hint">비워 둔 칸은 입력값으로 만든 자동 문구를 쓴다. '자동 문구 채우기'로 옮겨 고칠 수 있다.</p>
+    <label class="f"><span>제정(변경)의 필요성</span><textarea id="need" data-k="need"></textarea></label>
+    <label class="f"><span>주요 제정(변경)내용 <em class="auto" data-auto="content"></em></span><textarea id="content" data-k="content" rows="4"></textarea></label>
+    <label class="f" data-areas="efin,card"><span><span id="noticeLbl">이용자에 대한 고지방법 및 고지시작시점</span> <em class="auto" data-auto="notice"></em></span><textarea id="notice" data-k="notice"></textarea></label>
+    <label class="f"><span><span id="basisLbl">사전신고 근거</span> <em class="auto" data-auto="basis"></em></span><textarea id="basis" data-k="basis"></textarea></label>
+    <label class="f" data-areas="bank"><span>상품의 특징</span><textarea id="feature" data-k="feature"></textarea></label>
+    <label class="f"><span>약관 본문(전체)</span><input id="body" data-k="body"></label>
+    <label class="f" data-areas="card"><span>상품설명서(전체)</span><input id="prodDesc" data-k="prodDesc"></label>
+    <label class="f"><span>자체심사(표상) 특이사항</span><textarea id="selfReview" data-k="selfReview"></textarea></label>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:12px;font-weight:600;color:var(--muted)">최근 5년간 약관의 변경이력</span>
+      <div class="tblwrap"><table class="hist"><thead><tr><th>약관(상품)명</th><th style="width:24%">변경일</th><th>변경내용 요약</th><th style="width:40px"></th></tr></thead><tbody id="histBody"></tbody></table></div>
+      <div class="bar"><button type="button" class="btn sm" id="addHist">이력 추가</button></div>
+    </div>
+    <label class="f"><span id="recoLbl">변경권고에 따른 약관 변경 여부</span><input id="reco" data-k="reco"></label>
+    <label class="f"><span>기타 참고사항</span><textarea id="etc" data-k="etc"></textarea></label>
+  </section>
+  </div>
+
+  <!-- STEP 4 -->
+  <div data-panel="4" class="col" hidden>
+  <section class="step">
+    <h2>게시·안내</h2>
+    <div class="row">
+      <label class="f"><span>변경 게시 시작일</span><input type="date" id="postStart" data-k="postStart"></label>
+      <label class="f"><span>기존 가입고객 적용</span><select id="applyExisting" data-k="applyExisting"><option value="여">여</option><option value="부">부</option></select></label>
+      <label class="f"><span>안내문 약관명 표기</span><input id="noticeName" data-k="noticeName" placeholder="비우면 약관명 사용"></label>
+    </div>
+    <p class="hint" id="postHint"></p>
+    <label class="f"><span>은행명(안내문 표기)</span><input id="bankName" data-k="bankName"></label>
+    <label class="f"><span>홈페이지 조회 경로</span><input id="webPath" data-k="webPath"></label>
+    <label class="f"><span>고객센터 안내</span><input id="callCenter" data-k="callCenter"></label>
+  </section>
+  <section class="step">
+    <h2>시행문 본문 (사내 문서작업판용)</h2>
+    <p class="hint">입력한 내용으로 3개 항목을 글과 표로 만든다. 항목별로 복사해 문서작업판에 붙여넣는다.</p>
+    <div class="row">
+      <label class="f"><span>1번 항목 제목</span><select id="h1Label" data-k="h1Label"><option>배경 및 근거</option><option>배경</option><option>근거</option></select></label>
+      <label class="f"><span>3번 항목 제목</span><select id="h3Label" data-k="h3Label"><option>당부 및 유의사항</option><option>당부사항</option><option>유의사항</option></select></label>
+    </div>
+    <label class="f"><span>1. 배경·근거 글 <em class="auto" data-auto="execBg"></em></span><textarea id="execBg" data-k="execBg" rows="4"></textarea></label>
+    <label class="f"><span>3. 당부·유의사항 글 <em class="auto" data-auto="execActions"></em></span><textarea id="execActions" data-k="execActions" rows="5"></textarea></label>
+    <label class="tog"><input type="checkbox" id="execFull">2번 표에 현행·변경 원문 포함 (끄면 변경 요지만)</label>
+    <div class="bar">
+      <span class="note">항목 복사:</span>
+      <button type="button" class="btn sm" data-sec="1">1번</button>
+      <button type="button" class="btn sm" data-sec="2">2번</button>
+      <button type="button" class="btn sm" data-sec="3">3번</button>
+      <button type="button" class="btn sm" data-sec="0">전체</button>
+      <label class="tog"><input type="checkbox" id="plainCopy">서식 없이 텍스트로 (표는 탭 구분)</label>
+    </div>
+  </section>
+  </div>
+
+  <div class="bar">
+    <button type="button" class="btn" id="fillAuto">자동 문구 채우기</button>
+    <button type="button" class="btn" id="saveJson">작성본 저장</button>
+    <label class="btn" for="loadJson">작성본 불러오기</label><input type="file" id="loadJson" accept=".json" hidden>
+    <button type="button" class="btn" id="resetBtn">예시로 초기화</button>
+    <span class="note" id="resetConfirm" hidden>입력 내용이 모두 지워진다. <button type="button" class="btn sm" id="resetYes">초기화</button> <button type="button" class="btn sm" id="resetNo">취소</button></span>
+  </div>
+</div>
+
+<div class="col preview">
+  <div class="tabs">
+    <div class="seg" id="docSeg" role="group" aria-label="미리보기 문서">
+      <button type="button" data-doc="check" aria-pressed="true">점검<span id="chkBadge"></span></button>
+      <button type="button" data-doc="cmp" aria-pressed="false">대비표</button>
+      <button type="button" data-doc="full" aria-pressed="false">변경 전문</button>
+      <button type="button" data-doc="cover" aria-pressed="false">공문</button>
+      <button type="button" data-doc="report" aria-pressed="false">보고서</button>
+      <button type="button" data-doc="notice" aria-pressed="false">안내문</button>
+      <button type="button" data-doc="exec" aria-pressed="false">시행문</button>
+      <button type="button" data-doc="all" aria-pressed="false">전체</button>
+    </div>
+    <div class="bar">
+      <button type="button" class="btn" id="copyDoc">문서 복사</button>
+      <button type="button" class="btn pri" id="wordDoc">Word 저장</button>
+      <button type="button" class="btn" id="printDoc">인쇄</button>
+    </div>
+  </div>
+  <div class="stage" id="stage"></div>
+  <p class="note">Word 저장은 .docx 파일로 받는다. '전체'는 점검을 뺀 6개 문서를 한 파일로 묶는다.</p>
+</div>
+</div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const WD=['일','월','화','수','목','금','토'];
+const LSKEY='yakgwan-test-v1';
+const inFrame=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+
+/* ---------- 서식 정의 (업로드 서식 원문 기준) ---------- */
+const AREAS={
+  bank:{rule:'은행업감독업무시행세칙',form:'<제105호 서식><개정 2009. 6. 30, 2010. 11. 17, 2012. 8. 8. 2016. 7. 20. 2020. 1. 1. 2021.2.25.>',
+    signer:'○○은행 은행장',attTag:'(붙임)',reportOnly:false,hr:false,colon:true,
+    coverTitle:(k,rs,f)=>f?'약관 제정(변경)보고(신고)':`약관 ${k}${rs}`,
+    repTitle:(k,rs,f)=>f?'약관제정(변경)보고(신고)서':`약관${k}${rs}서`,
+    cover:(k,rs,n,f)=>`은행업감독업무시행세칙 제60조제2항에 의거 당행 ${n}의 ${f?'제정(변경)':k}을 붙임과 같이 ${f?'보고(신고)':rs}합니다.`,
+    atts:(k,rs,f)=>[f?'약관 제정(변경) 보고(신고)서':`약관 ${k} ${rs}서`,'상품설명서','자체심사표']},
+  efin:{rule:'전자금융감독규정시행세칙',form:'<별지 제7호 서식> <신설 2021.2.25.>',
+    signer:'○○은행 대표이사 (인)',attTag:'(붙임1)',reportOnly:true,hr:false,colon:false,
+    coverTitle:(k,rs,f)=>f?'약관 제정(변경)보고':`약관 ${k}보고`,
+    repTitle:(k,rs,f)=>f?'약관제정(변경)보고서':`약관${k}보고서`,
+    cover:(k,rs,n,f)=>`「전자금융거래법」 제25조 제1항 및 「전자금융감독규정」 제41조 제2항, 제4항에 의거하여 ${n}의 ${f?'제정(변경)':k}을 붙임과 같이 보고합니다.`,
+    atts:(k,rs,f)=>[f?'약관 제정(변경) 보고서':`약관 ${k} 보고서`,'자체심사표']},
+  card:{rule:'여신전문금융업감독업무시행세칙',form:'<별지 제14호 서식> <신설 2021.2.25.>',
+    signer:'○○은행 대표이사',attTag:'(붙임1)',reportOnly:false,hr:true,colon:false,
+    coverTitle:(k,rs,f)=>f?'약관 제정(변경) 보고(신고)':`약관 ${k} ${rs}`,
+    repTitle:(k,rs,f)=>f?'약관 제정(변경) 보고(신고)서':`약관 ${k} ${rs}서`,
+    cover:(k,rs,n,f)=>`「여신전문금융업법」 제54조의3 및 여신전문금융업법시행령 제23조의3제1항제10호에 의거 ${n}의 ${f?'제정(개정)':(k==='변경'?'개정':'제정')}을 붙임과 같이 ${f?'보고(신고)':rs}합니다.`,
+    atts:(k,rs,f)=>[f?'약관 제정(변경) 보고(신고)서':`약관 ${k} ${rs}서`,'상품설명서','자체심사표(단, 표준약관과 동일한 내용으로 사후보고하는 경우에는 제출하지 않을 수 있음)']}
+};
+
+const HOL_DEFAULT=`2026-01-01,2026-02-16,2026-02-17,2026-02-18,2026-03-02,2026-05-01,2026-05-05,2026-05-25,2026-06-03,2026-08-17,2026-09-24,2026-09-25,2026-09-26,2026-10-05,2026-10-09,2026-12-25,2026-12-31,
+2027-01-01,2027-02-08,2027-02-09,2027-03-01,2027-05-05,2027-05-13,2027-08-16,2027-09-14,2027-09-15,2027-09-16,2027-10-04,2027-10-11,2027-12-27,2027-12-31`;
+
+const OLD_SAMPLE=`제1조(목적) 이 특약은 ○○정기예금(이하 "이 예금"이라 한다)의 거래조건을 정합니다.
+제2조(가입대상) 이 예금은 실명의 개인이 가입할 수 있습니다.
+제3조(이자) ① 이 예금의 이자는 만기일에 원금과 함께 지급합니다.
+② 만기 전 해지 시 가입기간에 따라 기본이율의 50%를 적용합니다.
+③ 만기 후 이율은 만기일 당시 보통예금 이율을 적용합니다.
+제4조(양도 및 담보제공) 이 예금은 은행의 승낙 없이 양도하거나 담보로 제공할 수 없습니다.
+부 칙(2024.3.4.)
+이 특약은 2024년 3월 4일부터 시행합니다.`;
+const NEW_SAMPLE=`제1조(목적) 이 특약은 ○○정기예금(이하 "이 예금"이라 한다)의 거래조건을 정합니다.
+제2조(가입대상) 이 예금은 실명의 개인 및 개인사업자가 가입할 수 있습니다.
+제3조(이자) ① 이 예금의 이자는 만기일에 원금과 함께 지급합니다.
+② 만기 전 해지 시 가입기간에 따라 기본이율의 70%를 적용합니다.
+③ 만기 후 이율은 만기일 당시 보통예금 이율을 적용합니다.
+제3조의2(자동재예치) 고객이 신청한 경우 만기일에 동일 기간으로 자동 재예치합니다.
+제4조(양도 및 담보제공) 이 예금은 은행의 승낙 없이 양도하거나 담보로 제공할 수 없습니다.
+부 칙(2024.3.4.)
+이 특약은 2024년 3월 4일부터 시행합니다.
+부 칙(2026.11.2.)
+이 특약은 2026년 11월 2일부터 시행합니다.`;
+
+const DEMOS={
+ bank:{area:'bank',name:'[예시] ○○정기예금 특약',kind:'변경',effDate:'2026-11-02',oldText:OLD_SAMPLE,newText:NEW_SAMPLE,
+   need:'[예시] 개인사업자 가입 수요를 반영하고, 중도해지 고객의 이자 손실을 줄이기 위해 약관을 변경한다.',feature:'[예시] 1년제 거치식 정기예금, 가입금액 100만원 이상.',
+   hist:[{name:'[예시] ○○정기예금 특약',date:'2024.3.4.',sum:'우대이율 조건 변경'}]},
+ efin:{area:'efin',name:'[예시] ○○은행 전자금융거래 이용약관',kind:'변경',effDate:'2026-12-01',launchDate:'2026-12-01',
+   oldText:`제1조(목적) 이 약관은 ○○은행(이하 "은행"이라 한다)과 이용자 사이의 전자금융거래에 관한 사항을 정합니다.
+제5조(접근매체) 이용자는 공동인증서 또는 보안카드를 접근매체로 사용합니다.
+제8조(이체한도) ① 1일 이체한도는 1억원으로 합니다.
+② 1회 이체한도는 5천만원으로 합니다.
+제12조(거래내용 확인) 은행은 이용자의 요청이 있는 경우 최근 5년간의 거래내용을 제공합니다.
+부 칙(2025.3.1.)
+이 약관은 2025년 3월 1일부터 시행합니다.`,
+   newText:`제1조(목적) 이 약관은 ○○은행(이하 "은행"이라 한다)과 이용자 사이의 전자금융거래에 관한 사항을 정합니다.
+제5조(접근매체) 이용자는 공동인증서, 보안카드 또는 생체인증을 접근매체로 사용합니다.
+제8조(이체한도) ① 1일 이체한도는 5억원으로 합니다.
+② 1회 이체한도는 1억원으로 합니다.
+제12조(거래내용 확인) 은행은 이용자의 요청이 있는 경우 최근 5년간의 거래내용을 제공합니다.
+부 칙(2025.3.1.)
+이 약관은 2025년 3월 1일부터 시행합니다.
+부 칙(2026.12.1.)
+이 약관은 2026년 12월 1일부터 시행합니다.`,
+   need:'[예시] 생체인증 도입과 고액 이체 수요를 반영해 접근매체와 이체한도 규정을 변경한다.',
+   judge:{new:false,cut:false,same:true,law:false,order:false,std:false},similarName:'[예시] ○○은행 모바일뱅킹 이용약관',
+   hist:[{name:'[예시] ○○은행 전자금융거래 이용약관',date:'2025.3.1.',sum:'거래내용 보관기간 조정'}]},
+ card:{area:'card',name:'[예시] ○○체크카드 개인회원 약관',kind:'변경',effDate:'2026-11-16',
+   oldText:`제1조(목적) 이 약관은 ○○체크카드(이하 "카드"라 한다)의 이용에 관한 사항을 정합니다.
+제2조(이용한도) ① 1일 이용한도는 600만원으로 합니다.
+② 월 이용한도는 2,000만원으로 합니다.
+제3조(해외이용 수수료) 해외 이용 시 이용금액의 1.0%를 해외서비스수수료로 부과합니다.
+제4조(부가서비스) 회원은 전월 이용실적 30만원 이상 시 대중교통 이용금액의 10%를 할인받을 수 있습니다.
+부 칙(2023.5.1.)
+이 약관은 2023년 5월 1일부터 시행합니다.`,
+   newText:`제1조(목적) 이 약관은 ○○체크카드(이하 "카드"라 한다)의 이용에 관한 사항을 정합니다.
+제2조(이용한도) ① 1일 이용한도는 1,000만원으로 합니다.
+② 월 이용한도는 2,000만원으로 합니다.
+제3조(해외이용 수수료) 해외 이용 시 이용금액의 0.5%를 해외서비스수수료로 부과합니다.
+제4조(부가서비스) 회원은 전월 이용실적 20만원 이상 시 대중교통 이용금액의 10%를 할인받을 수 있습니다.
+제4조의2(모바일카드) 회원은 실물카드와 별도로 모바일카드를 발급받아 이용할 수 있습니다.
+부 칙(2023.5.1.)
+이 약관은 2023년 5월 1일부터 시행합니다.
+부 칙(2026.11.16.)
+이 약관은 2026년 11월 16일부터 시행합니다.`,
+   need:'[예시] 해외 이용 수수료를 낮추고 이용한도·부가서비스 실적 조건을 완화해 회원 편의를 높이기 위해 약관을 변경한다.',
+   hist:[{name:'[예시] ○○체크카드 개인회원 약관',date:'2023.5.1.',sum:'부가서비스 할인율 조정'}]}
+};
+function sample(){return{
+  area:'bank',name:'[예시] ○○정기예금 특약',kind:'변경',effDate:'2026-11-02',launchDate:'',postStart:'',
+  oldText:OLD_SAMPLE,newText:NEW_SAMPLE,autoSync:true,omitSame:true,rows:[],
+  docNo:'리스크관리부-2026-000',sendDate:'2026-10-05',ref:'',author:'',position:'',phone:'',signer:'',
+  judge:{new:false,cut:false,same:false,law:false,order:false,std:false},similarName:'',
+  postDays:10,preN:10,preUnit:'bd',holidays:HOL_DEFAULT,titleMode:'resolved',showHeader:true,
+  need:'[예시] 개인사업자 가입 수요를 반영하고, 중도해지 고객의 이자 손실을 줄이기 위해 약관을 변경한다.',
+  content:'',notice:'',basis:'',
+  feature:'[예시] 1년제 거치식 정기예금, 가입금액 100만원 이상.',
+  body:'별첨',prodDesc:'별첨',selfReview:'[예시] 특이사항 없음.',
+  hist:[{name:'[예시] ○○정기예금 특약',date:'2024.3.4.',sum:'우대이율 조건 변경'}],
+  reco:'해당 없음',etc:'',
+  noticeName:'',applyExisting:'여',
+  webPath:'www.○○bank.co.kr > 고객센터 > 서식/약관 > 예금',bankName:'○○은행',
+  callCenter:'○○은행 고객센터(☎0000-0000)',
+  execBg:'',execActions:'',execFull:true,plainCopy:false,h1Label:'배경 및 근거',h3Label:'당부 및 유의사항'
+}}
+let S=load()||sample();
+function load(){try{const t=localStorage.getItem(LSKEY);return t?Object.assign(sample(),JSON.parse(t)):null}catch(e){return null}}
+function persist(){try{localStorage.setItem(LSKEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- 날짜 ---------- */
+function pd(s){if(!s)return null;const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return m?new Date(+m[1],m[2]-1,+m[3]):null}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function kd(d,wd=true){if(!d)return '';return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}.`+(wd?`(${WD[d.getDay()]})`:'')}
+function kl(d){return d?`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`:''}
+function holSet(){return new Set((S.holidays||'').split(/[\s,]+/).filter(Boolean))}
+function isOff(d,H){return d.getDay()===0||d.getDay()===6||H.has(iso(d))}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function subBiz(d,n,H){let x=new Date(d),c=0;while(c<n){x=addDays(x,-1);if(!isOff(x,H))c++}return x}
+function nextBiz(d,H){let x=new Date(d);while(isOff(x,H))x=addDays(x,1);return x}
+function subMonth(d){const x=new Date(d);x.setMonth(x.getMonth()-1);return x}
+function today(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())}
+function dd(a,b){return Math.round((a-b)/864e5)}
+function postStartD(){return pd(S.postStart)||(pd(S.effDate)?subMonth(pd(S.effDate)):null)}
+
+/* ---------- 판정 ---------- */
+function verdict(){
+  const j=S.judge,A=AREAS[S.area];
+  if(A.reportOnly)return{rs:'보고',pre:false,why:'전자금융 서식은 보고 절차만 둔다.'};
+  const preR=j.new||j.cut,exc=j.same||j.law||j.order||j.std;
+  if(preR&&!exc)return{rs:'신고',pre:true,why:j.cut?'이용자 권리 축소·의무 확대 사유에 해당한다.':'기존 서비스와 차별성 있는 내용을 포함한다.'};
+  if(preR&&exc)return{rs:'보고',pre:false,why:'사전신고 사유가 있으나 사후보고 예외에 해당한다.'};
+  return{rs:'보고',pre:false,why:'사전신고 사유가 없어 원칙상 사후보고한다.'};
+}
+function deadline(v){
+  const e=pd(S.effDate);if(!e)return null;const H=holSet();
+  if(v.pre){const n=+S.preN||10;return{d:S.preUnit==='bd'?subBiz(e,n,H):addDays(e,-n),txt:`시행예정일 ${n}${S.preUnit==='bd'?'영업일':'일'} 전까지`}}
+  const n=+S.postDays||10,d=addDays(e,n),nb=nextBiz(d,H);
+  return{d:nb,txt:`시행일 후 ${n}일 이내`+(iso(nb)!==iso(d)?' (말일 휴일로 익영업일 만료)':'')};
+}
+
+/* ---------- diff ---------- */
+function tok(s){return (s||'').match(/\r?\n|[ \t]+|[가-힣A-Za-z0-9.%·]+|[^\s가-힣A-Za-z0-9.%·]/g)||[]}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function nl(s){return s.replace(/\r?\n/g,'<br>')}
+function norm(s){return (s||'').replace(/\s+/g,' ').trim()}
+function diff(a,b){
+  const A=tok(a),B=tok(b),n=A.length,m=B.length,dl=[],il=[];
+  if(!n||!m||n*m>4e6)return{o:n?`<u class="del">${nl(esc(a))}</u>`:'',n:m?`<u class="ins">${nl(esc(b))}</u>`:'',dl:[a],il:[b]};
+  const L=Array.from({length:n+1},()=>new Uint16Array(m+1));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i][j]=A[i]===B[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+  let i=0,j=0;const oa=[],na=[];
+  while(i<n||j<m){
+    if(i<n&&j<m&&A[i]===B[j]){oa.push([A[i],0]);na.push([B[j],0]);i++;j++}
+    else if(j<m&&(i>=n||L[i][j+1]>=L[i+1][j])){na.push([B[j],1]);j++}
+    else{oa.push([A[i],1]);i++}
+  }
+  const r=(arr,cls,list)=>{let out='',buf='',cur=0;
+    const flush=()=>{if(!buf)return;
+      if(cur&&buf.trim()){const mm=/^(\s*)([\s\S]*?)(\s*)$/.exec(buf);list.push(mm[2]);out+=nl(esc(mm[1]))+`<u class="${cls}">${nl(esc(mm[2]))}</u>`+nl(esc(mm[3]))}
+      else out+=nl(esc(buf));buf=''};
+    for(const [t,c] of arr){const cc=/^\s+$/.test(t)&&cur?cur:c;if(cc!==cur){flush();cur=cc}buf+=t}flush();return out};
+  return{o:r(oa,'del',dl),n:r(na,'ins',il),dl,il};
+}
+
+/* ---------- 조문 분리 ---------- */
+const ART_RE=/(^|\n)[ \t]*(?:(제[ \t]*(\d+)[ \t]*조(?:[ \t]*의[ \t]*(\d+))?)(?=[ \t]*[(（\n]|[ \t]+|$)|(부[ \t]*칙))/g;
+function splitArt(t){
+  t=(t||'').replace(/\r/g,'');const idx=[];let m,bc=0;ART_RE.lastIndex=0;
+  while((m=ART_RE.exec(t))){const pos=m.index+m[1].length;
+    idx.push({pos,key:m[5]?'부칙#'+(++bc):'제'+m[3]+'조'+(m[4]?'의'+m[4]:'')});
+    if(ART_RE.lastIndex===m.index)ART_RE.lastIndex++}
+  const out=new Map();
+  if(!idx.length){if(t.trim())out.set('본문',t.trim());return out}
+  const pre=t.slice(0,idx[0].pos).trim();if(pre)out.set('전문',pre);
+  idx.forEach((x,k)=>{const s=t.slice(x.pos,k+1<idx.length?idx[k+1].pos:t.length).trim();if(!out.has(x.key))out.set(x.key,s)});
+  return out;
+}
+function splitHead(t){
+  const m=/^\s*((?:제\s*\d+\s*조(?:\s*의\s*\d+)?|부\s*칙)\s*(?:[(（][^)）\n]{0,40}[)）])?)/.exec(t||'');
+  return m?{h:m[1],b:(t.slice(m[0].length)).replace(/^[ \t]+/,'')}:{h:'',b:t||''};
+}
+function extractRows(){
+  const a=splitArt(S.oldText),b=splitArt(S.newText);
+  const order=[...b.keys()];const ok=[...a.keys()];
+  ok.forEach((k,i)=>{if(!b.has(k)){const prev=ok.slice(0,i).reverse().find(x=>order.includes(x));order.splice(prev?order.indexOf(prev)+1:0,0,k)}});
+  const rows=[];
+  order.forEach(k=>{const o=a.get(k),n=b.get(k);
+    if(o&&n&&norm(o)===norm(n))return;
+    const lab=splitHead(n||o).h||k;
+    rows.push({label:lab.replace(/\s+/g,' '),old:o||'<신 설>',neo:n||'<삭 제>'})});
+  return{rows,total:new Set([...a.keys(),...b.keys()]).size};
+}
+
+/* ---------- 대비표 셀 ---------- */
+const CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+function units(body){
+  const pos=[];for(let i=0;i<body.length;i++){if(CIRC.includes(body[i])){const p=body.slice(0,i).replace(/[ \t]+$/,'');if(!p||p.endsWith('\n'))pos.push(i)}}
+  if(pos.length<2)return null;
+  const lead=body.slice(0,pos[0]).trim(),map=new Map();
+  pos.forEach((p,k)=>map.set(body[p],body.slice(p,k+1<pos.length?pos[k+1]:body.length).trim()));
+  return{lead,map};
+}
+function isMark(s){return /^\s*<\s*(신\s*설|삭\s*제)\s*>\s*$/.test(s||'')}
+function cells(r){
+  if(isMark(r.old)){const s=splitHead(r.neo);return{o:esc(r.old.trim()),n:`<b><u class="ins">${esc(s.h)}</u></b> <u class="ins">${nl(esc(s.b))}</u>`,dl:[],il:[r.neo]}}
+  if(isMark(r.neo)){const s=splitHead(r.old);return{o:`<b><u class="del">${esc(s.h)}</u></b> <u class="del">${nl(esc(s.b))}</u>`,n:esc(r.neo.trim()),dl:[r.old],il:[]}}
+  const so=splitHead(r.old),sn=splitHead(r.neo);
+  const hd=diff(so.h||r.label||'',sn.h||r.label||'');
+  const H=(x)=>x?`<b>${x}</b> `:'';
+  let dl=[...hd.dl],il=[...hd.il];
+  const uo=S.omitSame?units(so.b):null,un=S.omitSame?units(sn.b):null;
+  if(uo&&un){
+    const keys=[...new Set([...uo.map.keys(),...un.map.keys()])].sort((x,y)=>CIRC.indexOf(x)-CIRC.indexOf(y));
+    const O=[],N=[];let same=[];
+    const flushSame=()=>{if(same.length){O.push(`${same.join('·')} (생 략)`);N.push(`${same.join('·')} (현행과 같음)`);same=[]}};
+    const ld=diff(uo.lead,un.lead);if(uo.lead||un.lead){if(norm(uo.lead)===norm(un.lead)){O.push(nl(esc(uo.lead)));N.push(nl(esc(un.lead)))}else{O.push(ld.o);N.push(ld.n);dl.push(...ld.dl);il.push(...ld.il)}}
+    keys.forEach(k=>{const a=uo.map.get(k),b=un.map.get(k);
+      if(a&&b&&norm(a)===norm(b)){same.push(k);return}
+      flushSame();
+      if(a&&b){const d=diff(a,b);O.push(d.o);N.push(d.n);dl.push(...d.dl);il.push(...d.il)}
+      else if(b){O.push('&lt;신 설&gt;');N.push(`<u class="ins">${nl(esc(b))}</u>`);il.push(b)}
+      else{O.push(`<u class="del">${nl(esc(a))}</u>`);N.push('&lt;삭 제&gt;');dl.push(a)}});
+    flushSame();
+    const oh=so.h?hd.o:esc(r.label),nh=sn.h?hd.n:esc(r.label);
+    return{o:H(oh)+O.join('<br>'),n:H(nh)+N.join('<br>'),dl,il};
+  }
+  const d=diff(so.b,sn.b);dl.push(...d.dl);il.push(...d.il);
+  return{o:H(so.h?hd.o:esc(r.label))+d.o,n:H(sn.h?hd.n:esc(r.label))+d.n,dl,il};
+}
+
+/* ---------- 자동 문구 ---------- */
+function nm(){return S.name||'○○약관'}
+function kindWord(){return S.kind==='제정'?'제정':'변경'}
+function numsOf(list){return list.join(' ').match(/\d[\d,.]*\s*(?:%|％|원|만원|억원|일|개월|년|회|bp)?/g)||[]}
+function autoContent(){
+  if(S.kind==='제정')return '○ 약관 신규 제정 (본문 별첨)';
+  if(!S.rows.length)return '';
+  return S.rows.map(r=>{
+    let t;if(isMark(r.old))t=/부\s*칙/.test(r.label)?'부칙 신설':'조문 신설';else if(isMark(r.neo))t='조문 삭제';
+    else{const c=cells(r),a=numsOf(c.dl),b=numsOf(c.il);t=a.length&&b.length?`${a.join(', ')} → ${b.join(', ')}`:'문구 변경'}
+    return `○ ${r.label}: ${t}`}).join('\n')+'\n  - 세부 내용은 신구조문 대비표 참조';
+}
+function autoBasis(v){
+  const j=S.judge,why=[j.same&&'기보고 약관과 동일·유사',j.law&&'법령 제·개정 반영',j.order&&'금융위원회 명령·변경권고 반영',j.std&&'표준약관 제·개정 반영'].filter(Boolean).join(', ');
+  if(S.area==='efin'){
+    if(j.same)return `「전자금융감독규정」 제41조 제1항 제2호(기 보고된 동일·유사 약관: ${S.similarName||'약관명 기재'})`;
+    return `「전자금융감독규정」 제41조 제1항 제○호${why?`(${why})`:''}`;
+  }
+  const law=S.area==='bank'?'「은행법」 제52조제1항':'「여신전문금융업법」 제54조의3제1항';
+  if(v.pre)return `${law} 단서에 따른 사전신고 대상(${S.judge.cut?'이용자 권리 축소·의무 확대':'기존 서비스와 차별성 있는 내용 포함'})`;
+  return `해당 없음(${law} 본문에 따른 사후보고 대상${why?', 사유: '+why:''})`;
+}
+function autoNotice(){
+  const p=postStartD(),e=pd(S.effDate);if(!p||!e)return '';
+  return `영업점 객장 및 인터넷 홈페이지 게시, 고지시작 ${kd(p)}(시행일 ${dd(e,p)}일 전)`;
+}
+function lawOf(){return {bank:'「은행법」 제52조, 은행업감독업무시행세칙 제60조제2항',efin:'「전자금융거래법」 제25조, 「전자금융감독규정」 제41조',card:'「여신전문금융업법」 제54조의3, 같은 법 시행령 제23조의3'}[S.area]}
+function clean(t){return (t||'').replace(/^\s*\[예시\]\s*/,'').trim()}
+function autoBg(){
+  const v=verdict(),e=pd(S.effDate),k=kindWord(),n=S.noticeName||nm(),sd=pd(S.sendDate);
+  const L=[];
+  if(clean(S.need))L.push(`○ ${clean(S.need)}`);
+  L.push(`○ 「${n}」을 ${k}하여 ${kd(e)||'시행일'}부터 시행한다.`);
+  L.push(`○ ${lawOf()}에 따라 금융감독원에 ${v.pre?'사전신고':'사후보고'}${sd?`했다(${S.docNo?S.docNo+', ':''}${kd(sd,false)})`:'한다'}.`);
+  return L.join('\n');
+}
+function autoExec(){
+  const p=postStartD(),e=pd(S.effDate);if(!e)return '';
+  const L=[`○ 변경안내문을 ${kd(p)}부터 ${kd(addDays(e,-1))}까지 영업점 객장에 게시하시기 바랍니다.`,
+    `○ ${kd(e)}부터 변경 약관을 비치·교부하고, 구 약관은 회수·폐기하시기 바랍니다.`,
+    S.applyExisting==='여'?`○ 기존 가입고객에게도 ${kd(e)}부터 변경 약관이 적용됨을 안내하시기 바랍니다.`:`○ 기존 가입고객에게는 종전 약관이 적용됨을 안내하시기 바랍니다.`,
+    `○ 고객 문의 시 신구조문 대비표를 활용하여 안내하시기 바랍니다.`];
+  if(S.judge.cut)L.push('○ 고객에게 불리한 변경이 포함되어 있으므로 개별 통지 대상 여부를 확인하시기 바랍니다.');
+  return L.join('\n');
+}
+function rowGist(r){
+  if(isMark(r.old))return /부\s*칙/.test(r.label)?'부칙 신설(시행일 규정)':'조문 신설';
+  if(isMark(r.neo))return '조문 삭제';
+  const c=cells(r),a=numsOf(c.dl),b=numsOf(c.il);
+  if(a.length&&b.length)return `${a.join(', ')} → ${b.join(', ')}`;
+  const ins=c.il.filter(x=>x.trim()).slice(0,2).map(x=>x.length>24?x.slice(0,24)+'…':x);
+  return ins.length?`"${ins.join('", "')}" 반영`:'문구 정비';
+}
+function val(k,auto){return (S[k]||'').trim()?S[k]:auto}
+
+/* ---------- 점검 ---------- */
+function checks(v,dl){
+  const L=[],E=(lv,m)=>L.push({lv,m});
+  const e=pd(S.effDate),sd=pd(S.sendDate),t=today(),p=postStartD();
+  if(!S.name.trim())E('err','약관(상품)명이 비었다.');
+  if(!e)E('err','시행(예정)일이 비었다.');
+  if(!S.need.trim())E('err','2번 항목 "제정(변경)의 필요성"이 비었다.');
+  if(S.kind==='변경'&&!S.rows.length)E('err','변경 건인데 신구조문 대비표 행이 없다.');
+  if(!S.docNo.trim())E('warn','공문 문서번호가 비었다.');
+  if(!S.author.trim()||!S.phone.trim())E('warn','공문 작성자·전화번호 칸이 비었다.');
+  if(S.area==='bank'&&!S.feature.trim())E('warn','7번 항목 "상품의 특징"이 비었다.');
+  if(S.area==='card'&&!S.prodDesc.trim())E('warn','9번 항목 "상품설명서(전체)"가 비었다.');
+  if(S.area==='efin'&&S.judge.same&&!S.similarName.trim())E('err','제41조제1항제2호 사후보고는 기보고 동일·유사 약관명을 적어야 한다.');
+  if(S.area==='efin'&&!S.judge.same&&!(S.basis||'').trim())E('warn','7번 사후보고 근거의 "제○호"를 실제 호수로 채운다.');
+  if(!S.hist.length)E('warn','최근 5년 변경이력이 없으면 표에 "해당 없음"을 적는다.');
+  // 기한
+  if(dl&&sd){const gap=dd(dl.d,sd);
+    if(gap<0)E('err',`발신일 ${kd(sd)}이 제출기한 ${kd(dl.d)}보다 ${-gap}일 늦다.`);
+    else E('ok',`발신일 기준 제출기한까지 ${gap}일 남는다(기한 ${kd(dl.d)}).`)}
+  if(dl){const g=dd(dl.d,t);E(g<0?'err':g<=3?'warn':'ok',g<0?`오늘 기준 제출기한이 ${-g}일 지났다.`:`오늘 기준 제출기한 D-${g}.`)}
+  // 게시
+  if(e&&p){const g=dd(e,p);if(g<30)E('warn',`게시 시작일부터 시행일까지 ${g}일이다. 약관 변경 조항의 사전 게시기간(통상 1개월)을 확인한다.`);
+    if(dd(p,t)<0&&dd(e,t)>0)E('warn',`게시 시작일 ${kd(p)}이 이미 지났다. 게시 여부를 확인한다.`)}
+  // 전문
+  if(S.kind==='변경'&&e&&S.newText.trim()){
+    const y=e.getFullYear(),mo=e.getMonth()+1,d=e.getDate();
+    const hit=new RegExp(`${y}\\s*년\\s*${mo}\\s*월\\s*${d}\\s*일|${y}\\.\\s*${mo}\\.\\s*${d}\\.?`).test(S.newText);
+    E(hit?'ok':'warn',hit?`변경 전문에 시행일(${kl(e)})이 들어 있다.`:`변경 전문 부칙에 시행일(${kl(e)})이 없다. '부칙 추가'로 넣는다.`)}
+  const arts=[...splitArt(S.newText).keys()].filter(k=>/^제\d+조$/.test(k)).map(k=>+k.match(/\d+/)[0]);
+  for(let i=1;i<arts.length;i++){if(arts[i]<=arts[i-1])E('err',`변경 전문 조문 순서 오류: 제${arts[i-1]}조 다음 제${arts[i]}조.`);else if(arts[i]-arts[i-1]>1)E('warn',`변경 전문에 제${arts[i-1]+1}조${arts[i]-arts[i-1]>2?`~제${arts[i]-1}조`:''}가 없다. 삭제 조문이면 "(삭제)" 표기를 확인한다.`)}
+  if(arts.length){const set=new Set([...splitArt(S.newText).keys()]);
+    const refs=new Set();(S.newText.match(/제\s*\d+\s*조(?:\s*의\s*\d+)?(?=\s*(?:제\s*\d+\s*항|에|의|를|및|또는|,|·|\s|부터|까지))/g)||[]).forEach(x=>refs.add(x.replace(/\s/g,'')));
+    const bad=[...refs].filter(r=>!set.has(r));if(bad.length)E('warn',`변경 전문이 인용한 ${bad.join(', ')}가 전문에 없다. 조문 이동 후 인용 조항을 확인한다.`)}
+  // 권리축소 의심
+  const INS=/(수수료|제한|불가|할 수 없|지급하지 않|책임을 지지 않|부담|해지할 수 있|정지|중단|인하|축소|연체)/,DEL=/(면제|우대|보장|환급|지급합니다|할 수 있습니다)/;
+  const sus=S.rows.filter(r=>{const c=cells(r);return c.il.some(x=>INS.test(x))||c.dl.some(x=>DEL.test(x))}).map(r=>r.label);
+  if(sus.length&&!S.judge.cut&&!AREAS[S.area].reportOnly)E('warn',`${sus.join(', ')}에 권리 축소·의무 확대로 볼 수 있는 표현이 있다. 사전신고 사유 해당 여부를 확인한다.`);
+  // 수치 변경 목록
+  S.rows.forEach(r=>{if(isMark(r.old)||isMark(r.neo))return;const c=cells(r),a=numsOf(c.dl),b=numsOf(c.il);if(a.length||b.length)E('ok',`수치 변경 ${r.label}: ${a.join(', ')||'-'} → ${b.join(', ')||'-'}`)});
+  if(S.area!=='efin'&&/제○호/.test(val('basis','')))E('warn','근거 문구의 "제○호"를 채운다.');
+  return L;
+}
+function timeline(v,dl){
+  const e=pd(S.effDate),p=postStartD(),sd=pd(S.sendDate),t=today(),rows=[];
+  if(sd)rows.push(['금감원 공문 발신일',sd]);
+  if(p)rows.push(['변경 게시 시작',p]);
+  if(dl)rows.push([v.pre?'사전신고 제출기한':'사후보고 제출기한',dl.d]);
+  if(e)rows.push(['시행일',e]);
+  rows.sort((a,b)=>a[1]-b[1]);
+  return rows.map(([k,d])=>`<tr class="${iso(d)===iso(t)?'now':''}"><td>${k}</td><td>${kd(d)}</td><td style="text-align:right">${dd(d,t)>=0?'D-'+dd(d,t):'D+'+(-dd(d,t))}</td></tr>`).join('');
+}
+
+/* ---------- 문서 ---------- */
+const TD='border:1px solid #000;padding:6px 8px;vertical-align:top;';
+function headerLines(A,second){
+  if(!S.showHeader)return '';
+  return `<div style="font-size:12px">&lt;${A.rule}&gt;</div><div style="font-size:12px;margin-bottom:6px">${esc(second)}</div>`;
+}
+function cmpTable(h1,h2){
+  if(!S.rows.length)return '<p>(해당 없음)</p>';
+  return `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px"><tr><th style="${TD}background:#d9d9d9;text-align:center;width:50%">${h1}</th><th style="${TD}background:#d9d9d9;text-align:center">${h2}</th></tr>`+
+    S.rows.map(r=>{const c=cells(r);return `<tr><td style="${TD}">${c.o}</td><td style="${TD}">${c.n}</td></tr>`}).join('')+'</table>';
+}
+function coverDoc(v){
+  const A=AREAS[S.area],k=kindWord(),f=S.titleMode==='form',rs=v.rs,sign=S.signer||A.signer;
+  const c=A.colon?':':'';const lab=(x)=>`<td style="padding:3px 16px 3px 0;white-space:nowrap">${x}${c}</td>`;
+  const atts=A.atts(k,rs,f).map((a,i)=>`<tr><td style="padding:2px 6px 2px 0;white-space:nowrap;${i?'visibility:hidden':''}">붙&nbsp;&nbsp;임&nbsp;:</td><td style="padding:2px 0;vertical-align:top;white-space:nowrap">${i+1}.&nbsp;</td><td style="padding:2px 0">${esc(a)}</td></tr>`).join('');
+  const date=kd(pd(S.sendDate),false);
+  return `<div class="page" data-doc="cover">
+${headerLines(A,A.form)}
+<table style="width:auto;margin:10px 0 24px auto;font-size:13px"><tr><td style="${TD}min-width:230px">작 성 자 : ${esc(S.author)} &nbsp;(${esc(S.position)||'직 위'})</td></tr><tr><td style="${TD}">전화번호 : ${esc(S.phone)}</td></tr></table>
+<p style="text-align:center;font-size:19px;font-weight:bold;text-decoration:underline;margin:0 0 26px">${A.coverTitle(k,rs,f)}</p>
+${S.area==='bank'?`<p style="text-align:right;margin:0">${date||'20&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.'}</p>`:''}
+<table style="width:auto;font-size:14px;margin-bottom:22px">
+<tr>${lab('문서번호')}<td>${esc(S.docNo)}</td></tr>
+${S.area!=='bank'?`<tr>${lab('발신일자')}<td>${date}</td></tr>`:''}
+<tr>${lab('수&emsp;&emsp;신')}<td>금융감독원장</td></tr>
+<tr>${lab('참&emsp;&emsp;조')}<td>${esc(S.ref)}</td></tr>
+${S.area==='bank'?`<tr>${lab('제&emsp;&emsp;목')}<td>${esc(nm())} ${f?'제정(변경)보고(신고)':k+rs}</td></tr>`:''}
+</table>
+${A.hr?'<hr style="border:0;border-top:1px solid #000;margin:0 0 22px">':''}
+<p style="text-indent:2em;margin:0 0 34px">${esc(A.cover(k,rs,nm(),f))}</p>
+<table style="width:auto">${atts}</table>
+<p style="text-align:center;font-size:18px;font-weight:bold;margin-top:70px">${esc(sign)}</p>
+</div>`;
+}
+function histTable(dh){
+  const rows=(S.hist.length?S.hist:[{name:'해당 없음',date:'',sum:''}]).map(h=>`<tr><td style="${TD}">${esc(h.name)}</td><td style="${TD}">${esc(h.date)}</td><td style="${TD}">${esc(h.sum)}</td></tr>`).join('');
+  return `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px"><tr><td style="${TD}width:34%">약관(상품)명</td><td style="${TD}width:22%">${dh}</td><td style="${TD}">변경내용 요약</td></tr>${rows}</table>`;
+}
+function reportDoc(v){
+  const A=AREAS[S.area],k=kindWord(),f=S.titleMode==='form';
+  const eff=kd(pd(S.effDate)),lau=kd(pd(S.launchDate));
+  const x=s=>s?nl(esc(s)):'';
+  const tbl=S.kind==='변경'?cmpTable('현&nbsp;&nbsp;행','변&nbsp;&nbsp;경'):'해당 없음(제정)';
+  const content=x(val('content',autoContent())),basis=x(val('basis',autoBasis(v))),notice=x(val('notice',S.kind==='변경'?autoNotice():'해당 없음(제정)'));
+  let items;
+  if(S.area==='bank')items=[['약관명',esc(nm())],['제정(변경)의 필요성',x(S.need)],['주요 제정(변경)내용',content],['신구조문대비표(변경의 경우)',tbl],['시행일자',eff],['사전신고 근거',basis],['상품의 특징',x(S.feature)],['약관본문 (전체)',x(S.body)],['자체심사시 특이사항',x(S.selfReview)],['최근 5년간 약관의 변경이력',histTable('변경일'),1],['변경권고에 따른 약관 변경 여부',x(S.reco)],['기타 참고사항',x(S.etc)]];
+  else if(S.area==='efin')items=[['약관(상품)명',esc(nm())],['제정(변경)의 필요성',x(S.need)],['주요 제정(변경)내용',content],['신구조문 대비표(변경의 경우)',tbl],['시행(예정)일자(변경의 경우 서비스 개시일도 병기)',eff+(lau?` / 서비스 개시일 ${lau}`:'')],['이용자에 대한 고지방법 및 고지시작시점(변경의 경우)',notice],['사후보고 근거 (「전자금융감독규정」 제41조 제1항 제2호의 경우에는 기 보고된 동일·유사 약관명을 구체적으로 명시)',basis],['약관 본문 (전체)',x(S.body)],['자체심사표상 특이사항',x(S.selfReview)],['최근 5년간 약관의 변경이력',histTable('제정·변경일'),1],['변경권고에 따른 약관 변경 여부',x(S.reco)],['기타 참고사항',x(S.etc)]];
+  else items=[['약관(상품)명',esc(nm())],['제정(변경)의 필요성',x(S.need)],['주요 제정(변경)내용',content],['신구조문 대비표(변경의 경우)',tbl],['시행(예정)일자(변경의 경우 상품 출시일도 병기)',eff+(lau?` / 상품 출시일 ${lau}`:'')],['회원에 대한 고지방법 및 고지시작시점(변경의 경우)',notice],['사전신고 근거',basis],['약관 본문 (전체)',x(S.body)],['상품설명서 (전체)',x(S.prodDesc)],['자체심사표상 특이사항',x(S.selfReview)],['최근 5년간 약관의 변경이력',histTable('변경일'),1],['변경명령에 따른 약관 변경 여부',x(S.reco)],['기타 참고사항',x(S.etc)]];
+  const block=items.map(([h,b,noColon],i)=>{const wide=/<table/.test(b||'');
+    return `<div style="margin:0 0 14px"><div><b>${i+1}. ${h}${noColon?'':' :'}</b>${wide?'':' '+(b||'')}</div>${wide?b:''}</div>`}).join('');
+  return `<div class="page" data-doc="report">
+${S.showHeader?`<div style="font-size:12px">&lt;${A.rule}&gt;</div>`:''}<div style="font-size:12px;margin-bottom:8px">${A.attTag}</div>
+<p style="text-align:center;font-size:19px;font-weight:bold;text-decoration:underline;margin:0 0 24px">${A.repTitle(k,v.rs,f)}</p>
+${block}</div>`;
+}
+function cmpDoc(){
+  return `<div class="page" data-doc="cmp"><p style="text-align:center;font-size:18px;font-weight:bold;margin:0 0 6px">「${esc(nm())}」 신구조문 대비표</p>
+<p style="text-align:right;font-size:12px;margin:0 0 6px">시행일: ${kd(pd(S.effDate))}</p>${S.kind==='변경'?cmpTable('현&nbsp;&nbsp;&nbsp;행','개&nbsp;&nbsp;정&nbsp;&nbsp;안'):'<p>제정 약관으로 대비표가 없다.</p>'}</div>`;
+}
+function fullDoc(){
+  const t=(S.newText||'').replace(/\r/g,'');
+  const html=t.split('\n').map(line=>{const s=splitHead(line);
+    if(s.h&&/부\s*칙/.test(s.h))return `<p style="text-align:center;font-weight:bold;margin:14px 0 4px">${esc(s.h)}</p>${s.b?`<p style="margin:0">${esc(s.b)}</p>`:''}`;
+    if(s.h)return `<p style="margin:8px 0 0"><b>${esc(s.h)}</b> ${esc(s.b)}</p>`;
+    return line.trim()?`<p style="margin:0 0 0 ${/^\s*[①-⑳]/.test(line)?'0':'0'}">${esc(line)}</p>`:''}).join('');
+  return `<div class="page" data-doc="full"><p style="text-align:center;font-size:18px;font-weight:bold;margin:0 0 18px">${esc(nm())}</p>${html||'<p>변경 전문이 비었다. STEP 1에서 입력한다.</p>'}</div>`;
+}
+function noticeDoc(){
+  const n=S.noticeName||nm(),eff=kd(pd(S.effDate)),yes=S.applyExisting==='여';
+  const ck=(on,t)=>on?`<span style="border:1px solid #000;border-radius:50%;padding:0 4px">${t}</span>`:t;
+  const rows=S.rows.length?S.rows.map(r=>{const c=cells(r);return `<tr><td style="${TD}width:50%">${c.o}</td><td style="${TD}">${c.n}</td></tr>`}).join(''):`<tr><td style="${TD}height:120px"></td><td style="${TD}"></td></tr>`;
+  return `<div class="page" data-doc="notice">
+<div style="border-top:1px solid #000;border-bottom:3px double #000;padding:6px 0;margin-bottom:16px;text-align:center;font-size:20px;font-weight:bold">「${esc(n)}」 변경 안내</div>
+<p style="margin:0 0 14px">다음과 같이 약관 변경 내용을 안내합니다. 변경된 약관은 ${esc(S.bankName||'당행')} 영업점 또는 인터넷 홈페이지(${esc(S.webPath)})에서 조회 및 교부 가능합니다.</p>
+<p style="text-align:center;letter-spacing:1em;margin:0 0 10px">- 다 음 -</p>
+<div style="line-height:2"><div>□ <u>대상약관</u>: ${esc(n)}</div><div>□ <u>시행(예정)일</u>: ${eff}</div>
+<div>□ <u>기존 가입고객에 대한 변경약관 적용 여부</u>: ${ck(yes,'여')} / ${ck(!yes,'부')}</div><div style="margin-top:10px">□ 변경내용</div></div>
+<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:4px"><tr><th style="${TD}background:#bfbfbf;text-align:center">현&nbsp;&nbsp;행</th><th style="${TD}background:#bfbfbf;text-align:center">변&nbsp;&nbsp;경</th></tr>${rows}</table>
+<p style="border-top:1px solid #000;margin-top:16px;padding-top:8px">※ 기타 자세한 내용은 영업점 창구직원 또는 ${esc(S.callCenter)}로 문의하시기 바랍니다.</p></div>`;
+}
+function h2t(h){return (h||'').replace(/<br\s*\/?>/g,'\n').replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&')}
+function execParts(v){
+  const e=pd(S.effDate),p=postStartD(),dl=deadline(v),k=kindWord(),n=S.noticeName||nm(),sd=pd(S.sendDate);
+  const txt=t=>t.split('\n').filter(x=>x.trim());
+  // 1
+  const t1={head:['구 분','내 용'],rows:[
+    ['대상 약관',esc(n)],['변경 사유',esc(clean(S.need))||'-'],['관련 근거',esc(lawOf())],
+    [`금감원 ${v.pre?'사전신고':'사후보고'}`,[S.docNo&&esc(S.docNo),sd&&`발신 ${kd(sd,false)}`,dl&&`제출기한 ${kd(dl.d,false)}`].filter(Boolean).join(', ')||'-'],
+    ['시행일',kd(e)||'-']]};
+  // 2
+  const cnt={신설:0,변경:0,삭제:0};S.rows.forEach(r=>{isMark(r.old)?cnt.신설++:isMark(r.neo)?cnt.삭제++:cnt.변경++});
+  const l2=S.kind==='제정'?[`○ 「${n}」을 신규 제정한다.`]:[
+    `○ 변경 조항은 ${S.rows.length}개다(변경 ${cnt.변경}, 신설 ${cnt.신설}, 삭제 ${cnt.삭제}).`,
+    ...S.rows.map(r=>`  - ${r.label}: ${rowGist(r)}`),
+    `○ 기존 가입고객 적용 여부: ${S.applyExisting==='여'?'적용한다':'적용하지 않는다'}.`];
+  const t2=S.execFull?{head:['조 항','현 행','변 경'],rows:S.rows.map(r=>{const c=cells(r);return[esc(r.label),c.o,c.n]}),w:['16%','42%','42%']}
+                     :{head:['조 항','변경 요지'],rows:S.rows.map(r=>[esc(r.label),esc(rowGist(r))]),w:['30%','70%']};
+  // 3
+  const t3={head:['일 자','조치 사항','대 상'],rows:[
+    p&&[kd(p),'변경안내문 게시 시작','영업점·홈페이지'],
+    e&&[kd(addDays(e,-1)),'변경안내문 게시 종료','영업점'],
+    e&&[kd(e),'변경 약관 시행, 비치·교부 개시','영업점'],
+    e&&[kd(e),'구 약관 회수·폐기','영업점']].filter(Boolean).map(r=>r.map(esc))};
+  return[
+    {no:1,title:S.h1Label||'배경 및 근거',lines:txt(val('execBg',autoBg())),table:t1},
+    {no:2,title:'주요 내용',lines:l2,table:S.kind==='변경'&&S.rows.length?t2:null},
+    {no:3,title:S.h3Label||'당부 및 유의사항',lines:txt(val('execActions',autoExec())),table:t3.rows.length?t3:null}];
+}
+function secHtml(sec){
+  const TH=`${TD}background:#e7e7e7;text-align:center;font-weight:bold;`;
+  const tb=sec.table?`<table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 4px"><tr>${sec.table.head.map((h,i)=>`<td style="${TH}${sec.table.w?'width:'+sec.table.w[i]:''}">${h}</td>`).join('')}</tr>${sec.table.rows.map(r=>`<tr>${r.map((c,i)=>`<td style="${TD}${i===0?'text-align:center;white-space:nowrap;':''}">${c}</td>`).join('')}</tr>`).join('')}</table>`:'';
+  return `<div data-sec="${sec.no}" style="margin:0 0 22px"><p style="font-size:15px;font-weight:bold;margin:0 0 6px">${sec.no}. ${esc(sec.title)}</p>${sec.lines.map(l=>`<p style="margin:0 0 2px;${/^\s+-/.test(l)?'padding-left:1.6em':''}">${esc(l.trim())}</p>`).join('')}${tb}</div>`;
+}
+function secText(sec){
+  const L=[`${sec.no}. ${sec.title}`,...sec.lines.map(l=>/^\s+-/.test(l)?'  '+l.trim():l.trim())];
+  if(sec.table){L.push('');L.push(sec.table.head.join('\t'));sec.table.rows.forEach(r=>L.push(r.map(c=>h2t(c).replace(/\s*\n\s*/g,' ')).join('\t')))}
+  return L.join('\n');
+}
+function execDoc(v){
+  return `<div class="page" data-doc="exec"><p style="text-align:center;font-size:17px;font-weight:bold;margin:0 0 20px">「${esc(S.noticeName||nm())}」 ${kindWord()} 시행 안내</p>${execParts(v).map(secHtml).join('')}</div>`;
+}
+function checkView(v,dl,L){
+  const g={err:'오류',warn:'확인',ok:'정상'};
+  const ord={err:0,warn:1,ok:2};L=[...L].sort((a,b)=>ord[a.lv]-ord[b.lv]);
+  return `<div class="chk"><div><h3>제출 일정</h3><table class="tl">${timeline(v,dl)||'<tr><td>시행일을 입력한다.</td></tr>'}</table></div>
+<div><h3>자동 점검 ${L.filter(x=>x.lv==='err').length}건 오류 · ${L.filter(x=>x.lv==='warn').length}건 확인</h3><ul>${L.map(x=>`<li><span class="lv ${x.lv}">${g[x.lv]}</span><span>${esc(x.m)}</span></li>`).join('')}</ul></div>
+<p class="note" style="margin:0">점검은 입력값과 전문 텍스트 기준이다. 사전신고 해당 여부의 최종 판단은 준법·약관 심사 담당과 확인한다.</p></div>`;
+}
+
+/* ---------- 갱신 ---------- */
+let curDoc='check',curStep='1';
+function sync(){if(S.autoSync){const r=extractRows();S.rows=r.rows;$('bulkMsg').textContent=`조문 ${r.total}개 중 변경 ${r.rows.length}개`}}
+function update(opts={}){
+  if(!opts.noSync)sync();
+  const v=verdict(),dl=deadline(v);
+  const vb=$('verdict');vb.className='verdict '+(v.pre?'pre':'post');
+  vb.innerHTML=`<b>${v.pre?'사전신고':'사후보고'} 대상</b><span class="d">${v.why}</span>`+(dl?`<span class="d">제출기한: <b>${kd(dl.d)}</b> — ${dl.txt}</span>`:'<span class="d">시행(예정)일을 입력하면 제출기한을 계산한다.</span>');
+  const p=postStartD();$('postHint').textContent=p?`게시 시작일 ${kd(p)}${S.postStart?'':' (비워 두면 시행일 1개월 전으로 계산)'}`:'';
+  $('postStart').placeholder=p?iso(p):'';
+  $('simWrap').hidden=!(S.area==='efin'&&S.judge.same);
+  const autos={content:autoContent(),notice:autoNotice(),basis:autoBasis(v),execActions:autoExec(),execBg:autoBg()};
+  document.querySelectorAll('[data-auto]').forEach(el=>{const k=el.dataset.auto;el.textContent=(S[k]||'').trim()?'':'· 비우면 자동 문구 사용';$(k).placeholder=autos[k]||''});
+  const L=checks(v,dl),ne=L.filter(x=>x.lv==='err').length,nw=L.filter(x=>x.lv==='warn').length;
+  $('chkBadge').innerHTML=ne?`<span class="badge">${ne}</span>`:nw?`<span class="badge w">${nw}</span>`:'<span class="badge o">✓</span>';
+  const H={check:()=>checkView(v,dl,L),cmp:cmpDoc,full:fullDoc,cover:()=>coverDoc(v),report:()=>reportDoc(v),notice:noticeDoc,exec:()=>execDoc(v)};
+  $('stage').innerHTML=curDoc==='all'?['cover','report','cmp','full','notice','exec'].map(k=>H[k]()).join(''):H[curDoc]();
+  if(opts.rows)renderRows();
+  persist();
+}
+let deb;function updateSoon(){clearTimeout(deb);deb=setTimeout(()=>update({rows:true}),250)}
+
+/* ---------- 바인딩 ---------- */
+function bindFields(){
+  document.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;
+    el.addEventListener('input',()=>{S[k]=el.type==='number'?Number(el.value):el.value;
+      if(k==='oldText'||k==='newText')updateSoon();else update({noSync:true})})});
+  document.querySelectorAll('[data-j]').forEach(el=>el.addEventListener('change',()=>{S.judge[el.dataset.j]=el.checked;update({noSync:true})}));
+  $('autoSync').addEventListener('change',e=>{S.autoSync=e.target.checked;update({rows:true})});
+  $('omitSame').addEventListener('change',e=>{S.omitSame=e.target.checked;update({noSync:true})});
+  $('showHeader').addEventListener('change',e=>{S.showHeader=e.target.checked;update({noSync:true})});
+  $('execFull').addEventListener('change',e=>{S.execFull=e.target.checked;update({noSync:true})});
+  $('plainCopy').addEventListener('change',e=>{S.plainCopy=e.target.checked;persist()});
+}
+function fillInputs(){
+  document.querySelectorAll('[data-k]').forEach(el=>{el.value=S[el.dataset.k]??''});
+  document.querySelectorAll('[data-j]').forEach(el=>{el.checked=!!S.judge[el.dataset.j]});
+  $('autoSync').checked=!!S.autoSync;$('omitSame').checked=!!S.omitSame;$('showHeader').checked=!!S.showHeader;$('execFull').checked=!!S.execFull;$('plainCopy').checked=!!S.plainCopy;
+}
+function applyArea(){
+  document.querySelectorAll('#areaSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.area===S.area));
+  document.querySelectorAll('[data-areas]').forEach(el=>{el.hidden=!el.dataset.areas.split(',').includes(S.area)});
+  $('launchLbl').textContent=S.area==='card'?'상품 출시일':'서비스 개시일';
+  $('noticeLbl').textContent=(S.area==='card'?'회원':'이용자')+'에 대한 고지방법 및 고지시작시점';
+  $('basisLbl').textContent=S.area==='efin'?'사후보고 근거':'사전신고 근거';
+  $('recoLbl').textContent=S.area==='card'?'변경명령에 따른 약관 변경 여부':'변경권고에 따른 약관 변경 여부';
+  document.querySelectorAll('#judge input').forEach(i=>i.disabled=AREAS[S.area].reportOnly);
+}
+function manualEdit(){if(S.autoSync){S.autoSync=false;$('autoSync').checked=false;toast('직접 수정으로 자동 갱신을 껐다')}}
+function renderRows(){
+  const box=$('cmpList');box.innerHTML='';
+  S.rows.forEach((r,i)=>{
+    const d=document.createElement('div');d.className='cmp-row';
+    d.innerHTML=`<div class="hd"><input id="rl${i}" value="${esc(r.label)}" aria-label="조항"><button type="button" class="btn sm">행 삭제</button></div>
+      <label class="f"><span>현행</span><textarea id="ro${i}" rows="3" class="code">${esc(r.old)}</textarea></label>
+      <label class="f"><span>변경</span><textarea id="rn${i}" rows="3" class="code">${esc(r.neo)}</textarea></label>`;
+    box.appendChild(d);
+    d.querySelector(`#rl${i}`).addEventListener('input',e=>{manualEdit();r.label=e.target.value;update({noSync:true})});
+    d.querySelector(`#ro${i}`).addEventListener('input',e=>{manualEdit();r.old=e.target.value;update({noSync:true})});
+    d.querySelector(`#rn${i}`).addEventListener('input',e=>{manualEdit();r.neo=e.target.value;update({noSync:true})});
+    d.querySelector('button').addEventListener('click',()=>{manualEdit();S.rows.splice(i,1);renderRows();update({noSync:true})});
+  });
+  if(!S.rows.length)box.innerHTML='<p class="hint">변경 조문이 없다. STEP 1에서 전문을 넣거나 행을 직접 추가한다.</p>';
+}
+function renderHist(){
+  const tb=$('histBody');tb.innerHTML='';
+  S.hist.forEach((h,i)=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input id="hn${i}" value="${esc(h.name)}"></td><td><input id="hd${i}" value="${esc(h.date)}" placeholder="2024.3.4."></td><td><input id="hs${i}" value="${esc(h.sum)}"></td><td><button type="button" class="btn sm" aria-label="이력 삭제">✕</button></td>`;
+    tb.appendChild(tr);
+    ['name','date','sum'].forEach((f,j)=>tr.querySelectorAll('input')[j].addEventListener('input',e=>{h[f]=e.target.value;update({noSync:true})}));
+    tr.querySelector('button').addEventListener('click',()=>{S.hist.splice(i,1);renderHist();update({noSync:true})});
+  });
+}
+
+/* ---------- 파일 읽기 (docx / hwpx / txt, 오프라인) ---------- */
+async function unzip(buf){
+  const u=new Uint8Array(buf),dv=new DataView(buf);let e=-1;
+  for(let i=u.length-22;i>=Math.max(0,u.length-70000);i--){if(dv.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw new Error('압축 구조를 찾지 못했다');
+  const cnt=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const files=[];
+  for(let k=0;k<cnt;k++){
+    const meth=dv.getUint16(p+10,true),cs=dv.getUint32(p+20,true),nl2=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true);
+    const name=new TextDecoder().decode(u.subarray(p+46,p+46+nl2));files.push({name,meth,cs,lo});p+=46+nl2+xl+cl}
+  return{files,read:async f=>{const ln=dv.getUint16(f.lo+26,true),lx=dv.getUint16(f.lo+28,true),st=f.lo+30+ln+lx,data=u.subarray(st,st+f.cs);
+    if(f.meth===0)return new TextDecoder().decode(data);
+    if(typeof DecompressionStream==='undefined')throw new Error('이 브라우저는 압축 해제를 지원하지 않는다');
+    return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()}};
+}
+function xmlParas(xml){
+  const doc=new DOMParser().parseFromString(xml,'application/xml'),out=[];
+  const ptext=p=>{let s='';(function rec(el){for(const c of el.children){const n=c.localName;if(n==='p')continue;if(n==='t')s+=c.textContent;else if(n==='tab')s+='\t';else if(n==='br'||n==='lineBreak')s+='\n';rec(c)}})(p);return s};
+  (function rec(el){for(const c of el.children){if(c.localName==='p'){out.push(ptext(c));rec(c)}else rec(c)}})(doc.documentElement);
+  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+async function readFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='txt')return await file.text();
+  if(ext==='hwp')throw new Error('.hwp는 읽지 못한다. 한글에서 .hwpx로 저장해 올린다');
+  const z=await unzip(await file.arrayBuffer());
+  if(ext==='docx'){const f=z.files.find(x=>x.name==='word/document.xml');if(!f)throw new Error('Word 본문을 찾지 못했다');return xmlParas(await z.read(f))}
+  if(ext==='hwpx'){const fs=z.files.filter(x=>/^Contents\/section\d+\.xml$/i.test(x.name)).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+    if(!fs.length)throw new Error('한글 본문을 찾지 못했다');const parts=[];for(const f of fs)parts.push(xmlParas(await z.read(f)));return parts.join('\n')}
+  throw new Error('docx·hwpx·txt만 읽는다');
+}
+function bindUpload(inputId,key,msgId){
+  $(inputId).addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
+    const msg=msgId?$(msgId):null;
+    try{const t=await readFile(f);S[key]=t;$(key).value=t;const n=splitArt(t).size;toast(`${f.name}: 조문 ${n}개를 읽었다`);if(msg)msg.textContent=f.name;update({rows:true})}
+    catch(err){toast(err.message||'파일을 읽지 못했다')}e.target.value=''});
+}
+
+/* ---------- 이벤트 ---------- */
+document.querySelectorAll('#areaSeg button').forEach(b=>b.addEventListener('click',()=>{S.area=b.dataset.area;applyArea();update({noSync:true})}));
+const stepDoc={1:'full',2:'cmp',3:'report',4:'exec'};
+document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>{curStep=b.dataset.step;
+  document.querySelectorAll('#steps button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==curStep);
+  setDoc(stepDoc[curStep]);}));
+function setDoc(d){curDoc=d;document.querySelectorAll('#docSeg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.doc===d));update({noSync:true})}
+document.querySelectorAll('#docSeg button').forEach(b=>b.addEventListener('click',()=>setDoc(b.dataset.doc)));
+$('addRow').addEventListener('click',()=>{manualEdit();S.rows.push({label:'제○조()',old:'',neo:''});renderRows();update({noSync:true})});
+$('addHist').addEventListener('click',()=>{S.hist.push({name:nm(),date:'',sum:''});renderHist();update({noSync:true})});
+$('bulkRun').addEventListener('click',()=>{S.autoSync=true;$('autoSync').checked=true;update({rows:true});toast($('bulkMsg').textContent)});
+$('copyOld').addEventListener('click',()=>{S.newText=S.oldText;$('newText').value=S.newText;update({rows:true});$('newText').focus();toast('현행을 복사했다. 바꿀 부분만 고친다')});
+$('addBuchik').addEventListener('click',()=>{const e=pd(S.effDate);if(!e){toast('시행(예정)일을 먼저 입력한다');return}
+  const noun=/특약/.test(S.name)?'특약':'약관';
+  S.newText=(S.newText||'').replace(/\s+$/,'')+`\n부 칙(${e.getFullYear()}.${e.getMonth()+1}.${e.getDate()}.)\n이 ${noun}은 ${kl(e)}부터 시행합니다.`;
+  $('newText').value=S.newText;update({rows:true});toast('부칙을 추가했다')});
+$('fillAuto').addEventListener('click',()=>{const v=verdict(),m={content:autoContent(),notice:autoNotice(),basis:autoBasis(v),execActions:autoExec(),execBg:autoBg()};let n=0;
+  Object.entries(m).forEach(([k,t])=>{if(!(S[k]||'').trim()&&t){S[k]=t;$(k).value=t;n++}});update({noSync:true});toast(n?`빈 칸 ${n}개에 자동 문구를 넣었다`:'채울 빈 칸이 없다')});
+document.querySelectorAll('[data-sec]').forEach(b=>{if(b.tagName!=='BUTTON')return;b.addEventListener('click',async()=>{
+  if(curDoc!=='exec')setDoc('exec');
+  const no=+b.dataset.sec,parts=execParts(verdict()).filter(x=>!no||x.no===no);
+  if(S.plainCopy){const t=parts.map(secText).join('\n\n');
+    try{await navigator.clipboard.writeText(t);toast(`${no?no+'번 항목':'전체'}을 텍스트로 복사했다`)}catch(e){toast('복사가 막혔다. 서식 복사로 바꿔 시도한다')}return}
+  const els=[...$('stage').querySelectorAll('div[data-sec]')].filter(x=>!no||+x.dataset.sec===no);if(!els.length)return;
+  const got=await copyHtml(els.map(x=>x.outerHTML).join(''),parts.map(secText).join('\n\n'));
+  if(got){toast(got===true?`${no?no+'번 항목':'전체'}을 복사했다. 문서작업판에 붙여넣는다`:'텍스트로 복사했다');return}
+  const r=document.createRange();r.setStartBefore(els[0]);r.setEndAfter(els[els.length-1]);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);
+  let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  toast(ok?`${no?no+'번 항목':'전체'}을 복사했다. 문서작업판에 붙여넣는다`:'선택했다. Ctrl+C로 복사한다')})});
+function currentPages(){return [...$('stage').querySelectorAll('.page')]}
+$('copyDoc').addEventListener('click',async()=>{
+  const pages=currentPages();if(!pages.length){toast('점검 화면은 복사 대상이 아니다');return}
+  const got=await copyHtml(pages.map(p=>p.outerHTML).join(''),pages.map(p=>p.innerText).join('\n\n'));
+  if(got){toast(got===true?'복사했다. 한글·Word에 붙여넣는다':'텍스트로 복사했다');return}
+  const r=document.createRange();r.setStartBefore(pages[0]);r.setEndAfter(pages[pages.length-1]);const s=getSelection();s.removeAllRanges();s.addRange(r);
+  let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  toast(ok?'복사했다. 한글·Word에 붙여넣는다':'문서를 선택했다. Ctrl+C로 복사한다')});
+let DL=null;try{window.claude?.use?.('downloads').then(d=>{DL=d}).catch(()=>{})}catch(e){}
+async function download(name,blob){
+  if(DL){try{await DL.save({filename:name,data:blob});toast('저장했다');}catch(e){toast(e&&e.code==='declined'?'저장을 취소했다':'이 화면에서는 저장할 수 없다')}return}
+  if(inFrame){toast('이 화면에서는 저장할 수 없다. 문서 복사를 쓴다');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  for(const [name,txt] of files){const nb=enc.encode(name),d=enc.encode(txt),crc=crc32(d);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer),nb,d);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    cd.push(new Uint8Array(c.buffer),nb);off+=30+nb.length+d.length}
+  const cdl=cd.reduce((a,x)=>a+x.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdl,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
+function xesc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function hexc(c){const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c||'');if(m)return [m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,'0')).join('').toUpperCase();const h=/#([0-9a-f]{6})/i.exec(c||'');return h?h[1].toUpperCase():null}
+function lenPx(v){if(!v)return 0;const n=parseFloat(v);return /em$/.test(v)?n*14:n||0}
+function RUN(t,f){return `<w:r><w:rPr><w:rFonts w:ascii="Batang" w:hAnsi="Batang" w:eastAsia="바탕"/>${f.b?'<w:b/>':''}${f.u?'<w:u w:val="single"/>':''}${f.color?`<w:color w:val="${f.color}"/>`:''}<w:sz w:val="${f.sz||21}"/><w:szCs w:val="${f.sz||21}"/></w:rPr><w:t xml:space="preserve">${xesc(t)}</w:t></w:r>`}
+function blockXml(el,f0,p0,target){
+  let cur=null;
+  const fl=()=>{if(cur){if(cur.r.length)target.push(`<w:p><w:pPr><w:spacing w:after="60" w:line="300" w:lineRule="auto"/>${cur.p}</w:pPr>${cur.r.join('')}</w:p>`);cur=null}};
+  const ensure=p=>{if(!cur)cur={p,r:[]}};
+  function inl(n,f,p){
+    for(const c of n.childNodes){
+      if(c.nodeType===3){const t=c.textContent.replace(/[ \t\r\n]+/g,' ');if(t.trim()||(cur&&cur.r.length&&t)){ensure(p);cur.r.push(RUN(cur.r.length?t:t.replace(/^ /,''),f))}continue}
+      if(c.nodeType!==1)continue;
+      const tg=c.tagName,st=c.style;
+      if(tg==='BR'){ensure(p);cur.r.push('<w:r><w:br/></w:r>');continue}
+      if(tg==='TABLE'){fl();target.push(tblXml(c));target.push('<w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>');continue}
+      if(tg==='HR'){fl();target.push('<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="8" w:space="1" w:color="000000"/></w:pBdr></w:pPr></w:p>');continue}
+      if(tg==='STYLE'||tg==='SCRIPT')continue;
+      const g={...f};
+      if(/^(B|STRONG|TH)$/.test(tg)||st.fontWeight==='bold'||+st.fontWeight>=600)g.b=1;
+      if(tg==='U'||/underline/.test(st.textDecoration))g.u=1;
+      if(c.classList.contains('ins')){g.u=1;g.color='B3261E'}
+      if(c.classList.contains('del'))g.u=1;
+      if(st.fontSize)g.sz=Math.round(lenPx(st.fontSize)*1.5);
+      if(st.visibility==='hidden')g.color='FFFFFF';
+      if(/^(P|DIV|LI|H\d|UL|OL|SECTION)$/.test(tg)){
+        fl();let q=p;
+        if(st.textAlign==='center')q+='<w:jc w:val="center"/>';else if(st.textAlign==='right')q+='<w:jc w:val="right"/>';
+        const ind=lenPx(st.paddingLeft)+lenPx(st.marginLeft);if(ind)q=q.replace(/<w:ind[^>]*\/>/,'')+`<w:ind w:left="${Math.round(ind*15)}"/>`;
+        if(lenPx(st.textIndent))q+=`<w:ind w:firstLine="${Math.round(lenPx(st.textIndent)*15)}"/>`;
+        inl(c,g,q);fl();
+      }else inl(c,g,p);
+    }
+  }
+  inl(el,f0,p0);fl();
+}
+function tblXml(t){
+  const rows=[...t.rows];if(!rows.length)return '';
+  const bordered=rows.some(r=>[...r.cells].some(c=>/solid/.test(c.style.border||c.style.borderTop||'')));
+  const B=bordered?['top','left','bottom','right','insideH','insideV'].map(x=>`<w:${x} w:val="single" w:sz="4" w:color="000000"/>`).join(''):'';
+  const full=(t.style.width||'100%')!=='auto';
+  let x=`<w:tbl><w:tblPr><w:tblW w:w="${full?5000:0}" w:type="${full?'pct':'auto'}"/>${!full&&t.style.marginLeft==='auto'?'<w:jc w:val="right"/>':''}<w:tblBorders>${B}</w:tblBorders><w:tblCellMar><w:left w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr>`;
+  for(const r of rows){x+='<w:tr>';
+    for(const c of r.cells){const cp=[],st=c.style;
+      if(c.colSpan>1)cp.push(`<w:gridSpan w:val="${c.colSpan}"/>`);
+      if(/%$/.test(st.width))cp.push(`<w:tcW w:w="${Math.round(parseFloat(st.width)*50)}" w:type="pct"/>`);
+      const fill=hexc(st.backgroundColor||st.background);if(fill&&fill!=='FFFFFF')cp.push(`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`);
+      const inner=[];const al=st.textAlign==='center'||c.tagName==='TH'?'<w:jc w:val="center"/>':'';
+      blockXml(c,c.tagName==='TH'||st.fontWeight==='bold'?{b:1}:{},al,inner);
+      if(!inner.length)inner.push('<w:p/>');
+      x+=`<w:tc><w:tcPr>${cp.join('')}</w:tcPr>${inner.join('')}</w:tc>`}
+    x+='</w:tr>'}
+  return x+'</w:tbl>';
+}
+function docxFrom(pages){
+  const body=[];pages.forEach((pg,i)=>{if(i)body.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');blockXml(pg,{},'',body)});
+  return zip([
+  ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],
+  ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],
+  ['word/document.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1418" w:right="1247" w:bottom="1418" w:left="1247" w:header="851" w:footer="992" w:gutter="0"/></w:sectPr></w:body></w:document>`]])}
+async function copyHtml(html,text){
+  try{if(window.ClipboardItem&&navigator.clipboard?.write){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);return true}}catch(e){}
+  try{await navigator.clipboard.writeText(text);return 'text'}catch(e){}
+  return false}
+$('wordDoc').addEventListener('click',()=>{
+  const pages=currentPages();if(!pages.length){toast('문서 탭을 고른 뒤 저장한다');return}
+  const map={cmp:'신구조문대비표',full:'변경전문',cover:'공문',report:'보고서',notice:'변경안내문',exec:'시행문',all:'전체'};
+  download(`${(S.name||'약관').replace(/[\\/:*?"<>|\[\]]/g,'')}_${map[curDoc]}.docx`,docxFrom(pages))});
+$('printDoc').addEventListener('click',()=>window.print());
+$('saveJson').addEventListener('click',()=>download(`약관보고_${iso(new Date())}.json`,new Blob([JSON.stringify(S,null,1)],{type:'application/json'})));
+$('loadJson').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();
+  fr.onload=()=>{try{S=Object.assign(sample(),JSON.parse(fr.result));init();toast('작성본을 불러왔다')}catch(err){toast('작성본 형식이 올바르지 않다')}};fr.readAsText(f);e.target.value=''});
+$('resetBtn').addEventListener('click',()=>{$('resetConfirm').hidden=false});
+$('resetNo').addEventListener('click',()=>{$('resetConfirm').hidden=true});
+$('resetYes').addEventListener('click',()=>{S=sample();$('resetConfirm').hidden=true;init();toast('예시로 초기화했다')});
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600)}
+
+function init(){fillInputs();applyArea();sync();renderRows();renderHist();update({noSync:true})}
+if(inFrame)$('printDoc').hidden=true;
+document.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>{S=Object.assign(sample(),JSON.parse(JSON.stringify(DEMOS[b.dataset.demo])));init();
+  document.querySelector('[data-step="2"]').click();toast(b.textContent.trim()+' 예시를 불러왔다')}));
+bindUpload('upOld','oldText','upOldMsg');bindUpload('upNew','newText',null);
+bindFields();init();
+})();
+</script>
+
+</body>
+</html>
