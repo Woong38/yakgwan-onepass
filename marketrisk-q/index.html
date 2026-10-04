@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시장리스크 표준방법 계산 엔진 — FRTB-SA</title>
+<style>
+:root{
+  --bg:#0B0F17; --bg-2:#0D1320;
+  --panel:#131A28; --panel-2:#182035; --panel-3:#1D2740;
+  --border:#232C40; --border-soft:#1B2333;
+  --text:#E7ECF5; --text-dim:#93A0B8; --text-faint:#5C6780;
+  --gold:#D3AE4E; --gold-dim:#8B7530;
+  --teal:#4FB3AC; --teal-dim:#2C6B66;
+  --red:#D2694F; --red-dim:#7A3D2C;
+  --violet:#9C8FE0;
+  --mono:'SF Mono','D2Coding','Consolas','Menlo','Malgun Gothic',monospace;
+  --serif:'Iowan Old Style','Palatino Linotype','Georgia','Apple SD Gothic Neo','Malgun Gothic',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{font-size:14px;line-height:1.55;}
+::selection{background:var(--gold-dim);color:#fff;}
+a{color:var(--teal);}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+.serif{font-family:var(--serif);}
+
+/* ---------- header ---------- */
+header.top{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:18px 28px;background:linear-gradient(180deg,#0D1320 0%,#0B0F17 100%);
+  border-bottom:1px solid var(--border);
+}
+header.top .brand{display:flex;flex-direction:column;gap:2px;}
+header.top .brand .eyebrow{font-family:var(--serif);font-size:11px;letter-spacing:.16em;color:var(--text-faint);text-transform:uppercase;}
+header.top .brand h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;}
+header.top .totals{display:flex;gap:28px;align-items:baseline;}
+header.top .totals .item{text-align:right;}
+header.top .totals .item .lbl{font-size:10px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+header.top .totals .item .val{font-family:var(--serif);font-size:22px;color:var(--gold);font-weight:600;}
+header.top .totals .item .val.small{font-size:16px;color:var(--text);}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 76px);}
+nav.rail{border-right:1px solid var(--border);padding:20px 0;position:sticky;top:76px;align-self:start;height:calc(100vh - 76px);overflow-y:auto;}
+nav.rail .group-label{font-size:10px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase;padding:14px 20px 6px;}
+nav.rail button{
+  display:flex;width:100%;align-items:center;gap:10px;text-align:left;
+  background:none;border:none;color:var(--text-dim);font:inherit;font-size:13px;
+  padding:9px 20px;cursor:pointer;border-left:2px solid transparent;
+}
+nav.rail button .n{font-family:var(--mono);font-size:11px;color:var(--text-faint);width:20px;}
+nav.rail button:hover{color:var(--text);background:var(--panel);}
+nav.rail button.active{color:var(--text);background:var(--panel-2);border-left-color:var(--gold);}
+nav.rail button.active .n{color:var(--gold);}
+nav.rail hr{border:none;border-top:1px solid var(--border-soft);margin:10px 20px;}
+
+main{padding:32px 40px 80px;max-width:1080px;}
+section.view{display:none;}
+section.view.active{display:block;animation:fadein .18s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+.page-head{margin-bottom:28px;}
+.page-head .eyebrow{font-family:var(--serif);font-size:11px;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+.page-head h2{margin:0 0 6px;font-size:24px;font-weight:600;}
+.page-head p{margin:0;color:var(--text-dim);font-size:13px;max-width:640px;}
+
+/* ---------- cards / grid ---------- */
+.grid{display:grid;gap:14px;}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-2{grid-template-columns:repeat(2,1fr);}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 18px;}
+.card .lbl{font-size:11px;color:var(--text-faint);letter-spacing:.05em;margin-bottom:6px;}
+.card .amt{font-family:var(--mono);font-size:19px;color:var(--text);}
+.card .amt.pos{color:var(--teal);}
+.card .amt.neg{color:var(--red);}
+.card .sub{font-size:11px;color:var(--text-faint);margin-top:6px;}
+
+/* ---------- citation disclosure ---------- */
+details.cite{display:inline-block;margin-left:6px;}
+details.cite summary{
+  list-style:none;cursor:pointer;display:inline-flex;align-items:center;
+  font-family:var(--mono);font-size:10.5px;color:var(--gold-dim);
+  border:1px solid var(--gold-dim);border-radius:10px;padding:1px 7px;
+}
+details.cite summary::-webkit-details-marker{display:none;}
+details.cite summary:hover{color:var(--gold);border-color:var(--gold);}
+details.cite[open] summary{color:var(--gold);border-color:var(--gold);}
+details.cite .panel{
+  margin-top:6px;padding:10px 12px;background:var(--panel-3);border:1px solid var(--border);
+  border-radius:6px;font-size:12px;color:var(--text-dim);max-width:460px;line-height:1.6;
+}
+details.cite .panel b{color:var(--text);}
+
+/* ---------- scenario bar ---------- */
+.scenario-row{display:flex;gap:8px;margin-top:10px;}
+.scenario-row .sc{
+  flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 10px;text-align:center;
+}
+.scenario-row .sc .k{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;}
+.scenario-row .sc .v{font-family:var(--mono);font-size:13px;margin-top:3px;}
+.scenario-row .sc.chosen{border-color:var(--gold);background:rgba(211,174,78,.07);}
+.scenario-row .sc.chosen .v{color:var(--gold);}
+
+/* ---------- tables ---------- */
+table.data{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px;}
+table.data th{
+  text-align:right;font-weight:500;color:var(--text-faint);font-size:10.5px;letter-spacing:.04em;
+  text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--border);
+}
+table.data th:first-child, table.data td:first-child{text-align:left;}
+table.data td{padding:8px 10px;border-bottom:1px solid var(--border-soft);font-family:var(--mono);text-align:right;color:var(--text-dim);}
+table.data td:first-child{font-family:var(--sans);color:var(--text);}
+table.data tr:hover td{background:var(--panel);}
+table.data td.neg{color:var(--red);}
+table.data tfoot td{font-weight:600;color:var(--text);border-top:1px solid var(--border);border-bottom:none;}
+
+/* ---------- waterfall ---------- */
+.waterfall{margin-top:6px;}
+.wf-row{display:grid;grid-template-columns:150px 1fr 120px;align-items:center;gap:10px;padding:6px 0;}
+.wf-row .name{font-size:12.5px;color:var(--text-dim);}
+.wf-row .bar-track{background:var(--border-soft);border-radius:4px;height:16px;position:relative;overflow:hidden;}
+.wf-row .bar-fill{height:100%;border-radius:4px;}
+.wf-row .amt{font-family:var(--mono);font-size:12px;text-align:right;color:var(--text);}
+.wf-row.total .name, .wf-row.total .amt{color:var(--gold);font-weight:600;}
+
+/* ---------- notice ---------- */
+.notice{background:var(--panel-2);border:1px solid var(--border);border-left:3px solid var(--gold-dim);border-radius:6px;padding:14px 16px;margin-bottom:20px;font-size:12.5px;color:var(--text-dim);}
+.notice b{color:var(--text);}
+ul.simple{margin:8px 0 0;padding-left:18px;}
+ul.simple li{margin-bottom:6px;}
+
+footer.foot{padding:24px 40px 60px;color:var(--text-faint);font-size:11px;border-top:1px solid var(--border-soft);margin-top:20px;}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr;}
+  nav.rail{position:static;height:auto;display:flex;flex-wrap:wrap;padding:10px;}
+  nav.rail .group-label{display:none;}
+  nav.rail hr{display:none;}
+  nav.rail button{width:auto;border-left:none;border-bottom:2px solid transparent;}
+  nav.rail button.active{border-bottom-color:var(--gold);}
+  main{padding:20px;}
+  .grid.cols-3{grid-template-columns:1fr 1fr;}
+  header.top{flex-direction:column;align-items:flex-start;gap:10px;}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="eyebrow">Market Risk · Standardised Approach</div>
+    <h1>시장리스크 표준방법(SA) 계산 엔진</h1>
+  </div>
+  <div class="totals">
+    <div class="item"><div class="lbl">소요자기자본</div><div class="val small" id="hdrCapital">–</div></div>
+    <div class="item"><div class="lbl">위험가중자산(RWA)</div><div class="val" id="hdrRWA">–</div></div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="rail" id="rail">
+    <div class="group-label">개요</div>
+    <button data-view="overview" class="active"><span class="n">00</span>총괄 요약</button>
+    <hr>
+    <div class="group-label">데이터</div>
+    <button data-view="upload"><span class="n">·</span>포지션 데이터 업로드</button>
+    <div class="group-label">지식베이스</div>
+    <button data-view="qna"><span class="n">Q</span>규정 Q&amp;A 검색</button>
+    <div class="group-label">민감도법 · 리스크군</div>
+    <button data-view="girr"><span class="n">01</span>일반금리(GIRR)</button>
+    <button data-view="csrns"><span class="n">02</span>신용스프레드(비유동화)</button>
+    <button data-view="secnonctp"><span class="n">03</span>유동화(비CTP)</button>
+    <button data-view="secctp"><span class="n">04</span>유동화(CTP)</button>
+    <button data-view="eq"><span class="n">05</span>주식</button>
+    <button data-view="fx"><span class="n">06</span>외환</button>
+    <button data-view="cty"><span class="n">07</span>일반상품</button>
+    <hr>
+    <div class="group-label">부도·잔여리스크</div>
+    <button data-view="drc"><span class="n">08</span>부도리스크(DRC)</button>
+    <button data-view="rrao"><span class="n">09</span>잔여리스크(RRAO)</button>
+    <hr>
+    <div class="group-label">근거</div>
+    <button data-view="method"><span class="n">10</span>산출근거·가정</button>
+  </nav>
+
+  <main id="main"></main>
+</div>
+
+<footer class="foot">
+  근거: 은행업감독업무시행세칙 &lt;별표3-2&gt; 신용·운영·시장리스크 위험가중자산에 대한 자기자본비율 산출기준 제6장(표준방법) · 바젤III 최종안 시장리스크 규제체계(2021.1.15, 금융감독원). 표시된 수치는 샘플 포지션 기준 데모용 산출 결과이며 실제 규제보고 수치가 아닙니다.
+</footer>
+
+<!-- ============================================================ -->
+<!-- ENGINE (검증된 계산 로직 — 별도 테스트 완료)                    -->
+<!-- ============================================================ -->
+<script>
+// ============================================================================
+// FRTB-SA (시장리스크 표준방법) 계산 엔진
+// 근거: 은행업감독업무시행세칙 <별표3-2> 제6장, 바젤III 최종안 시장리스크 규제체계
+// ============================================================================
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.FRTB = factory();
+}(typeof self !== 'undefined' ? self : this, function () {
+'use strict';
+
+function withinBucketK(values, corrFn, opts) {
+  opts = opts || {};
+  const n = values.length;
+  let sumSq = 0;
+  for (let i = 0; i < n; i++) {
+    const t = opts.clampNonNeg ? Math.max(values[i], 0) : values[i];
+    sumSq += t * t;
+  }
+  let cross = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      let rho = corrFn(i, j);
+      if (opts.squareCorr) rho = rho * rho;
+      if (opts.psiFilter && values[i] < 0 && values[j] < 0) rho = 0;
+      cross += rho * values[i] * values[j];
+    }
+  }
+  const val = sumSq + cross;
+  return Math.sqrt(Math.max(val, 0));
+}
+
+function crossBucketK(buckets, gammaFn, opts) {
+  opts = opts || {};
+  function total(sbArr) {
+    let s = 0;
+    for (let b = 0; b < buckets.length; b++) s += buckets[b].Kb * buckets[b].Kb;
+    for (let b = 0; b < buckets.length; b++) {
+      for (let c = 0; c < buckets.length; c++) {
+        if (b === c) continue;
+        let g = gammaFn(buckets[b], buckets[c]);
+        if (opts.squareCorr) g = g * g;
+        if (opts.psiFilter && sbArr[b] < 0 && sbArr[c] < 0) g = 0;
+        s += g * sbArr[b] * sbArr[c];
+      }
+    }
+    return s;
+  }
+  const primarySb = buckets.map((b) => b.Sb);
+  let val = total(primarySb);
+  if (val < 0) {
+    const clipped = buckets.map((b) => Math.max(Math.min(b.Sb, b.Kb), -b.Kb));
+    val = total(clipped);
+  }
+  return Math.sqrt(Math.max(val, 0));
+}
+
+function scaleRho(rho, scenario) {
+  if (scenario === 'medium') return rho;
+  if (scenario === 'high') return Math.min(2 * rho, 1);
+  if (scenario === 'low') return Math.max(2 * rho - 1, 0.75 * rho);
+  throw new Error('unknown scenario ' + scenario);
+}
+
+const GIRR_TENORS = [0.25, 0.5, 1, 2, 3, 5, 10, 15, 20, 30];
+const GIRR_RW_BY_TENOR = [0.017, 0.017, 0.016, 0.013, 0.012, 0.011, 0.011, 0.011, 0.011, 0.011];
+const GIRR_INFL_XCCY_RW = 0.016;
+const GIRR_HQ_CCY = ['EUR', 'USD', 'GBP', 'AUD', 'JPY', 'SEK', 'CAD', 'KRW'];
+const GIRR_BUCKET_CORR = 0.50;
+
+function girrTenorRho(t1, t2) {
+  if (t1 === t2) return 1;
+  return Math.max(Math.exp(-0.03 * Math.abs(t1 - t2) / Math.min(t1, t2)), 0.40);
+}
+function girrRiskFactorRho(a, b) {
+  if (a.kind === 'rate' && b.kind === 'rate') {
+    return a.curve === b.curve ? girrTenorRho(a.tenor, b.tenor) : (a.tenor === b.tenor ? 0.999 : girrTenorRho(a.tenor, b.tenor) * 0.999);
+  }
+  if (a.kind === 'infl' && b.kind === 'infl') return 0.999;
+  if ((a.kind === 'rate' && b.kind === 'infl') || (a.kind === 'infl' && b.kind === 'rate')) return 0.40;
+  return 0;
+}
+function girrRiskWeight(rf) {
+  if (rf.kind !== 'rate') return GIRR_INFL_XCCY_RW;
+  const idx = GIRR_TENORS.indexOf(rf.tenor);
+  let rw = GIRR_RW_BY_TENOR[idx];
+  if (GIRR_HQ_CCY.includes(rf.currency)) rw = rw / Math.sqrt(2);
+  return rw;
+}
+function computeGIRR(sensitivities, scenario) {
+  const byCcy = groupBy(sensitivities, (s) => s.currency);
+  const buckets = [];
+  for (const ccy in byCcy) {
+    const items = byCcy[ccy];
+    const WS = items.map((s) => s.delta * girrRiskWeight(s));
+    const Kb = withinBucketK(WS, (i, j) => scaleRho(girrRiskFactorRho(items[i], items[j]), scenario));
+    const Sb = WS.reduce((a, b) => a + b, 0);
+    buckets.push({ ccy, Kb, Sb, WS, items });
+  }
+  const total = crossBucketK(buckets, () => scaleRho(GIRR_BUCKET_CORR, scenario));
+  return { total, buckets };
+}
+
+const CSR_NS_RW = { 1: 0.005, 2: 0.010, 3: 0.050, 4: 0.030, 5: 0.030, 6: 0.020, 7: 0.015, 8: 0.025,
+  9: 0.020, 10: 0.040, 11: 0.120, 12: 0.070, 13: 0.085, 14: 0.055, 15: 0.050, 16: 0.120, 17: 0.015, 18: 0.050 };
+const CSR_NS_BUCKET_CORR = {
+  '1,2': .75, '1,3': .10, '1,4': .20, '1,5': .25, '1,6': .20, '1,7': .15, '1,8': .10,
+  '2,3': .05, '2,4': .15, '2,5': .20, '2,6': .15, '2,7': .10, '2,8': .10,
+  '3,4': .05, '3,5': .15, '3,6': .20, '3,7': .05, '3,8': .20,
+  '4,5': .20, '4,6': .25, '4,7': .05, '4,8': .05,
+  '5,6': .25, '5,7': .05, '5,8': .15,
+  '6,7': .05, '6,8': .20,
+  '7,8': .05,
+  '17,18': .75
+};
+function csrNsBucketPairKey(b1, b2) {
+  const map = (b) => (b >= 9 && b <= 16 ? b - 8 : b);
+  const m1 = map(b1), m2 = map(b2);
+  if (b1 === b2) return 1;
+  if ((b1 <= 16 && b2 >= 17) || (b2 <= 16 && b1 >= 17)) return 0.45;
+  if (b1 >= 17 && b2 >= 17) return CSR_NS_BUCKET_CORR['17,18'] || 0;
+  let base;
+  if (m1 === m2) base = 1.0;
+  else {
+    const key1 = m1 < m2 ? `${m1},${m2}` : `${m2},${m1}`;
+    base = CSR_NS_BUCKET_CORR[key1];
+    if (base === undefined) base = 0;
+  }
+  const diffGrade = (b1 <= 8) !== (b2 <= 8) && (b1 <= 16 && b2 <= 16);
+  return (diffGrade ? 0.5 : 1.0) * base;
+}
+function csrNameRho(same) { return same ? 1.0 : 0.35; }
+function csrTenorRho(same) { return same ? 1.0 : 0.65; }
+function computeCsrNonSec(sensitivities, scenario, isCTP) {
+  const curveDiffVal = isCTP ? 0.99 : 0.999;
+  const byBucket = groupBy(sensitivities, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    const rwVal = CSR_NS_RW[b];
+    const WS = items.map((s) => s.delta * rwVal);
+    const rhoFn = (i, j) => {
+      const a = items[i], c = items[j];
+      let r = csrNameRho(a.issuer === c.issuer) * csrTenorRho(a.tenor === c.tenor) * (a.curve === c.curve ? 1 : curveDiffVal);
+      return scaleRho(r, scenario);
+    };
+    const Kb = withinBucketK(WS, rhoFn);
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items });
+  }
+  const total = crossBucketK(buckets, (b1, b2) => scaleRho(csrNsBucketPairKey(Number(b1.bucket), Number(b2.bucket)), scenario));
+  return { total, buckets };
+}
+
+const SEC_SENIOR_IG_RW = [0.009, 0.015, 0.020, 0.020, 0.008, 0.012, 0.012, 0.014];
+function secRw(bucket) {
+  if (bucket === 25) return 0.035;
+  const prodIdx = ((bucket - 1) % 8);
+  const tier = Math.floor((bucket - 1) / 8);
+  const mult = tier === 0 ? 1 : tier === 1 ? 1.25 : 1.75;
+  return SEC_SENIOR_IG_RW[prodIdx] * mult;
+}
+function computeSecNonCTP(sensitivities, scenario) {
+  const byBucket = groupBy(sensitivities, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    const rwVal = secRw(Number(b));
+    const WS = items.map((s) => s.delta * rwVal);
+    const rhoFn = (i, j) => {
+      const a = items[i], c = items[j];
+      const trancheSame = a.tranche === c.tranche;
+      let r = (trancheSame ? 1 : 0.40) * (a.tenor === c.tenor ? 1 : 0.80) * (a.curve === c.curve ? 1 : 0.999);
+      return scaleRho(r, scenario);
+    };
+    const Kb = withinBucketK(WS, rhoFn);
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items });
+  }
+  const others = buckets.filter((x) => Number(x.bucket) === 25);
+  const main = buckets.filter((x) => Number(x.bucket) !== 25);
+  const mainTotal = crossBucketK(main, () => 0);
+  const total = mainTotal + others.reduce((a, x) => a + x.Kb, 0);
+  return { total, buckets };
+}
+
+const EQ_RW = { 1: .55, 2: .60, 3: .45, 4: .55, 5: .30, 6: .35, 7: .40, 8: .50, 9: .70, 10: .50, 11: .70, 12: .15, 13: .25 };
+const EQ_REPO_RW = { 1: .0055, 2: .0060, 3: .0045, 4: .0055, 5: .0030, 6: .0035, 7: .0040, 8: .0050, 9: .0070, 10: .0050, 11: .0070, 12: .0015, 13: .0025 };
+const EQ_WITHIN_BUCKET_CORR = { 1: .15, 2: .15, 3: .15, 4: .15, 5: .25, 6: .25, 7: .25, 8: .25, 9: .075, 10: .125, 12: .80, 13: .80 };
+function eqBucketPairRho(b1, b2) {
+  if (b1 === b2) return 1;
+  if (b1 === 11 || b2 === 11) return 0;
+  if ((b1 <= 10) && (b2 <= 10)) return 0.15;
+  if (b1 >= 12 && b2 >= 12) return 0.75;
+  return 0.45;
+}
+function computeEquity(sensitivities, scenario) {
+  const byBucket = groupBy(sensitivities, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    const bn = Number(b);
+    const WS = items.map((s) => s.delta * (s.kind === 'repo' ? EQ_REPO_RW[bn] : EQ_RW[bn]));
+    const within = bn === 11 ? null : (EQ_WITHIN_BUCKET_CORR[bn] !== undefined ? EQ_WITHIN_BUCKET_CORR[bn] : 0.15);
+    let Kb;
+    if (bn === 11) { Kb = WS.reduce((a, x) => a + Math.abs(x), 0); }
+    else {
+      Kb = withinBucketK(WS, (i, j) => {
+        const a = items[i], c = items[j];
+        const r = (a.issuer === c.issuer) ? 0.999 : within * 0.999;
+        return scaleRho(within === null ? 0 : r, scenario);
+      });
+    }
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items });
+  }
+  const total = crossBucketK(buckets, (x, y) => scaleRho(eqBucketPairRho(Number(x.bucket), Number(y.bucket)), scenario));
+  return { total, buckets };
+}
+
+const FX_RW = 0.15;
+const FX_BUCKET_CORR = 0.60;
+function computeFX(sensitivities, scenario) {
+  const buckets = sensitivities.map((s) => ({ bucket: s.pair, Kb: Math.abs(s.delta * FX_RW), Sb: s.delta * FX_RW, WS: [s.delta * FX_RW], items: [s] }));
+  const total = crossBucketK(buckets, () => scaleRho(FX_BUCKET_CORR, scenario));
+  return { total, buckets };
+}
+
+const CTY_RW = { 1: .30, 2: .35, 3: .60, 4: .80, 5: .40, 6: .45, 7: .20, 8: .35, 9: .25, 10: .35, 11: .50 };
+const CTY_WITHIN_BASE = { 1: .55, 2: .95, 3: .40, 4: .80, 5: .60, 6: .65, 7: .55, 8: .45, 9: .15, 10: .40, 11: .15 };
+function computeCommodity(sensitivities, scenario) {
+  const byBucket = groupBy(sensitivities, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    const bn = Number(b);
+    const WS = items.map((s) => s.delta * CTY_RW[bn]);
+    const Kb = withinBucketK(WS, (i, j) => {
+      const a = items[i], c = items[j];
+      const r = (a.commodity === c.commodity ? 1 : CTY_WITHIN_BASE[bn]) * (a.tenor === c.tenor ? 1 : 0.99) * (a.location === c.location ? 1 : 0.999);
+      return scaleRho(r, scenario);
+    });
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items });
+  }
+  const total = crossBucketK(buckets, (x, y) => scaleRho(Number(x.bucket) === 11 || Number(y.bucket) === 11 ? 0 : 0.20, scenario));
+  return { total, buckets };
+}
+
+function girrVegaRho(t1, t2, scenario) {
+  const base = Math.max(Math.exp(-0.01 * Math.abs(t1 - t2) / Math.min(t1, t2)), 0);
+  return scaleRho(base, scenario);
+}
+function computeGIRRVega(items, scenario) {
+  const byCcy = groupBy(items, (s) => s.currency);
+  const buckets = [];
+  for (const ccy in byCcy) {
+    const arr = byCcy[ccy];
+    const WS = arr.map((s) => s.vega * 1.0);
+    const Kb = withinBucketK(WS, (i, j) => girrVegaRho(arr[i].optTenor, arr[j].optTenor, scenario));
+    const Sb = WS.reduce((a, b) => a + b, 0);
+    buckets.push({ ccy, Kb, Sb, WS, items: arr });
+  }
+  const total = crossBucketK(buckets, () => scaleRho(GIRR_BUCKET_CORR, scenario));
+  return { total, buckets };
+}
+function computeCsrVega(items, scenario, isCTP) {
+  const curveDiffVal = isCTP ? 0.99 : 0.999;
+  const byBucket = groupBy(items, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const arr = byBucket[b];
+    const WS = arr.map((s) => s.vega * 1.0);
+    const rhoFn = (i, j) => {
+      const a = arr[i], c = arr[j];
+      const r = csrNameRho(a.issuer === c.issuer) * csrTenorRho(a.tenor === c.tenor) * (a.curve === c.curve ? 1 : curveDiffVal);
+      return scaleRho(r, scenario);
+    };
+    const Kb = withinBucketK(WS, rhoFn);
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items: arr });
+  }
+  const total = crossBucketK(buckets, (b1, b2) => scaleRho(csrNsBucketPairKey(Number(b1.bucket), Number(b2.bucket)), scenario));
+  return { total, buckets };
+}
+function eqVegaWeight(bn) { return (bn <= 8 || bn >= 12) ? 0.7778 : 1.0; }
+function computeEquityVega(items, scenario) {
+  const byBucket = groupBy(items, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const arr = byBucket[b];
+    const bn = Number(b);
+    const w = eqVegaWeight(bn);
+    const WS = arr.map((s) => s.vega * w);
+    const within = bn === 11 ? null : (EQ_WITHIN_BUCKET_CORR[bn] !== undefined ? EQ_WITHIN_BUCKET_CORR[bn] : 0.15);
+    let Kb;
+    if (bn === 11) Kb = WS.reduce((a, x) => a + Math.abs(x), 0);
+    else Kb = withinBucketK(WS, (i, j) => {
+      const a = arr[i], c = arr[j];
+      const r = (a.issuer === c.issuer) ? 0.999 : within * 0.999;
+      return scaleRho(within === null ? 0 : r, scenario);
+    });
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items: arr });
+  }
+  const total = crossBucketK(buckets, (x, y) => scaleRho(eqBucketPairRho(Number(x.bucket), Number(y.bucket)), scenario));
+  return { total, buckets };
+}
+function computeFXVega(items, scenario) {
+  const buckets = items.map((s) => ({ bucket: s.pair, Kb: Math.abs(s.vega * 1.0), Sb: s.vega * 1.0, WS: [s.vega * 1.0], items: [s] }));
+  const total = crossBucketK(buckets, () => scaleRho(FX_BUCKET_CORR, scenario));
+  return { total, buckets };
+}
+function computeCommodityVega(items, scenario) {
+  const byBucket = groupBy(items, (s) => s.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const arr = byBucket[b];
+    const bn = Number(b);
+    const WS = arr.map((s) => s.vega * 1.0);
+    const Kb = withinBucketK(WS, (i, j) => {
+      const a = arr[i], c = arr[j];
+      const r = (a.commodity === c.commodity ? 1 : CTY_WITHIN_BASE[bn]) * (a.tenor === c.tenor ? 1 : 0.99) * (a.location === c.location ? 1 : 0.999);
+      return scaleRho(r, scenario);
+    });
+    const Sb = WS.reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, WS, items: arr });
+  }
+  const total = crossBucketK(buckets, (x, y) => scaleRho(Number(x.bucket) === 11 || Number(y.bucket) === 11 ? 0 : 0.20, scenario));
+  return { total, buckets };
+}
+
+function computeCurvatureGeneric(sensitivities, bucketKeyFn, rhoFn, gammaFn) {
+  const byBucket = groupBy(sensitivities, bucketKeyFn);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    const up = items.map((s) => s.cvrUp);
+    const down = items.map((s) => s.cvrDown);
+    const rf = (i, j) => rhoFn(items[i], items[j], b);
+    const KbUp = withinBucketK(up, rf, { clampNonNeg: true, psiFilter: true });
+    const KbDown = withinBucketK(down, rf, { clampNonNeg: true, psiFilter: true });
+    const useUp = KbUp >= KbDown;
+    const Kb = useUp ? KbUp : KbDown;
+    const Sb = (useUp ? up : down).reduce((a, x) => a + x, 0);
+    buckets.push({ bucket: b, Kb, Sb, KbUp, KbDown, useUp, items });
+  }
+  const total = crossBucketK(buckets, (x, y) => gammaFn(x, y), { psiFilter: true });
+  return { total, buckets };
+}
+function sq(x) { return x * x; }
+function computeGIRRCurvature(items, scenario) {
+  return computeCurvatureGeneric(items, (s) => s.currency,
+    (a, b) => scaleRho(sq(girrTenorRho(a.optTenor, b.optTenor)), scenario),
+    () => scaleRho(sq(GIRR_BUCKET_CORR), scenario));
+}
+function computeCsrCurvature(items, scenario, isCTP) {
+  const curveDiffVal = isCTP ? 0.99 : 0.999;
+  return computeCurvatureGeneric(items, (s) => s.bucket,
+    (a, b) => {
+      const r = csrNameRho(a.issuer === b.issuer) * csrTenorRho(a.tenor === b.tenor) * (a.curve === b.curve ? 1 : curveDiffVal);
+      return scaleRho(sq(r), scenario);
+    },
+    (bx, by) => scaleRho(sq(csrNsBucketPairKey(Number(bx.bucket), Number(by.bucket))), scenario));
+}
+function computeEquityCurvature(items, scenario) {
+  return computeCurvatureGeneric(items, (s) => s.bucket,
+    (a, b, bucketKey) => {
+      const bn = Number(bucketKey);
+      if (bn === 11) return 0;
+      const within = EQ_WITHIN_BUCKET_CORR[bn] !== undefined ? EQ_WITHIN_BUCKET_CORR[bn] : 0.15;
+      const r = (a.issuer === b.issuer) ? 0.999 : within * 0.999;
+      return scaleRho(sq(r), scenario);
+    },
+    (bx, by) => scaleRho(sq(eqBucketPairRho(Number(bx.bucket), Number(by.bucket))), scenario));
+}
+function computeFXCurvature(items, scenario) {
+  return computeCurvatureGeneric(items, (s) => s.pair, () => 0,
+    () => scaleRho(sq(FX_BUCKET_CORR), scenario));
+}
+function computeCommodityCurvature(items, scenario) {
+  return computeCurvatureGeneric(items, (s) => s.bucket,
+    (a, b, bucketKey) => {
+      const bn = Number(bucketKey);
+      const r = (a.commodity === b.commodity ? 1 : CTY_WITHIN_BASE[bn]) * (a.tenor === b.tenor ? 1 : 0.99) * (a.location === b.location ? 1 : 0.999);
+      return scaleRho(sq(r), scenario);
+    },
+    (bx, by) => scaleRho(Number(bx.bucket) === 11 || Number(by.bucket) === 11 ? 0 : sq(0.20), scenario));
+}
+
+const DRC_RW_BY_RATING = { AAA: .005, AA: .02, A: .03, BBB: .06, BB: .15, B: .30, CCC: .50, NR: .15, D: 1.00 };
+const DRC_LGD = { equity_or_subordinated: 1.00, senior: 0.75, covered: 0.25 };
+function jtd(position) {
+  const lgd = DRC_LGD[position.lgdType];
+  let raw = position.notional >= 0
+    ? Math.max(lgd * position.notional + position.mtm, 0)
+    : Math.min(lgd * position.notional + position.mtm, 0);
+  const m = Math.max(position.maturityYears, 0.25);
+  const adj = position.maturityYears < 1 ? Math.min(m, 1) : 1;
+  return raw * adj;
+}
+function computeDRC_NonSecLike(positions) {
+  const withJtd = positions.map((p) => Object.assign({}, p, { jtd: jtd(p) }));
+  const byObligor = groupBy(withJtd, (p) => p.obligor);
+  const netByObligor = Object.keys(byObligor).map((o) => {
+    const items = byObligor[o];
+    return Object.assign({}, items[0], { netJtd: items.reduce((a, x) => a + x.jtd, 0) });
+  });
+  const byBucket = groupBy(netByObligor, (p) => p.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    let longSum = 0, shortSum = 0;
+    for (const it of items) {
+      const rw = DRC_RW_BY_RATING[it.rating];
+      const w = rw * it.netJtd;
+      if (w >= 0) longSum += w; else shortSum += -w;
+    }
+    const hbr = 1.0;
+    const Kb = Math.max(longSum - hbr * shortSum, 0);
+    buckets.push({ bucket: b, Kb, longSum, shortSum, items });
+  }
+  const total = buckets.reduce((a, b) => a + b.Kb, 0);
+  return { total, buckets };
+}
+function computeDRC_CTP(positions) {
+  const withJtd = positions.map((p) => Object.assign({}, p, { jtd: jtd(p) }));
+  const byBucket = groupBy(withJtd, (p) => p.bucket);
+  const buckets = [];
+  for (const b in byBucket) {
+    const items = byBucket[b];
+    let longSum = 0, shortSum = 0;
+    for (const it of items) {
+      const rw = DRC_RW_BY_RATING[it.rating];
+      const w = rw * it.jtd;
+      if (w >= 0) longSum += w; else shortSum += -w;
+    }
+    const Kb = Math.max(longSum - shortSum, 0);
+    buckets.push({ bucket: b, Kb, items });
+  }
+  let s2 = 0;
+  for (const b of buckets) s2 += b.Kb * b.Kb;
+  for (const b of buckets) for (const c of buckets) if (b !== c) s2 += 0.5 * b.Kb * c.Kb;
+  const total = Math.sqrt(Math.max(s2, 0));
+  return { total, buckets };
+}
+function computeRRAO(positions) {
+  let total = 0;
+  const detail = positions.map((p) => {
+    const rw = p.kind === 'exotic' ? 0.01 : 0.001;
+    const charge = Math.abs(p.notional) * rw;
+    total += charge;
+    return Object.assign({}, p, { rw, charge });
+  });
+  return { total, detail };
+}
+function groupBy(arr, keyFn) {
+  const out = {};
+  for (const item of arr) { const k = keyFn(item); (out[k] = out[k] || []).push(item); }
+  return out;
+}
+
+return {
+  scaleRho, withinBucketK, crossBucketK,
+  computeGIRR, computeCsrNonSec, computeSecNonCTP, computeEquity, computeFX, computeCommodity,
+  computeGIRRVega, computeCsrVega, computeEquityVega, computeFXVega, computeCommodityVega,
+  computeGIRRCurvature, computeCsrCurvature, computeEquityCurvature, computeFXCurvature, computeCommodityCurvature,
+  computeDRC_NonSecLike, computeDRC_CTP, computeRRAO, jtd, groupBy
+};
+}));
+</script>
+
+<!-- ============================================================ -->
+<!-- SAMPLE DATA (데모용 샘플 포지션)                                 -->
+<!-- ============================================================ -->
+<script>
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.FRTB_SAMPLE = factory();
+}(typeof self !== 'undefined' ? self : this, function () {
+'use strict';
+const girrDelta = [
+  { currency: 'KRW', kind: 'rate', curve: 'IRS', tenor: 0.25, delta: -12000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'IRS', tenor: 1, delta: 45000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'IRS', tenor: 3, delta: 62000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'IRS', tenor: 5, delta: -38000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'IRS', tenor: 10, delta: 21000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'IRS', tenor: 20, delta: 9000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'KTB', tenor: 3, delta: 30000000 },
+  { currency: 'KRW', kind: 'rate', curve: 'KTB', tenor: 10, delta: 15000000 },
+  { currency: 'KRW', kind: 'infl', curve: 'INFL', tenor: 5, delta: 4000000 },
+  { currency: 'USD', kind: 'rate', curve: 'IRS', tenor: 1, delta: 18000000 },
+  { currency: 'USD', kind: 'rate', curve: 'IRS', tenor: 5, delta: -9000000 },
+  { currency: 'USD', kind: 'rate', curve: 'IRS', tenor: 10, delta: 7000000 },
+  { currency: 'EUR', kind: 'rate', curve: 'IRS', tenor: 3, delta: 6000000 },
+  { currency: 'EUR', kind: 'rate', curve: 'IRS', tenor: 10, delta: -3000000 }
+];
+const csrNonSecDelta = [
+  { bucket: 4, issuer: '한국전력공사', tenor: 5, curve: 'BOND', delta: 22000000 },
+  { bucket: 4, issuer: '한국전력공사', tenor: 10, curve: 'BOND', delta: 11000000 },
+  { bucket: 3, issuer: 'A카드', tenor: 3, curve: 'BOND', delta: 15000000 },
+  { bucket: 3, issuer: 'B증권', tenor: 1, curve: 'BOND', delta: -6000000 },
+  { bucket: 6, issuer: 'C전자', tenor: 5, curve: 'BOND', delta: 9000000 },
+  { bucket: 11, issuer: 'D캐피탈', tenor: 3, curve: 'CDS', delta: -14000000 }
+];
+const secNonCTPDelta = [
+  { bucket: 1, tranche: 'RMBS-Prime-Senior', tenor: 5, curve: 'BOND', delta: 8000000 },
+  { bucket: 1, tranche: 'RMBS-Prime-Senior', tenor: 10, curve: 'BOND', delta: 5000000 },
+  { bucket: 8, tranche: 'CLO-Senior', tenor: 3, curve: 'BOND', delta: 6000000 }
+];
+const equityDelta = [
+  { bucket: 5, issuer: 'KOSPI-A전자', kind: 'spot', delta: 30000000 },
+  { bucket: 5, issuer: 'KOSPI-B금융지주', kind: 'spot', delta: 18000000 },
+  { bucket: 5, issuer: 'KOSPI-A전자', kind: 'repo', delta: 1200000 },
+  { bucket: 12, issuer: 'KOSPI200-지수선물', kind: 'spot', delta: -25000000 }
+];
+const fxDelta = [
+  { pair: 'USD/KRW', delta: 40000000 },
+  { pair: 'EUR/KRW', delta: -12000000 },
+  { pair: 'JPY/KRW', delta: 7000000 }
+];
+const commodityDelta = [
+  { bucket: 7, commodity: '금', tenor: 1, location: 'LBMA', delta: 9000000 },
+  { bucket: 2, commodity: 'WTI원유', tenor: 0.5, location: 'US-GULF', delta: -6000000 }
+];
+const girrVega = [
+  { currency: 'KRW', optTenor: 1, delta: 3000000, vega: 5000000, cvrUp: -1800000, cvrDown: 2100000 },
+  { currency: 'KRW', optTenor: 5, delta: -1500000, vega: 3200000, cvrUp: 900000, cvrDown: -1100000 }
+];
+const eqVega = [
+  { bucket: 5, issuer: 'KOSPI-A전자', vega: 4000000, cvrUp: -2600000, cvrDown: 3100000 }
+];
+const fxVega = [
+  { pair: 'USD/KRW', vega: 2500000, cvrUp: -1500000, cvrDown: 1700000 }
+];
+const csrVega = [
+  { bucket: 4, issuer: '한국전력공사', tenor: 5, curve: 'BOND', vega: 1200000, cvrUp: -700000, cvrDown: 850000 }
+];
+const ctyVega = [
+  { bucket: 7, commodity: '금', tenor: 1, location: 'LBMA', vega: 900000, cvrUp: -500000, cvrDown: 600000 }
+];
+const drcNonSec = [
+  { obligor: '한국전력공사', bucket: '기업', rating: 'AA', notional: 500000000, mtm: 4000000, lgdType: 'senior', maturityYears: 5 },
+  { obligor: 'A카드', bucket: '기업', rating: 'A', notional: 300000000, mtm: -1000000, lgdType: 'senior', maturityYears: 3 },
+  { obligor: 'D캐피탈', bucket: '기업', rating: 'BB', notional: -200000000, mtm: 500000, lgdType: 'senior', maturityYears: 3 },
+  { obligor: '대한민국정부', bucket: '정부', rating: 'AA', notional: 800000000, mtm: 6000000, lgdType: 'senior', maturityYears: 10 }
+];
+const drcSecCTP = [
+  { bucket: 'CDX North America IG', rating: 'A', notional: 100000000, mtm: 500000, lgdType: 'senior', maturityYears: 5 }
+];
+const rrao = [
+  { name: 'KOSPI 배리어옵션(낙아웃)', notional: 150000000, kind: 'exotic' },
+  { name: '소매 조기상환권부 채권(behavioral)', notional: 200000000, kind: 'other' }
+];
+return { girrDelta, csrNonSecDelta, secNonCTPDelta, equityDelta, fxDelta, commodityDelta,
+  girrVega, eqVega, fxVega, csrVega, ctyVega, drcNonSec, drcSecCTP, rrao };
+}));
+</script>
+
+<!-- ============================================================ -->
+<!-- 규정 검색 데이터 (은행업감독업무시행세칙 <별표3-2> 조항·각주 전문)          -->
+<!-- ============================================================ -->
+<script>
+const CLAUSES = [{"n":"1","t":"적용대상","p":"제1장 총칙","b":"가. 이 기준은 다음 각 호의 어느 하나에 해당하는 은행에 대하여 적용한다. 이 경우 트레이딩계정1)이란 제2장에서 정하는 바를 따른다. <개정 2022.11.28.> (1) 연결재무상태표의 총자산에 대한 트레이딩계정 합계액의 비율이 일별 5% 이상인 경우 (2) 트레이딩계정 합계액이 일별 최대 1천억원 이상인 경우 나. 가.의 규정에 의한 기준 적용대상 은행은 감독원장의 승인 없이는 기준 적용대상 은행에서 제외되지 아니한다. 다. 감독원장은 가.의 규정에 불구하고 필요한 경우 기준 적용대상 은행으로 지정하거나 적용대상 은행에서 제외시킬 수 있다. 라. 이 기준은 은행의 트레이딩계정 합계액이 가.(1) 또는 (2)에 해당하게 된 날 또는 다.에 따라 감독원장이 적용대상 으로 지정한 날이 속하는 분기의 다음 분기 말일부터 적용한다. <개정 2022.11.28.>"},{"n":"2","t":"정의","p":"제1장 총칙","b":"가. 이 기준에서 사용하는 용어의 뜻은 다음과 같다. (1) \"시장리스크\"란 시장가격의 비우호적인 변동으로 인하여 은행 난내ㆍ외 익스포져에서 손실이 발생하는 리스크를 말한다. (2) \"상품\"이란 금융상품2)ㆍ외환상품ㆍ일반상품(전력 등 무형재화를 포함한다)을 말한다. ① 단기매매항목으로 분류된 유가증권: 시가평가액 ② 차입유가증권: 시가평가액 ③ 장내파생상품: 재무상태표상 \"기타 예치금\" 중 관련 \"증거금\" ④ 장외파생상품: 재무상태표상 \"파생상품평가자산\"과 \"파생상품평가부채\"의 절댓값의 합계 ⑤ 기 타: 공정가액 시키는 상품을 말하며, 현물상품뿐만 아니라 파생상품 또한 포함한다. 이 경우 \"금융자산\"이란 현금, 현금 또는 그 밖의 금융 자산 또는 일반상품을 수취할 수 있는 계약상 권리, 또는 지분상품 등을 말하며, \"금융부채\"란 현금 또는 그 밖의 금융자산 (3) \"트레이딩계정\"이란 은행이 단기매매 목적 등으로 보유하는 상품의 집합을 말한다. (4) \"은행계정\"이란 은행이 보유하는 상품 중 트레이딩계정으로 분류되지 않는 상품의 집합을 말한다. (5) \"트레이딩데스크\"란 명확한 리스크관리 구조 아래에서 분명하게 정의된 사업전략을 수행하는 트레이더 또는 트레 이딩계좌의 그룹을 말한다. (6) \"표준방법\"이란 바젤은행감독위원회가 제시하는 시장리스크 소요자기자본에 대한 표준화된 산출방법을 말한다. (7) \"간편법\"이란 트레이딩계정이 소규모이거나 단순한 은행에 대하여 허용되는 시장리스크 소요자기자본에 대한 간 편한 산출방법을 말한다. (8) \"개별기준\"이란 시장리스크 소요자기자본을 산출할 때 특정 상품 또는 포트폴리오에 대하여 다른 상품과의 상쇄, 분산 또는 헤지를 인식하지 않고 산출하는 것을 말한다. (9) \"기초자산접근법\"이란 지수상품, 복수 기초자산 상품 및 집합투자증권 등에 대하여 은행이 해당 상품의 기초자산 을 직접 보유하는 것으로 가정하여 소요자기자본을 산출하는 방법을 말한다. (10) \"약정서기반접근법\"이란 집합투자증권에 대하여 투자약정서나 해당 집합투자기구와 관련된 규제의 내용을 이용 하여 가장 보수적인 관점에서 소요자기자본을 산출하는 방법을 말한다. 나. 가.에서 정하지 않는 그 밖의 용어는 「은행업감독업무시행세칙」<별표3>(이하 \"<별표3>\"이라 한다)을 따른다."},{"n":"3","t":"신용ㆍ운영ㆍ시장리스크 기준 자기자본비율","p":"제1장 총칙","b":"신용ㆍ운영ㆍ시장리스크가 모두 반영된 통합 리스크 기준 자기자본비 율은 다.에 따라 산출한 자기자본을 가.에 따라 산출한 위험가중자산과 나.에 따라 산출한 리스크평가조정을 합산한 값으로 나누어 산출한다. <개정 2007.11.9, 2013.11.22, 2015.12.18., 2016.6.28., 2020.4.8., 2022.11.28.> 보통주자본 보통주자본 비율 = [신용위험가중자산 － 트레이딩계정 상품의 신용위험가중자산] + 시장위험가중자산 + 운영위험가중자산 + 하한 초과 위험가중자산 + 리스크평가 조정 보통주자본 + 기타기본자본 기본자본 비율 = [신용위험가중자산 － 트레이딩계정 상품의 신용위험가중자산] + 시장위험가중자산 + 운영위험가중자산 + 하한 초과 위험가중자산 + 리스크평가 조정 보통주자본 + 기타기본자본 + 보완자본 총자본비율 = [신용위험가중자산 － 트레이딩계정 상품의 신용위험가중자산] + 또는 일반상품을 인도해야 하는 계약상 의무를 말한다. 시장위험가중자산 + 운영위험가중자산 + 하한 초과 위험가중자산 + 리스크평가 조정 가. 위험가중자산 (1) 조정 신용위험가중자산의 산출: <별표3>의 신용리스크 산출기준에 따라 산출한 위험가중자산에서 제2장에 따라 트레이딩계정으로 분류되는 상품의 위험가중자산을 차감하여 산출한다. 다만, <별표3>제7장에 따른 거래상대방 신용위험가중자산과 <별표3>제8장에 따른 CVA위험가중자산은 차감하지 않는다. (2) 시장위험가중자산의 산출: 제5장의 시장리스크 산출기준에 따라 산출한다. (3) 운영위험가중자산의 산출: <별표 3>의 운영리스크 산출기준에 따라 산출한다. (4) 위험가중자산의 산출: 위험가중자산은 (1)부터 (3)까지에 의하여 산출한 조정 신용위험가중자산, 시장위험가중자 산 및 운영위험가중자산을 합산한 것으로 한다. (5) 내부모형 사용에 따른 위험가중자산의 하한: 다음에 규정하는 방법으로 산출한 위험가중자산의 합계에 72.5%를 곱한 금액이 (4)의 위험가중자산 합계를 초과하는 경우에는 해당 초과하는 금액을 3.의 산식 분모에 추가해야 한 다. 리스크 종류 신용리스크 거래상대방 신용리스크 CVA리스크 산출방법 <별표3>제2장 신용리스크 표준방법에 따라 산출되는 신용위험가중 자산 <별표3>제7장제3절제2관의2 거래상대방 신용위험 표준방법에 따라 산출되는 부도 시 익스포져에 <별표3>제2장 신용리스크 표준방법에 따라 위험가중치를 적용하여 산출되는 위험가중자산 <별표3>제8장 CVA리스크 산출방법에 따라 산출되는 CVA위험가중 자산 <별표3>제4장제2절의2 유동화자산의 신용위험가중자산 산출방법 중 유동화자산 제3관 외부신용등급법, 제5관 표준방법 또는 위험가중치 1,250%를 적용하여 산출되는 유동화자산의 위험가중자산 시장리스크 (2)에 따라 산출되는 시장위험가중자산 운영리스크 (3)에 따라 산출되는 운영위험가중자산 나. 리스크평가조정은 <별표 9>에서 정하는 리스크평가 등급별 위험가중치 조정기준에 따라 산출한다. 다만, 감독원장 이 제29조에 따른 리스크평가를 실시하여 리스크평가 등급을 변경하는 시점까지는 <별표 9> 6.에 따른 위험가중 자산 할증률을 동일하게 적용한다. 다. 자기자본 (1) 자기자본의 범위: 자기자본은 보통주자본, 기타기본자본 및 보완자본으로 구분되며 각각 <별표3>에서 정하는 항 목 및 요건에 따른다. (2) 자기자본의 산출: 총자본은 보통주자본, 기타기본자본 및 보완자본의 합에서 <별표3>에서 정하는 공제항목을 차 감하여 산출한다. 이 경우 공제항목은 달리 명시되지 않는 한 보통주자본에서 차감하는 것으로 한다."},{"n":"4","t":"외국은행 국내지점에 대한 특례","p":"제1장 총칙","b":"외국은행 국내지점은 신용ㆍ운영ㆍ시장리스크 기준 자기자본비율 산출 시 운영위 험가중자산은 포함하지 않는다."},{"n":"5","t":"계정분류","p":"제2장 계정분류 제1절 계정분류","b":"가. 은행은 보유하는 모든 상품을 이 장에 따라 트레이딩계정이나 은행계정 중 하나로 분류해야 한다. 나. 트레이딩계정으로 분류하려는 상품은 매도하거나 완전히 헤지하는데 법적 제약이 없어야 한다. 다. 트레이딩계정으로 분류된 상품은 일 단위로 공정가치가 측정되고, 그 변동이 손익계정에 인식되어야 한다."},{"n":"6","t":"트레이딩계정 상품","p":"제2장 계정분류 제1절 계정분류","b":"가. 최초 인식시점에서 다음 중 어느 하나의 목적으로 보유하는 상품(이하 \"트레이딩계정 상품\"이라 한다)은 트레이딩 계정으로 분류해야 한다. 다만, 5.나.에 따라 트레이딩계정으로 분류할 수 없는 상품과 7.나.의 상품은 제외한다. (1) 단기 재판매 (2) 단기 가격변동을 통한 차익 추구 (3) 무위험차익 확정 (4) (1)부터 (3)까지 중 어느 하나의 목적으로 보유하는 다른 상품의 헤지 나. 다음 상품은 트레이딩계정 상품으로 본다. 다만, 5.나.에 따라 트레이딩계정으로 분류할 수 없는 상품과 7.나.의 상품은 제외한다. (1) 37.에 따라 상관관계 트레이딩 포트폴리오에 포함되는 상품 (2) 은행계정에서 신용 또는 주식 순매도포지션3)을 발생시키는 상품 치가 상승하는 은행계정 포지션을 말한다. (3) 은행이 결제일에 실제로 매입할 것으로 예상되는 증권의 인수약정"},{"n":"7","t":"은행계정 상품","p":"제2장 계정분류 제1절 계정분류","b":"가. 6.에 따라 트레이딩계정으로 분류되는 상품을 제외한 상품(이하 \"은행계정 상품\"이라 한다)은 은행계정으로 분류해 야 한다. 나. 다음 상품은 은행계정 상품으로 본다. (1) 비상장주식 (2) 유동화 대상으로 지정된 상품 (3) 보유 부동산. 이 경우 직접적인 보유뿐만 아니라 파생상품 또한 포함한다. (4) 소매ㆍ중소기업 신용공여 (5) 다음 요건을 모두 충족하지 않는 집합투자증권 (가) 집합투자증권의 기초자산을 모두 파악할 수 있으며, 독립적인 제3자가 검증한 기초자산에 대한 정보를 충분하 고 빈번하게 입수할 수 있을 것 (나) 집합투자증권의 고시가격을 일 단위로 입수할 수 있으며, 투자약정서나 해당 집합투자기구와 관련된 규제의 내 용을 열람할 수 있을 것 (6) 「자본시장과 금융투자업에 관한 법률」의 사모집합투자기구 중 운용목적이 전문투자인 집합투자기구(hedge fund) 가 발행한 집합투자증권 (7) 기초자산이 (1)부터 (6)까지 중 어느 하나인 파생상품과 집합투자증권 (8) (1)부터 (7)까지의 상품을 헤지하기 위해 보유하는 상품"},{"n":"8","t":"트레이딩계정 추정 상품","p":"제2장 계정분류 제1절 계정분류","b":"가. 다음 상품(이하 \"트레이딩계정 추정 상품\"이라 한다)은 6.가.(1)부터 (4)까지 중 어느 하나의 목적으로 보유하는 것 으로 추정한다. 다만, 5.나.에 따라 트레이딩계정으로 분류할 수 없는 상품과 7.나.의 상품은 제외한다. (1) 회계기준상 단기매매 목적의 자산 또는 부채4) 되는 상품은 트레이딩계정 상품으로 추정된다. (2) 시장조성활동으로 보유하는 상품 (3) 7.나.(5)에 해당하지 않는 집합투자증권 (4) 상장주식5) (5) 매매목적의 환매조건부거래6) (6) 옵션. 이 경우 은행계정으로 발행되는 신용 또는 주식리스크 관련 상품의 내재파생상품7) 또한 포함한다. 나. 트레이딩계정 추정 상품을 은행계정으로 분류하려는 경우, 은행은 해당 상품을 6.가.(1)부터 (4)까지의 목적으로 보유하는 것이 아니라는 사실을 감독원장에게 입증하고 승인을 받아야 한다. 다. 은행은 나.에 따라 은행계정으로 분류하는 트레이딩계정 추정 상품에 대하여 지속적으로 상세히 문서화해야 한다."},{"n":"9","t":"계정분류에 대한 감독원장의 권한","p":"제2장 계정분류 제1절 계정분류","b":"가. 감독원장은 은행이 트레이딩계정으로 분류한 상품에 대하여 다음 권한을 가진다. 다만, 6.나.의 상품에 대해서는 그렇지 않다. (1) 은행이 해당 상품을 6.가.(1)부터 (4)까지 중 어느 하나의 목적으로 보유한다는 사실을 입증하도록 요구 (2) (1)에 따라 은행이 입증한 내용이 적정하지 않거나 해당 상품을 은행계정으로 분류하는 것이 일반적이라고 판단 되는 경우, 은행이 해당 상품을 은행계정으로 다시 분류하도록 요구 나. 감독원장은 은행이 은행계정으로 분류한 상품에 대하여 다음 권한을 가진다. 다만, 7.나.의 상품에 대해서는 그렇 지 않다. (1) 은행이 해당 상품을 6.가.(1)부터 (4)까지의 목적으로 보유하는 것이 아니라는 사실을 입증하도록 요구 (2) (1)에 따라 은행이 입증한 내용이 적정하지 않거나 해당 상품을 트레이딩계정으로 분류하는 것이 일반적이라고 판단되는 경우, 해당 상품을 트레이딩계정으로 다시 분류하도록 요구"},{"n":"10","t":"계정분류에 대한 문서화","p":"제2장 계정분류 제1절 계정분류","b":"가. 은행은 이 장의 계정분류 관련 요건과 은행의 리스크관리 역량과 실무를 반영하여 계정분류에 대한 정책ㆍ절차를 무상품이었던 지분상품, 은행 보유 생명보험상품(bank-owned life insurance) 및 법률상의 계획 등으로 발생되는 상장주식에 대한 포지션을 감독원장과 협의하여 시장리스크 소요자기자본 산출대상에서 제외할 수 있다. 이 경우 해당 포지션은 단기매매 또는 자기매매 목적의 트레이딩데스크와 분리된 트레이딩데스크가 관리해야 한다. 재파생상품을 주계약과 분리하여 인식해야 한다. 명확히 마련하고 실무에 대한 사항을 포함하여 문서화해야 한다. 나. 은행의 내부통제 조직은 트레이딩계정의 상품 유출입을 지속적으로 점검하여 상품의 계정이 실제 트레이딩활동에 적합하게 분류되었는지 평가하고 가.의 정책ㆍ절차가 준수되었는지 완전히 문서화해야 하며, 적어도 연 단위로 내 부감사를 실시하고 감독원장이 요구하는 경우 그 결과를 지체 없이 제출해야 한다."},{"n":"11","t":"계정변경의 제한","p":"제2장 계정분류 제2절 계정변경","b":"가. 은행이 자의적인 판단에 따라 최초 계정분류를 변경하는 행위는 엄격히 제한되며, 극히 예외적인 상황8)에서 감독 원장의 승인을 받는 경우에만 허용된다. 나. 계정변경을 하려는 은행은 변경된 계정분류가 6.부터 8.까지의 관련 요건을 엄격히 충족한다는 사실을 입증해야 한다."},{"n":"12","t":"계정변경으로 인한 규제차익의 금지","p":"제2장 계정분류 제2절 계정변경","b":"가. 계정변경으로 소요자기자본이 감소하는 경우, 은행은 그 차액을 별도 소요자기자본으로 인식하여 계정변경에도 은 행의 전체 소요자기자본이 변동하지 않도록 해야 한다. 나. 가.의 계정변경으로 인한 소요자기자본은 계정변경 시점에서 산출된 수준을 계정변경 상품의 만기까지 적용해야 하며, 이를 제거하려는 경우 감독원장과 협의해야 한다."},{"n":"13","t":"계정변경의 절차","p":"제2장 계정분류 제2절 계정변경","b":"가. 계정변경을 하려는 은행은 계정변경이 정책을 준수하는지 점검하여 명확히 문서화하고 경영진과 감독원장의 승인 을 받아야 한다.9) 나. 가.에서 경영진과 감독원장의 승인을 받은 경우, 은행은 계정변경 상품과 12.가.의 계정변경으로 인한 소요자기자 본 등 계정변경에 대한 사항을 지체 없이 공시해야 한다. 다. 계정변경의 취소는 허용되지 않는다. 다만, 포지션의 성격이 변하여 계정을 다시 분류해야 하는 경우에는 그렇지 않다."},{"n":"14","t":"계정변경에 대한 정책","p":"제2장 계정분류 제2절 계정변경","b":"정 항목을 공정가치로 측정하고 그 변동을 당기손익으로 인식하도록 하는 회계기준이 변경되는 경우 등 대외적으로 공표되는 중대한 사건 등이 있다. 시장사건, 금융상품 유동성의 변화 또는 매매목적의 변화 등은 그 자체로는 계정변경의 합리적인 근 거가 될 수는 없다. 경영진과 감독원장의 승인을 받아야 한다. 한편 은행계정 상품이 회계기준상 단기매매 자산 또는 부채로 재분류되는 경우, 14.에 따라 트레이딩계정 상품으로 추정되므로 감독원장의 승인 없이 계정변경을 할 수 있다. 가. 은행은 다음을 모두 포함하여 계정변경에 대한 정책을 마련해야 한다. (1) 11.부터 13.까지의 계정변경 관련 요건. 특히 극히 예외적인 상황에 근거해야 한다는 점과 계정변경을 고려할 수 있는 상황 또는 기준을 상세히 기술해야 한다. (2) 경영진과 감독원장의 승인을 받기 위한 절차 (3) 극히 예외적인 상황을 인식하는 방법 나. 은행은 전년도에 인식한 모든 극히 예외적인 상황을 분석하고, 이에 근거하여 계정변경 정책을 적어도 연 단위로 갱신해야 한다. 다. 은행은 나.에 따라 갱신한 계정변경 정책을 변경사항을 명시하여 감독원장에게 보고해야 한다."},{"n":"15","t":"내부 리스크 이전","p":"제2장 계정분류 제3절 내부 리스크 이전","b":"가. \"내부 리스크 이전\"이란 은행계정 내, 은행계정과 트레이딩계정 간 또는 트레이딩계정 내 리스크를 이전하는 문서 화된 내부 거래를 말한다. 나. 내부 리스크 이전은 다음 경우에만 소요자기자본 산출대상으로 인정될 수 있다. (1) 16.부터 17.까지의 관련 요건을 모두 충족하는 은행계정에서 트레이딩계정으로의 내부 리스크 이전 (2) 트레이딩데스크 간 내부 리스크 이전. 다만, 17.의 내부 리스크 이전 전담 트레이딩데스크와 다른 트레이딩데스 크 간 내부 리스크 이전인 경우 관련 요건을 모두 충족해야 한다. 다. 나.에서 내부 리스크 이전의 트레이딩계정 부분은 외부 거래상대방과 체결된 트레이딩계정 상품과 같이 이 장에 따라 트레이딩계정 상품의 요건을 모두 충족해야 한다."},{"n":"16","t":"은행계정 신용 또는 주식리스크의 이전","p":"제2장 계정분류 제3절 내부 리스크 이전","b":"가. 내부 리스크 이전을 이용하여 은행계정 신용리스크를 트레이딩계정으로 이전하려면 다음 요건을 모두 충족해야 한다. (1) 내부 리스크 이전과 정확히 매치되고 제3자인 적격 보장매도자와 체결된 외부 헤지거래를 트레이딩계정에서 보 유하고 있을 것. 이 경우 외부 헤지거래가 여러 거래상대방과의 여러 계약으로 구성되면 그 전체가 내부 리스크 이전과 정확히 매치되어야 한다. (2) 외부 헤지거래가 <별표3>90.부터 91.까지10) 및 <별표3>103.부터 107.까지에 따라 은행계정 신용리스크 헤지거래 로 인정될 것 나. 내부 리스크 이전을 이용하여 은행계정 주식리스크를 트레이딩계정으로 이전하려면 다음 요건을 모두 충족해야 한다. (1) 내부 리스크 이전과 정확히 매치되고 제3자인 적격 보장매도자와 체결된 외부 헤지거래를 트레이딩계정에서 보 유하고 있을 것. 이 경우 외부 헤지거래가 여러 거래상대방과의 여러 계약으로 구성되면 그 전체가 내부 리스크 이전과 정확히 매치되어야 한다. (2) 외부 헤지거래가 은행계정 주식리스크 헤지거래로 인정될 것 다. 가.부터 나.까지에서 요건을 모두 충족하는 내부 리스크 이전은 다음에 따라 처리한다. (1) 은행계정 부분은 은행계정 신용 또는 주식리스크와 헤지효과를 인식한다. (2) 트레이딩계정 부분은 시장리스크 소요자기자본 산출대상에 포함한다. 다. 내부 리스크 이전으로 발생하는 은행계정 신용 또는 주식 매도포지션11)은 시장리스크 소요자기자본 산출대상에 포함해야 한다."},{"n":"17","t":"은행계정 금리리스크의 이전","p":"제2장 계정분류 제3절 내부 리스크 이전","b":"가. 내부 리스크 이전을 이용하여 은행계정 금리리스크를 트레이딩계정으로 이전하려면 다음 요건을 모두 충족해야 한다. (1) 헤지 대상 은행계정 금리리스크와 원천을 포함하여 내부 리스크 이전을 문서화할 것 (2) 헤지목적으로 감독원장의 승인을 받은 내부 리스크 이전 전담 트레이딩데스크가 내부 리스크 이전을 수행할 것 (3) (2)의 내부 리스크 이전 전담 트레이딩데스크가 직접 외부 헤지거래를 체결하지 않고 다른 트레이딩데스크를 대 리인으로 하여 외부 헤지거래를 체결하는 경우, 이와 정확히 매치되는 내부 리스크 이전을 해당 트레이딩데스크 와 체결할 것 나. 가.에서 요건을 모두 충족하는 내부 리스크 이전을 다음에 따라 처리한다. (1) 은행계정 부분은 은행계정 금리리스크와 헤지효과를 인식한다. (2) 트레이딩계정 부분은 시장리스크 소요자기자본 산출대상에 포함한다. 신용위험경감효과의 인식에만 적용되며 내부 리스크 이전에는 그렇지 않다. 다. 은행은 내부 리스크 이전 전담 트레이딩데스크에 대하여 개별기준으로 시장리스크 소요자기자본을 산출해야 한다."},{"n":"18","t":"CVA리스크의 이전","p":"제2장 계정분류 제3절 내부 리스크 이전","b":"가. 내부 리스크 이전을 이용하여 CVA리스크를 트레이딩계정으로 이전하려면 다음 요건을 모두 충족해야 한다. (1) 헤지 대상 CVA리스크와 그 원천을 포함하여 내부 리스크 이전을 문서화할 것 (2) 내부 리스크 이전이 제6장의 커버쳐, 부도 또는 잔여리스크 소요자기자본 산출대상인 경우, 내부 리스크 이전과 정확히 매치되고 제3자인 적격 보장매도자와 체결된 외부 헤지거래를 트레이딩계정에서 보유하고 있을 것 (3) 내부 리스크 이전의 CVA포트폴리오 부분이 <별표3>320.가.에 따라 CVA리스크에 대한 적격 헤지거래로 인정될 것 나. 가.에서 요건을 모두 충족하는 내부 리스크 이전을 다음에 따라 처리한다. (1) CVA포트폴리오 부분은 CVA리스크와 헤지효과를 인식한다. (2) 트레이딩계정 부분은 시장리스크 소요자기자본 산출대상에 포함한다. 다. CVA포트폴리오와 트레이딩계정 간 내부 리스크 이전이 16.의 요건을 모두 충족하는 경우, 은행계정 또는 트레이 딩계정의 거래상대방 신용리스크 익스포져에 대한 적격 헤지거래로도 인정될 수 있다."},{"n":"19","t":"건전한 가치평가","p":"제3장 건전한 가치평가","b":"가. 은행은 공정가치로 평가되는 트레이딩계정 및 은행계정 포지션의 건전한 가치평가에 대한 기준을 이 장에 따라 마련ㆍ준수해야 한다. 나. 은행은 실제 시장가격이 존재하지 않거나, 가치평가 투입변수가 관측 불가능하거나 또는 유동성이 부족하여 건전 한 가치평가가 어려운 포지션에 대하여 이 장에서 요구하는 사항을 특히 엄격하게 충족해야 한다. 다만, 은행이 회계목적상 가치평가를 이 장에서 요구하는 사항을 충족하도록 변경해야 하는 것은 아니다. 다. 감독원장은 24. 및 25.에 따른 유동성 부족 포지션에 대한 가치평가조정 절차를 포함하여 은행의 가치평가 절차 가 이 장에서 요구하는 사항과 일관되는지 평가해야 한다."},{"n":"20","t":"시스템ㆍ통제체계","p":"제3장 건전한 가치평가","b":"가. 은행은 경영진과 감독원장이 가치평가 결과의 건전성ㆍ신뢰성을 충분히 확신할 수 있도록 적절한 시스템과 통제 체계를 구축ㆍ운영해야 한다. 나. 시스템과 통제체계는 신용분석 등 다른 리스크관리 시스템과 통합되어야 하며, 다음 사항을 모두 포함해야 한다. (1) 가치평가 절차에 대한 문서화된 정책ㆍ절차. 이 경우 가치평가의 확정에 관련된 여러 영역의 명확히 정의된 책 임, 시장정보의 원천과 적정성에 대한 검토, 시장참여자가 해당 포지션을 가치평가할 때 일반적으로 이용하는 가 정을 반영한 관측 불가능한 투입변수 이용에 대한 지침, 독립적인 가치평가의 주기, 가격의 마감시점, 가치평가 조정의 절차 그리고 월말 및 비정기 검증의 절차 등을 포함해야 한다. (2) 가치평가 절차에 책임이 있는 조직의 보고체계. 이 경우 명확하고 프론트오피스와 독립적이며 궁극적으로 주요 경영진을 대상으로 해야 한다."},{"n":"21","t":"시가평가","p":"제3장 건전한 가치평가","b":"가. \"시가평가\"(marking-to-market)란 거래소 거래가격, 벤더 조회가격 또는 독립적이고 신뢰할 수 있는 여러 브로 커의 고시가격 등 즉시 이용할 수 있는 종가를 독립적으로 수집하여 포지션을 적어도 영업일 단위로 가치평가하 는 것을 말한다. 나. 은행은 시가평가를 할 수 있는 포지션에 대해서는 반드시 시가평가를 수행해야 하며, 다음 사항을 모두 고려해야 한다. (1) 주요 시장조성자로 중간가격으로 청산할 수 있는 경우가 아닌 경우, 매입호가와 매도호가 중 더욱 보수적인 가격 을 이용한다. (2) 가치평가 기법은 관측 가능한 투입변수 데이터를 최대한으로 이용하고, 관측 불가능한 투입변수 데이터를 최소한 으로 이용하는 것이다. 다만, 강제청산ㆍ투매 등 거래가 관측 가능하나 부적정하거나 비활성 시장 등 거래 자체 가 관측 불가능한 경우에는 그렇지 않다."},{"n":"22","t":"모형평가","p":"제3장 건전한 가치평가","b":"가. \"모형평가\"(marking-to-model)란 시장데이터를 벤치마크로 이용하거나, 시장데이터에서 외삽을 하거나 또는 시장 데이터를 이용하여 수행되는 그 밖의 가치평가 기법을 말한다. 나. 은행은 시가평가를 할 수 없는 포지션에 대해서만 최대한 보수적인 관점에서 모형평가를 수행해야 하며, 모형평가 가 건전한 가치평가에 해당한다는 사실을 입증해야 한다. 다. 감독원장은 다음 사항을 모두 고려하여 모형평가가 건전한 가치평가에 해당하는지 평가해야 한다. (1) 경영진이 모형평가되는 공정가치 포지션을 인지하고 있으며, 보고되는 경영성과와 리스크에 내재된 모형평가로 인한 불확실성의 중요성을 이해하고 있다. (2) 시장가격이 투입변수로 충분히 이용되며, 투입변수가 적정한지 주기적으로 검토되고 있다. (3) 일반적으로 인정되는 가치평가 기법이 충분히 이용되고 있다. (4) 은행 자체 모형의 가정이 합리적이고, 개발과 독립되고 적절한 자격이 있는 자가 이를 검토하고 있으며, 해당 모 형이 프론트오피스와 독립적으로 개발ㆍ승인되며, 개발에 이용된 수학ㆍ가정ㆍ소프트웨어 등을 포함하여 모형이 독립적으로 검증되고 있다. (5) 공식적인 변경관리 절차가 마련되어 있으며, 모형의 사본이 안전하게 보관되어 주기적으로 가치평가를 점검하는 데 이용되고 있다. (6) 리스크관리자가 모형의 한계와 이를 가치평가 결과에 반영하는 최선의 방법을 인지하고 있다. (7) 모형의 가정이 지속적으로 합리적인지 평가하거나, 리스크요소 대비 손익을 분석하거나 또는 실제 청산가격과 모 형평가 결과를 비교하는 등 모형의 성과가 정확한지 주기적으로 검토되고 있다. (8) 모형평가의 불확실성을 반영하는 가치평가조정을 24. 및 25.에 따라 적정하게 수행하고 있다."},{"n":"23","t":"독립적인 가격검증","p":"제3장 건전한 가치평가","b":"가. \"독립적인 가격검증\"이란 일별 가치평가와 별개로 시장가격 또는 가치평가모형의 투입변수의 정확성을 주기적으로 검증하는 절차를 말한다. 나. 독립적인 가격검증은 딜링룸과 독립적인 조직이 적어도 월 단위로 수행해야 하며, 시장이나 은행의 트레이딩활동 의 성격에 따라 더 짧은 주기로 수행할 수 있다. 다만, 일별 시가평가와 같이 빈번하게 수행할 필요는 없다. 다. 시장가격 또는 가치평가모형의 투입변수는 손익을 결정하는데 이용되므로 은행은 독립적인 가격검증을 수행할 때 정확성 기준을 높은 수준으로 적용해야 하며, 오직 하나의 브로커의 고시가격을 이용하는 등 가치평가 원천이 주 관적인 경우 가치평가조정과 같은 건전한 가치평가를 위한 조치를 취하는 것이 적절할 수 있다."},{"n":"24","t":"가치평가조정","p":"제3장 건전한 가치평가","b":"가. 은행은 가치평가 절차의 한 부분으로 가치평가조정이 필요한지 판단하는 절차를 마련ㆍ준수해야 하며, 이는 포지 션이 시가평가, 모형평가 또는 제3자에 의하여 가치평가 되는지와 무관하다. 나. 은행은 적어도 미수 신용스프레드ㆍ청산비용ㆍ운영리스크ㆍ조기종료ㆍ운용 및 조달비용ㆍ미래 관리비용ㆍ필요한 경우 모형리스크에 대하여 가치평가조정이 필요한지 판단해야 한다."},{"n":"25","t":"유동성 부족 포지션에 대한 가치평가조정","p":"제3장 건전한 가치평가","b":"가. 은행은 유동성 부족 포지션12)에 대하여 가치평가조정이 필요한지 판단하고 이를 산출하는 절차를 마련ㆍ준수해야 한다. 이 경우 해당 가치평가조정은 회계목적의 가치평가조정에 추가적으로 적용될 수 있으며 포지션의 유동성이 경우 등 은행 자체적인 상황에 의해서도 발생할 수 있다. 부족한 정도가 반영되어야 한다. 나. 은행은 유동성 부족 포지션을 실제로 매도하거나 헤지할 수 있는 가능성과 시장리스크 소요자기자본 산출방법의 유동성 가정이 반드시 일치하는 것이 아니라는 점을 고려하여 유동성 부족 포지션에 대하여 가치평가조정을 적용 하고 그 적정성을 지속적으로 검토해야 한다. 다. 유동성 부족 포지션에 대한 가치평가조정의 적정성을 검토할 때, 은행은 다음 사항을 모두 고려해야 한다. (1) 실제로 포지션을 매도하거나 헤지하는데 소요되는 기간 (2) 매입가격과 매도가격의 스프레드의 변동성 (3) 독립적인 고시가격의 이용가능성. 이 경우 시장조성자의 수와 실질이 고려되어야 한다. (4) 거래량의 평균과 변동성. 이 경우 스트레스 기간의 거래량 또한 고려되어야 한다. (5) 시장 편중도 (6) 포지션의 보유기간 (7) 모형평가에 의존하는 정도 (8) 그 밖의 모형리스크의 영향 라. 유동화상품ㆍ특정순위부도종결조건 신용파생상품 등 복잡한 상품의 경우, 은행은 다음 사항을 모두 고려하여 가치 평가조정이 필요한지 판단해야 한다. (1) 가치평가모형이 부정확할 가능성에 대한 모형리스크 (2) 관측 불가능한 투입변수를 이용하여 가치평가모형의 칼리브레이션이 부정확할 가능성에 대한 모형리스크 마. 은행은 유동성 부족 포지션의 가치평가조정을 기본자본에 반영해야 하며, 이는 회계기준 또는 24.에 따른 가치평 가조정을 초과할 수 있다."},{"n":"26","t":"트레이딩데스크","p":"제4장 트레이딩데스크","b":"가. 은행은 조직 구조에 따라 트레이딩데스크 구조를 정의해야 하며, 각 트레이딩데스크의 정책을 문서화해야 한다. 나. 은행은 가.에 따라 트레이딩데스크 구조를 정의할 때 27.의 질적요건을 고려할 수 있으며, 각 트레이딩데스크의 정책을 문서화할 때 질적요건을 충족하는지와 그 근거를 포함해야 한다. 다. 은행은 가.에 따라 정의한 트레이딩데스크에서 27.의 질적요건과 무관하게 하위 트레이딩데스크를 내부적인 목적 으로 정의하고 운영할 수 있다."},{"n":"27","t":"트레이딩데스크의 질적요건","p":"제4장 트레이딩데스크","b":"은행이 트레이딩데스크를 정의할 때 고려할 수 있는 질적요건이란 다음과 같다. (1) 트레이딩데스크는 다음 요건을 모두 충족하는 트레이더 또는 트레이딩계좌의 그룹으로 명확히 정의될 것 (가) 트레이딩계좌는 트레이딩 활동을 설명하는 명확한 관측 단위로서, 하나의 트레이딩계좌는 오직 하나의 트레이 딩데스크에만 할당될 것 (나) 하나의 트레이더는 오직 하나의 트레이딩데스크에만 소속될 것. 다만, 규제차익 목적이 아니라 건전한 경영ㆍ 영업ㆍ자원배분에 필요하다는 사실을 감독원장에게 입증하는 경우 하나 이상의 트레이딩데스크에 소속될 수 있다. (다) 트레이더 또는 트레이딩계좌는 명확히 정의된 전문분야를 보유할 것 (라) 트레이딩데스크는 트레이더 중 트레이딩데스크에 대한 직접적인 감독 권한을 가지는 트레이더(이하 \"대표 트레 이더\"라 한다)가 하나 이상 있을 것. 다만, 대표 트레이더가 둘 이상인 경우 역할ㆍ책임이 명확히 분리되거나 하나가 다른 하나에 대한 궁극적인 감독 권한을 가져야 한다. (마) 트레이딩데스크가 부담하는 리스크의 범위는 사전에 수립된 트레이딩데스크의 목표와 일관되게 명확히 정의될 것. 이 경우 해당 범위에는 전반적인 리스크군과 허용되는 리스크요소가 상세히 포함되어야 한다. (바) 트레이딩데스크는 경영진에 대한 명확한 보고체계를 가지며, 사전에 수립된 트레이딩데스크의 목표에 연계되며 명확하고 공식적인 보상정책을 가질 것 (2) 트레이딩데스크는 다음 사항을 모두 포함하여 명확히 정의되고 문서화된 사업전략을 보유할 것 (가) 관련 경제상황, 주요활동 및 매매ㆍ헤지전략에 대한 기술13) (나) 대표 트레이더를 포함하는 관리조직이 수립한 트레이딩데스크의 예산ㆍ인력에 대한 연간 계획 (다) 트레이딩데스크의 수익ㆍ비용ㆍ위험가중자산 등에 대한 정기적인 경영정보 보고 (3) 트레이딩데스크는 다음 요건을 모두 충족하는 명확한 리스크관리체계를 보유할 것 ① 경제상황: 사업전략의 배경이 되는 경제상황, 고객에 기반한 활동의 규모 및 유동화ㆍ구조화ㆍ거래실행서비스 등이 해당 활 동에 포함되는지 등 ② 주요활동: 허용되는 상품 및 가장 빈번하게 매매하는 상품 등 ③ 매매ㆍ헤지전략: 상품의 헤지방법, 예상 헤지불일치 정도 및 예상 보유기간 등 (가) 은행은 트레이딩데스크에서 리스크 부담 활동을 감독하는데 책임이 있는 핵심 조직과 인력을 지정할 것 (나) 트레이딩데스크는 사업전략에 근거하여 매매 한도를 명확히 정의하며, 경영진은 적어도 연 단위로 이를 점검할 것 (다) 트레이딩데스크는 (나)에 따라 한도를 설정할 때 시장리스크 측도 또는 적어도 단순 명목원금에 근거하는 트레 이딩데스크 수준의 매매 한도와, 트레이더의 책임ㆍ권한(trader mandate)을 명확히 정의할 것 (라) 트레이딩데스크는 리스크관리 보고서를 적어도 주 단위로 생산하며, 해당 보고서에 적어도 트레이딩데스크 단 위의 손익ㆍ리스크 지표14)를 포함할 것"},{"n":"28","t":"트레이딩데스크의 보고사항","p":"제4장 트레이딩데스크","b":"은행은 모든 트레이딩데스크에 대하여 다음 사항을 모두 마련ㆍ평가하고, 감독원장이 요구하는 경우 이를 지체 없이 제출해야 한다. (1) 잔액의 경과기간에 대한 보고 (2) 일일 한도에 대한 보고. 이 경우 익스포져, 한도초과 및 그에 따른 조치사항 등이 포함되어야 한다. (3) 일중 트레이딩활동이 활발한 은행의 경우, 일중 한도, 한도소진 및 한도초과에 대한 보고 (4) 시장유동성 평가에 대한 보고"},{"n":"29","t":"은행계정 외환ㆍ일반상품리스크의 처리","p":"제4장 트레이딩데스크","b":"30.(2)에 따라 시장리스크 소요자기자본 산출대상에 포함되는 은행계정 상품은 명목상의 트레이딩데스크가 보유하는 것으로 처리한다."},{"n":"30","t":"시장리스크 소요자기자본의 범위","p":"제5장 시장리스크 소요자기자본","b":"은행은 적어도 다음 사항을 모두 포함하여 시장리스크 소요자기자본을 산출해야 한다. (1) 트레이딩계정의 금리ㆍ부도ㆍ신용스프레드ㆍ주식ㆍ외환ㆍ일반상품리스크 (2) 은행계정의 외환ㆍ일반상품리스크"},{"n":"31","t":"시장리스크 소요자기자본의 관리","p":"제5장 시장리스크 소요자기자본","b":"가. 은행은 선도 매매인지와 무관하게 시장리스크 소요자기자본 산출대상에 해당하는 모든 상품을 거래의 체결일부터 산출대상에 포함해야 한다. 도, VaRㆍES의 사후검증 결과 및 p-값 등을 포함할 수 있다. 나. 은행은 각 영업일의 마감시점을 포함하여 연속적으로 소요자기자본이 충족될 수 있도록 시장리스크를 관리하고, 일중 익스포져가 과도하게 발생하지 않도록 엄격하게 리스크관리 시스템을 운영해야 한다. 다. 감독원장은 은행이 보고시점에 시장리스크 익스포져를 의도적으로 현저히 낮추는 행위를 하지 않도록 다양한 조 치를 취할 수 있으며, 은행이 특정 시점에서 소요자기자본을 충족하지 못하는 경우 이를 지체 없이 개선하도록 요 구해야 한다."},{"n":"32","t":"시장리스크 소요자기자본의 연결기준","p":"제5장 시장리스크 소요자기자본","b":"가. 은행은 <별표3>2.가.에 따라 연결기준으로 시장리스크 소요자기자본을 산출해야 한다. 이 경우 은행은 <별표3>2. 가.(2)에 따라 연결대상에 해당하는 원본 또는 이익보전계약이 있는 신탁자산 중 제2장에 따라 트레이딩계정으로 분류되는 상품을 시장리스크 소요자기자본 산출대상에 포함해야 한다. 나. 연결기준으로 트레이딩계정을 운영하고 소요자기자본을 산출하는 그룹으로서 감독원장이 인정하는 경우, 은행은 그룹 내 다른 자회사 간 포지션을 상쇄하여 소요자기자본을 산출할 수 있다. 이 경우 은행이 의결권이 있는 주식 모두를 보유하지 않은 자회사의 상품에 대해서는 「한국채택국제회계기준」을 적용해야 한다. 다. 나.에도 불구하고 해외 자회사의 이익을 본점으로 신속하게 이전하는데 제약이 있거나 법적 또는 절차적 장애로 인하여 적시에 연결기준으로 리스크를 관리하기 어려운 경우, 감독원장은 그룹 내 다른 자회사 간 포지션을 상쇄 하는 것을 제한할 수 있다. 라. 그룹 내 중대한 불균형을 효과적으로 감독하기 위해 감독원장은 개별기준으로 그룹 내 자회사의 시장리스크를 지 속적으로 모니터링할 수 있는 권한을 가지며, 특히 은행이 특정 포지션을 소요자기자본 산출대상에서 제외하고자 보고일에 해당 포지션을 숨기는 행위를 하지 않도록 해야 한다."},{"n":"33","t":"해외 자회사 등에 대한 특례","p":"제5장 시장리스크 소요자기자본","b":"해외 자회사 등이 이 기준과 유사한 기준에 따라 개별기준으로 시장리스크 소요자기 자본을 산출하고 있는 경우, 32.가.에도 불구하고 은행은 해당 자회사를 연결대상에서 제외하고 소요자기자본을 산 출한 후 해당 자회사의 소요자기자본을 단순 합산하여 시장리스크 소요자기자본을 산출할 수 있다."},{"n":"34","t":"시장리스크 소요자기자본의 산출방법","p":"제5장 시장리스크 소요자기자본","b":"가. 은행은 제6장의 표준방법으로 시장리스크 소요자기자본을 산출해야 한다. 나. 가.에도 불구하고 트레이딩계정의 규모가 작거나 비교적 단순한 은행은 다음 요건을 모두 충족하는 경우 감독원장 의 승인을 받아 제7장의 간편법으로 소요자기자본을 산출할 수 있다. (1) 트레이딩계정 합계액이 일별 최대 5천억원 미만일 것 (2) 「금융산업의 구조개선에 관한 법률」의 금융체계상 중요한 금융기관에 해당하지 않을 것 (3) 36.의 상관관계 트레이딩 포트폴리오를 보유하지 않을 것 다. 표준방법을 적용 중인 은행은 트레이딩계정의 규모가 작거나 비교적 단순하며 나.(1)부터 (3)까지의 요건을 모두 충족하는 자회사에 대하여 감독원장의 승인을 받아 간편법으로 소요자기자본을 산출할 수 있다. 다만, 간편법을 적용하려는 자회사가 하나 이상인 경우 해당 자회사 전체 트레이딩계정 합계액이 나.(1)의 요건을 충족해야 한다. 라. 간편법을 적용 중인 은행 또는 특정 자회사의 시장리스크의 규모가 크거나 비교적 복잡하다고 판단되는 경우, 감 독원장은 간편법 적용에 대한 승인을 취소할 수 있다."},{"n":"35","t":"시장리스크 소요자기자본의 보고","p":"제5장 시장리스크 소요자기자본","b":"가. 은행은 시장리스크 소요자기자본을 감독원장에게 월 단위로 산출ㆍ보고해야 한다. 다만, 비은행 자회사의 경우 감 독원장의 승인을 받아 분기 단위로 산출ㆍ보고할 수 있다. 나. 가.에도 불구하고 감독원장은 은행에 특정 시점을 기준으로 소요자기자본을 산출ㆍ보고하도록 요구할 수 있다."},{"n":"36","t":"상관관계 트레이딩 포트폴리오","p":"제5장 시장리스크 소요자기자본","b":"가. 은행은 관련 요건을 모두 충족하는 유동화상품과 특정순위부도종결조건(이하 \"NTD\"(nth-to-default)라 한다) 신용 파생상품의 집합을 \"상관관계 트레이딩 포트폴리오\"(이하 \"CTP\"(correlation trading portfolio)라 한다)로 지정하 고 다른 유동화상품과 구분하여 소요자기자본을 산출해야 한다. 나. CTP에 포함되는 상품은 다음 요건을 모두 충족해야 한다. (1) 재유동화상품이 아니며, 트렌치의 이익을 비례적으로 제공하지 않는 유동화상품의 파생상품 또한 아닐 것 (2) 기초자산이 다음 중 어느 하나일 것 (가) 유동성이 충분한 양방향시장15)이 존재하는 단일 기초자산 상품. 이 경우 단일 기초자산 신용파생상품 또한 포 함한다. (나) 기초자산이 (가)의 상품인 지수상품 (3) 기초자산이 다음 중 어느 하나에도 해당하지 않을 것 (가) <별표3>39.의 소매, <별표3>40.의 주거용 주택담보 및 <별표3>41.의 상업용 부동산담보 익스포져 (나) 특수목적기구에 대한 청구권 다. 나.에 따라 CTP에 포함되는 상품의 헤지거래는 유동화상품 또는 NTD 신용파생상품이 아닐지라도 CTP에 포함될 과 합리적으로 관련되어 있거나, 신뢰할 수 있고 경쟁적인 매입ㆍ매도호가가 1일 이내 결정될 수 있어 해당 가격으로 비교 적 짧은 시간 내 관행에 따라 거래가 체결될 수 있는 시장을 말한다. 수 있다."},{"n":"37","t":"구조적 외환포지션","p":"제5장 시장리스크 소요자기자본","b":"가. 은행은 다음 요건을 모두 충족하는 외환포지션(이하 \"구조적 외환포지션\"이라 한다)을 감독원장의 승인을 받아 외 환리스크 소요자기자본 산출대상에서 제외할 수 있다. 다만, 자기자본비율의 민감도를 중립화하는 수준까지 6개월 이상 제외하는 경우에만 허용된다. (1) 환율 변동에 따른 자기자본비율의 비우호적인 변동을 부분적으로 또는 완전히 헤지하려는 목적으로 보유하고 있 을 것16) (2) 해외통화로 표시되는 비연결 관계회사, 연결 자회사 또는 지점에 대한 투자로 발생하는 외환포지션과 같이 비거 래적인 성격을 가질 것 나. 구조적 외환포지션을 제외하려는 은행은 구조적 외환포지션의 지정ㆍ변경에 대한 리스크관리 정책을 마련하여 감 독원장의 승인을 받아야 하며, 해당 정책에 따라 구조적 외환포지션을 지정하고 변경해야 한다. 다. 구조적 외환포지션을 제외하는 은행은 이를 관련 자산 또는 그 밖의 항목의 잔여기간동안 일관되게 적용해야 하 며, 제외하는 포지션과 그 금액을 문서화하고 감독원장이 요구하는 경우 이를 지체 없이 제출해야 한다."},{"n":"38","t":"자기자본 공제항목의 시장리스크","p":"제5장 시장리스크 소요자기자본","b":"가. 자기자본 공제항목에서 발생하는 외환포지션은 시장리스크 소요자기자본 산출대상에서 제외한다. 나. 다음 항목을 포함하는 자본증권 등으로서 자기자본에서 공제하거나 위험가중치 1,250%가 적용되는 경우 시장리 스크 소요자기자본 산출대상에서 제외한다. (1) 은행 자신의 적격 자본증권 (2) 자기자본에서 공제하도록 요구되는 다른 은행, 증권회사 또는 그 밖의 금융회사의 적격 자본증권 및 무형자산 (3) 트레이딩계정의 다른 은행, 증권회사 또는 그 밖의 금융회사의 자본증권. 다만, 은행이 시장조성활동을 활발히 수행하며 해당 상품의 매매에 적합한 시스템ㆍ통제체계를 보유한다는 사실을 입증하고 감독원장의 승인을 받아 야 한다. 들어, 자본이 국내통화로 표시되고 포트폴리오가 완전히 매치되는 외화자산과 외화부채로 구성되는 경우 국내통화가 평가절 하되면 자기자본비율이 하락한다. 한편, 자기자본비율의 변동을 헤지하기 위해 국내통화 매도포지션을 보유함으로써 자기자 본비율의 변동을 방어할 수 있지만 국내통화가 평가절상되면 손실이 발생할 수 있다."},{"n":"39","t":"표준방법에 의한 소요자기자본","p":"제6장 시장리스크 표준방법 제1절 표준방법에 의한 소요자기자본","b":"가. 표준방법에 의한 시장리스크 소요자기자본은 제2절부터 제4절까지에 따라 산출되는 다음 소요자기자본을 단순 합 산하여 산출한다. (1) 민감도방법에 의한 소요자기자본: 금리ㆍ신용스프레드ㆍ주가ㆍ환율ㆍ일반상품 가격 등의 비우호적인 변동으로 발 생할 수 있는 선형ㆍ비선형 손실에 대한 소요자기자본 (2) 부도리스크 소요자기자본: 민감도방법에 의한 소요자기자본에서 고려되지 않는 갑작스러운 부도로 발생할 수 있 는 손실에 대한 소요자기자본 (3) 잔여리스크 소요자기자본: 민감도방법에 의한 소요자기자본과 부도리스크 소요자기자본에 의해서도 고려되지 않 는 그 밖의 손실에 대한 소요자기자본 나. 표준방법에 의한 시장위험가중자산은 가.에 따라 산출되는 소요자기자본에 12.5를 곱하여 산출한다. 제1관 개요"},{"n":"40","t":"정의","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"이 절에서 사용하는 용어의 뜻은 다음과 같다. (1) \"리스크요소\"란 상품의 가치변동에 영향을 미치는 시장리스크의 원천인 요소로 가치평가모형의 변수를 말한다. (2) \"리스크군\"이란 다음에 따라 유사한 리스크요소를 구분하는 단위를 말한다. (가) 일반금리리스크 (나) 비유동화 신용스프레드리스크 (다) 유동화(CTP 제외) 신용스프레드리스크 (라) 유동화(CTP) 신용스프레드리스크 (마) 주식리스크 (바) 외환리스크 (사) 일반상품리스크 (3) \"버킷\"이란 하나의 리스크군 내에서 유사한 리스크요소를 구분하는 단위를 말한다. (4) \"민감도\"란 특정 리스크요소의 변동에 따른 상품의 가치변동 정도를 말한다."},{"n":"41","t":"민감도방법에 의한 소요자기자본의 구조","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 민감도방법에 의한 소요자기자본은 40.(2).(가)부터 (사)까지의 리스크군 단위의 소요자기자본으로 구분된다. 나. 가.의 각 리스크군 단위의 소요자기자본은 다시 다음 소요자기자본으로 구분된다. (1) 델타리스크 소요자기자본: 가격 관련 리스크요소의 비우호적인 변동으로 발생할 수 있는 선형 손실에 대한 소요 자기자본 (2) 베가리스크 소요자기자본: 변동성 관련 리스크요소의 비우호적인 변동으로 발생할 수 있는 선형 손실에 대한 소 요자기자본 (3) 커버쳐리스크 소요자기자본: 가격 관련 리스크요소의 비우호적인 변동으로 가.의 손실을 초과하여 발생할 수 있 는 비선형 손실에 대한 소요자기자본"},{"n":"42","t":"민감도방법에 의한 소요자기자본의 산출대상","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 델타리스크 소요자기자본은 트레이딩데스크가 보유하는 모든 상품을 대상으로 산출한다. 다만, 비정형 기초자산만 이 상품의 가치에 영향을 미치는 상품은 제외할 수 있다. 나. 베가ㆍ커버쳐리스크 소요자기자본은 다음 상품을 포함하는 옵션성 상품17)을 대상으로 산출한다. (1) 조기상환권이 내재된 상품18) (2) 현금흐름이 기초자산의 비선형 함수인 상품 다. 나.에도 불구하고 옵션성 상품이 아닌 상품 또한 커버쳐리스크 소요자기자본 산출대상에 포함할 수 있다. 이 경우 보유하는 모든 상품을 일괄적으로 포함해야 하며, 지속적이고 일관되게 적용해야 한다."},{"n":"43","t":"민감도방법에 의한 소요자기자본의 산출방법","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 민감도방법에 의한 소요자기자본은 상관관계 시나리오별 소요자기자본 중 가장 큰 것으로 한다. 연계 조기상환권 등 옵션 내재 상품 또한 옵션성 상품에 해당한다. 자는 옵션을 행사하고 잔여만기동안 낮은 시장금리로 다시 차입하여 자본이익을 얻을 수 있다. 조기상환권은 일반금리ㆍ신용 스프레드리스크의 베가ㆍ커버쳐리스크 소요자기자본 산출대상이다. 해당 옵션이 행동옵션인 경우 제4절의 잔여리스크 소요 자기자본 산출대상에도 해당하며, 가치평가모형에 행동패턴을 반영해야 한다. 유동화상품에 조기상환권이 내재된 경우 또한 잔여리스크 소요자기자본 산출대상인지 판단해야 한다. 나. 가.의 상관관계 시나리오별 소요자기자본은 높은ㆍ중간ㆍ낮은 상관관계 시나리오별로 다음 절차에 따라 산출한다. (1) 상관관계 시나리오를 고려하여 리스크요소 간 상관계수와 버킷 간 상관계수를 46.에 따라 결정한다. (2) (1)에서 결정된 상관계수를 적용하여 44. 및 45.에 따라 리스크군 단위의 델타ㆍ베가ㆍ커버쳐리스크 소요자기자 본을 산출한다. (3) 모든 리스크군 단위의 델타ㆍ베가ㆍ커버쳐리스크 소요자기자본을 단순 합산한다. 다. 특정 트레이딩데스크에 대하여 개별기준으로 소요자기자본을 산출하는 경우, 민감도방법에 의한 소요자기자본은 해당 트레이딩데스크가 보유하는 상품에 대해서만 산출된 상관관계 시나리오별 소요자기자본 중 큰 것으로 한다."},{"n":"44","t":"델타ㆍ베가리스크 소요자기자본의 산출방법","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 특정 리스크군 단위의 델타ㆍ베가리스크 소요자기자본은 해당 리스크군의 모든 버킷 단위의 소요자기자본을 합산 하여 산출하며, 버킷 단위의 소요자기자본은 해당 버킷의 모든 리스크요소 단위의 소요자기자본을 합산하여 산출 한다. 나. 가.의 리스크요소 단위의 델타ㆍ베가리스크 소요자기자본은 다음 절차에 따라 산출한다. (1) 제2관에서 정하는 해당 리스크군의 모든 델타ㆍ베가 리스크요소에 대하여 모든 관련 상품의 델타ㆍ베가 민감도 를 제3관에 따라 산출한다. (2) 리스크요소 에 대한 모든 민감도 상쇄하여 순민감도 를 산출한다. 이 경우 리스크요소가 같은 모든 민감도는 상품 유형과 무관하게 상쇄할 수 있다. (3) 리스크요소 를 버킷에 할당하고, 다음 식에 따라 순민감도 에 위험가중치를 적용하여 리스크요소 단위의 소 요자기자본 를 산출한다. 이 경우 버킷과 위험가중치 는 제4관에 따라 결정한다. 다. 가.의 버킷 단위의 델타ㆍ베가리스크 소요자기자본 는 버킷 의 모든 리스크요소 단위의 소요자기자본을 다음 식에 따라 합산하여 산출한다. 이 경우 리스크요소 와 간 상관계수 는 상관관계 시나리오를 고려하여 46.에 따라 결정한다. max ≠ 라. 가.의 리스크군 단위의 델타ㆍ베가리스크 소요자기자본 는 해당 리스크군의 모든 버킷 단위의 소요자기 자본을 다음 식에 따라 합산하여 산출한다. 이 경우 버킷 와 간 상관계수 는 상관관계 시나리오를 고려하여 46.에 따라 결정한다. ≠ . 다만, 이면 max min ≠ . 다만, 이면 max min ≠"},{"n":"45","t":"커버쳐리스크 소요자기자본의 산출방법","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 특정 리스크군 단위의 커버쳐리스크 소요자기자본은 해당 리스크군의 모든 버킷 단위의 소요자기자본을 합산하여 산출하며, 버킷 단위의 소요자기자본은 해당 버킷의 모든 리스크요소 단위의 소요자기자본을 합산하여 산출한다. 나. 가.의 리스크요소 단위의 커버쳐리스크 소요자기자본은 상방 충격에 대한 소요자기자본 과 하방 충격에 대 한 소요자기자본 으로 구분되며, 제2관에서 정하는 해당 리스크군의 모든 커버쳐 리스크요소 에 대하여 다음 식에 따라 산출한다. , 리스크요소 의 관련 상품 리스크요소 의 현재 수준 리스크요소 의 현재 수준이 인 경우 상품 의 가치 리스크요소 의 상방 충격 시 상품 의 가치 리스크요소 의 하방 충격 시 상품 의 가치 리스크요소 의 위험가중치 리스크요소 에 대응하는 상품 의 델타 민감도 (1) 위험가중치 는 리스크요소에 적용하는 충격의 수준으로 제4관에 따라 결정한다. (2) 델타 민감도 는 다음에 따라 결정한다. (가) 일반금리ㆍ신용스프레드ㆍ일반상품리스크의 경우, 커버쳐 리스크요소 에 대응하는 모든 델타 리스크요소에 대 한 민감도를 합산한 값으로 한다. (나) 주식ㆍ외환리스크의 경우, 리스크요소 에 대한 상품 의 델타 민감도로 한다. 다. 가.의 버킷 단위의 소요자기자본은 다음 절차에 따라 산출한다. (1) 버킷 의 모든 리스크요소 단위의 소요자기자본을 다음 식에 따라 합산하여 상방 충격에 대한 버킷 단위의 소요 자기자본 와 하방 충격에 대한 버킷 단위의 소요자기자본 을 산출한다. 이 경우 리스크요소 와 간 상 관계수 는 상관관계 시나리오를 고려하여 46.에 따라 결정한다. max max , max max - ≠ ≠ : 이고 이면 0, 그렇지 않으면 1 (2) 다음 식에 따라 상방 충격에 대한 소요자기자본 와 하방 충격에 대한 소요자기자본 중 큰 것을 버킷 단 이면 상방 충격을 선택한 것으로, 위의 소요자기자본 로 한다.19) 인 경우 그렇지 않으면 하방 충격을 선택한 것으로 본다. max 라. 가.의 리스크군 단위의 소요자기자본 는 해당 리스크군의 모든 버킷 단위의 소요자기자본을 다음 식에 따라 합산하여 산출한다. 이 경우 버킷 와 간 상관계수 는 상관관계 시나리오를 고려하여 46.에 따라 결정 한다. max ≠ , 하방 충격 선택한 경우 상방 충격을 선택한 경우 이고 이면 0, 그렇지 않으면 1"},{"n":"46","t":"상관관계 시나리오","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"특정 상관관계 시나리오의 리스크요소 와 간 상관계수 와 버킷 와 간 상관계수 는 다음에 따라 결정한다. (1) 중간 상관관계 시나리오의 경우, 제4관에 따라 결정한다. (2) 높은 상관관계 시나리오의 경우, (1)의 상관계수 와 를 이용하여 다음 식에 따라 결정한다. min , min 하는 충격의 방향이 다를 수 있다. (3) 낮은 상관관계 시나리오의 경우, (1)의 상관계수 와 를 이용하여 다음 식에 따라 결정한다. , max max 제2관 리스크요소"},{"n":"47","t":"일반금리 리스크요소","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 일반금리 델타 리스크요소는 무위험금리ㆍ인플레이션율ㆍ이종통화 베이시스20)로 다음과 같이 정의된다. (1) 무위험금리 델타 리스크요소: 다음에 따라 정의된다. (가) 통화별 무위험금리 커브 (나) 만기 0.25년ㆍ0.5년ㆍ1년ㆍ2년ㆍ3년ㆍ5년ㆍ10년ㆍ15년ㆍ20년ㆍ30년21) (2) 인플레이션율 델타 리스크요소는 통화별 인플레이션율 커브이다.22) (3) 이종통화 베이시스 델타 리스크요소는 통화별 USD 또는 EUR 기준 베이시스 커브이다.23) 나. 일반금리 베가 리스크요소는 기초자산이 일반금리 델타 리스크요소인 옵션의 내재변동성으로 다음에 따라 정의된 다.24) (1) 옵션 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 (2) 옵션 만기 시 기초자산 잔여만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 다. 일반금리 커버쳐 리스크요소는 통화별 모든 무위험금리 커브이다.25) 관련되는 무위험금리와 함께 리스크요소로 고려되어야 한다. 선형보간 등 여러 방법을 이용할 수 있다. 다만, 독립적인 리스크 통제 조직이 경영진에게 시장리스크 또는 실제손익을 보고 할 때 이용하는 가치평가모형과 일관성이 있는 방법이어야 한다. 야 한다. 15개월ㆍ18개월ㆍ21개월이고 옵션 만기 시 기초자산 잔여만기가 모두 3개월인 4개 옵션으로 분해할 수 있다. 이에 따라 선 도캡의 내재변동성을 옵션 만기 12개월ㆍ15개월ㆍ18개월ㆍ21개월에, 그리고 옵션 만기 시 기초자산 잔여만기 3개월에 할당 해야 한다. 평행이동하여 산출해야 한다. 예를 들어, EURㆍEONIAㆍ3개월 EURIBORㆍ6개월 EURIBOR 커브의 커버쳐리스크 소요자기 자본은 해당 커브를 동시에 평행이동하여 산출한다. 인플레이션율과 이종통화 베이시스는 커버쳐 리스크요소로 고려하지 않"},{"n":"48","t":"무위험금리 커브","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 은행은 무위험금리 커브를 구축할 때 다음 중 어느 하나를 이용해야 한다. (1) OIS(overnight indexed swaps) 커브와 같이 트레이딩계정 상품 중 신용리스크가 가장 작은 단기금융시장 상품 (2) IBOR(interbank offered rates) 커브와 같이 시가평가에 이용하는 하나 이상의 스왑커브 (3) 국채커브. 다만, (1)부터 (2)까지에서 시장데이터가 충분하지 않은 경우에만 허용되며, 이 경우 국채금리를 무위험 금리와 신용스프레드로 적절히 분해하거나 국채금리 민감도를 무위험금리와 신용스프레드 민감도로 동일하게 적 용하여 신용스프레드리스크를 산출해야 한다. 나. 다음 중 어느 하나에 해당하는 두 커브는 다른 커브로 본다.26) (1) OIS 커브와 IBOR 커브 (2) 만기가 다른 두 IBOR 커브 (3) 역내 통화커브와 역외 통화커브"},{"n":"49","t":"비유동화 신용스프레드 리스크요소","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 비유동화 신용스프레드 델타 리스크요소는 다음에 따라 정의된다. (1) 발행자별 신용스프레드 커브. 이 경우 채권커브와 CDS 커브는 다른 커브로 본다. (2) 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 나. 비유동화 신용스프레드 베가 리스크요소는 발행자별 신용스프레드 옵션의 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 내재 변동성이다. 다. 비유동화 신용스프레드 커버쳐 리스크요소는 발행자별 모든 신용스프레드 커브이다."},{"n":"50","t":"유동화(CTP 제외","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"신용스프레드 리스크요소) 가. 유동화(CTP 제외) 신용스프레드 델타 리스크요소는 다음에 따라 정의된다. (1) 트렌치별 신용스프레드 커브. 이 경우 채권커브와 CDS 커브는 다른 커브로 본다. 는다. 한 역내 통화커브와 역외 통화커브는 각각 다른 커브이다. (2) 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 나. 유동화(CTP 제외) 신용스프레드 베가 리스크요소는 트렌치별 신용스프레드 옵션의 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ 10년 내재변동성이다. 다. 유동화(CTP 제외) 신용스프레드 커버쳐 리스크요소는 트렌치별 모든 신용스프레드 커브이다."},{"n":"51","t":"유동화(CTP","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"신용스프레드 리스크요소) 가. 유동화(CTP) 신용스프레드 델타 리스크요소는 다음에 따라 정의된다. (1) 기초자산별 신용스프레드 커브. 이 경우 채권커브와 CDS 커브는 다른 커브로 본다. (2) 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 나. 유동화(CTP) 신용스프레드 베가 리스크요소는 기초자산별 신용스프레드 옵션의 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10 년 내재변동성이다. 다. 유동화(CTP) 신용스프레드 커버쳐 리스크요소는 기초자산별 모든 신용스프레드 커브이다."},{"n":"52","t":"주식 리스크요소","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 주식 델타 리스크요소는 주식별 현물가격과 환매조건부금리이다. 나. 주식 베가 리스크요소는 주식별 현물가격 옵션의 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 내재변동성이다. 다. 주식 커버쳐 리스크요소는 주식별 현물가격이다."},{"n":"53","t":"외환 리스크요소","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 외환 델타 리스크요소는 보고통화에 대한 통화별 현물환율이다.27) 나. 외환 베가 리스크요소는 환율별 외환 옵션의 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 내재변동성이다. 다. 외환 커버쳐 리스크요소는 보고통화에 대한 통화별 현물환율이다. 라. 가.부터 다.까지에서 같은 통화에 대하여 다음 중 어느 하나에 해당하는 두 환율은 같은 환율로 본다. KRW인 경우 USD/JPY 선도환 거래의 리스크요소는 USD/KRW과 JPY/KRW 환율이다. 다만 54.에 따라 USD를 기준통화로 지정하는 경우, JPY/USD 환율에 대한 외환리스크와 KRW/USD 환율에 대한 외화환산리스크를 포함하여 소요자기자본을 산 출하고, 이를 USD/KRW 현물환율로 환산하여 KRW 표시 소요자기자본을 산출할 수 있다. (1) 역내 통화와 역외 통화 (2) 차액결제 통화와 실물인도 통화"},{"n":"54","t":"기준통화법","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 53.가.와 다.에도 불구하고 은행은 감독원장의 승인을 받아 보고통화가 아닌 통화를 기준통화로 지정하여 기준통 화에 대한 통화별 현물환율을 외환 델타ㆍ커버쳐 리스크요소로 대체(이하 \"기준통화법\"이라 한다)할 수 있다. 나. 기준통화법을 적용하려는 은행은 오직 하나의 통화만을 기준통화로 지정해야 하며, 기준통화에 대한 외환리스크 뿐만 아니라 보고통화와 기준통화 간 외화환산리스크 또한 포함하여 외환리스크 소요자기자본을 산출해야 한다. 다. 기준통화법을 적용하려는 은행은 기준통화법을 적용해도 소요자기자본이 부적절하게 감소하지 않는 등 기준통화 가 은행 포트폴리오를 적정하게 대표한다는 사실을 입증해야 한다."},{"n":"55","t":"일반상품 리스크요소","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 일반상품 델타 리스크요소는 일반상품별 현물가격으로 다음에 따라 정의된다. 다만, 기초자산이 선도가격인 거래 가 활성화된 경우28)은 선도가격을 리스크요소로 할 수 있다. (1) 인도지역에 대한 법적 조항29) (2) 만기 0년ㆍ0.25년ㆍ0.5년ㆍ1년ㆍ2년ㆍ3년ㆍ5년ㆍ10년ㆍ15년ㆍ20년ㆍ30년 나. 일반상품 베가 리스크요소는 일반상품별 현물가격 옵션의 만기 0.5년ㆍ1년ㆍ3년ㆍ5년ㆍ10년 내재변동성이다. 다. 일반상품 커버쳐 리스크요소는 일반상품별 현물 또는 선물가격 커브이다. 제3관 민감도"},{"n":"56","t":"민감도의 산출","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 은행은 민감도를 57.부터 62.까지에 따라 보고통화 표시로 산출해야 한다. 다만, 유사한 결과를 얻을 수 있다는 사실을 입증하는 경우 57.부터 62.까지와 달리 산출된 민감도를 소요자기자본 산출에도 이용할 수 있다. 나. 민감도는 독립적인 리스크 통제 조직이 경영진에게 시장리스크 또는 실제손익을 보고할 때 이용하는 상품 가격 또는 가치평가모형에 근거해야 한다. 도 인도지역이 해당 5개 항구로 동일하게 지정되어야 한다. 인도지역이 5개 항구 중 4개 항구만으로 지정된 거래는 같은 거 래로 볼 수 없다. 다. 나.의 상품 가격 또는 가치평가모형이 소요자기자본 산출에도 적합하다는 사실을 입증할 수 있도록, 은행은 제3장 에 따라 건전한 가치평가에 대한 기준을 마련ㆍ준수해야 한다."},{"n":"57","t":"일반금리 델타 민감도","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 일반금리 델타 민감도는 다음 식에 따라 무위험금리의 +1bp 절대적 변동에 따른 상품 가치의 변동을 1bp로 나누 어 산출한다. ⋯ ⋯ 만기 의 무위험금리 무위험금리의 함수로서 상품 의 가치 나. 인플레이션율 델타 민감도는 다음 식에 따라 인플레이션율 커브의 +1bp 절대적 변동에 따른 상품 가치의 변동을 1bp로 나누어 산출한다. ⋯ ⋯ 만기 의 무위험금리 인플레이션율 커브 무위험금리와 인플레이션율의 함수로서 상품 의 가치 다. 이종통화 베이시스 델타 민감도는 다음 식에 따라 이종통화 베이시스 커브의 +1bp 절대적 변동에 따른 상품 가 치의 변동을 1bp로 나누어 산출한다. ⋯ ⋯ 만기 의 무위험금리 이종통화 베이시스 커브 무위험금리와 이종통화 베이시스의 함수로서 상품 의 가치"},{"n":"58","t":"신용스프레드 델타 민감도","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"신용스프레드 델타 민감도는 다음 식에 따라 신용스프레드의 +1bp 절대적 변동에 따 른 상품 가치의 변동을 1bp로 나누어 산출한다. ⋯ ⋯ 만기 의 무위험금리 만기 의 신용스프레드 무위험금리 및 신용스프레드의 함수로서 상품 의 가치"},{"n":"59","t":"주식 델타 민감도","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 주식 현물가격 델타 민감도는 다음 식에 따라 주식 현물가격의 +1%p 상대적 변동에 따른 상품 가치의 변동을 1%로 나누어 산출한다. ⋯ ⋯ 주식 의 현물가격 주식 현물가격의 함수로서 상품 의 가치 나. 주식 환매조건부금리 델타 민감도는 다음 식에 따라 주식 환매조건부금리 커브의 +1bp 절대적 변동(평행이동)에 따른 상품 가치 의 변동을 1bp로 나누어 산출한다. ⋯ ⋯ 주식 의 환매조건부금리 커브 주식 환매조건부금리 커브의 함수로서 상품 의 가치"},{"n":"60","t":"외환 델타 민감도","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"외환 델타 민감도는 다음 식에 따라 현물환율의 +1%p 상대적 변동에 따른 상품 가치의 변동 을 1%로 나누어 산출한다. ⋯ ⋯ 보고통화(또는 기준통화) 한 단위에 대한 통화 의 현물환율 현물환율의 함수로서 상품 의 가치"},{"n":"61","t":"일반상품 델타 민감도","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"일반상품 델타 민감도는 다음 식에 따라 일반상품 가격의 1%p 상대적 변동에 따른 상품 가치의 변동을 1%로 나누어 산출한다. ⋯ ⋯ 일반상품 의 가격 일반상품 가격의 함수로서 상품 의 가치"},{"n":"62","t":"베가 민감도","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 베가 민감도는 다음 식에 따라 산출한다. 옵션 의 내재변동성 내재변동성의 함수로서 상품 의 가치 나. 은행은 가.에 따라 베가 민감도를 산출할 때 다음 요건을 모두 충족해야 한다. (1) 내재변동성에 대한 가정은 다음 중 어느 하나를 적용할 것 (가) 특정 수준의 행사가격에 대하여 내재변동성이 일정(sticky strike) (나) 특정 수준의 델타에 대하여 내재변동성이 일정(sticky delta) (2) 가치평가모형의 확률분포에 대한 가정은 리스크군별로 다음에 따라 적용할 것 (가) 일반금리ㆍ신용스프레드리스크의 경우, 정규분포와 로그정규분포 중 어느 하나를 가정 (나) 주식ㆍ외환ㆍ일반상품리스크의 경우, 로그정규분포를 가정 (3) CVA는 고려하지 않을 것"},{"n":"63","t":"비정형 옵션의 처리","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 만기가 없는 옵션은 내재변동성을 리스크요소를 정의하는 옵션 만기 중 가장 긴 만기에 할당해야 한다. 이 경우 은행은 해당 옵션을 잔여리스크 소요자기자본 산출대상에 포함해야 한다. 나. 행사가격 또는 배리어가 없거나 복수인 옵션은 가치평가할 때 가정하는 행사가격 또는 만기를 이용할 수 있다. 이 경우 은행은 해당 옵션을 잔여리스크 소요자기자본 산출대상에 포함해야 한다. 다. CTP에 포함되는 유동화상품의 트렌치는 델타ㆍ커버쳐리스크 소요자기자본 산출대상에 포함해야 하나 내재변동성 이 없으므로 베가리스크 소요자기자본 산출대상에는 포함되지 않는다. 제4관 버킷, 위험가중치 및 상관계수"},{"n":"64","t":"일반금리 델타리스크의 버킷ㆍ위험가중치ㆍ상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 일반금리 델타리스크의 버킷은 개별 통화이다. 나. 일반금리 델타 위험가중치는 무위험금리의 경우 만기별로 다음 표에 따라 적용하며, 인플레이션율과 이종통화 베 이시스의 경우 1.6%를 적용한다. 다만, 고유동성 통화에 대한 위험가중치는 로 나눈 것을 적용할 수 있다. 이 경우 \"고유동성 통화\"란 EURㆍUSDㆍGBPㆍAUDㆍJPYㆍSEKㆍCAD와 보고통화를 말한다. 만 기 0.25년 0.5년 1년 2년 3년 5년 10년 15년 20년 30년 위험가중치 1.7% 1.7% 1.6% 1.3% 1.2% 1.1% 1.1% 1.1% 1.1% 1.1% 다. 일반금리 델타 리스크요소 와 간 상관계수 는 다음에 따라 적용한다. (1) 무위험금리 와 간 상관계수 은 커브가 같으나 만기가 다르면 다음 표에 따라 적용하고, 만기가 같으나 커 브가 다르면 99.90%를 적용하고, 커브와 만기가 모두 다르면 다음 표의 상관계수에 99.90%를 곱하여 적용한 다.30) 만 기 0.25년 0.5년 1년 2년 3년 5년 10년 15년 20년 30년 0.25년 - 97.0% 91.4% 81.1% 71.9% 56.6% 40.0% 40.0% 40.0% 40.0% 0.50년 - - 97.0% 91.4% 86.1% 76.3% 56.6% 41.9% 40.0% 40.0% 1년 - - - 97.0% 94.2% 88.7% 76.3% 65.7% 56.6% 41.9% 2년 - - - - 98.5% 95.6% 88.7% 82.3% 76.3% 65.7% 3년 - - - - - 98.0% 93.2% 88.7% 84.4% 76.3% 5년 - - - - - - 97.0% 94.2% 91.4% 86.1% 10년 - - - - - - - 98.5% 97.0% 94.2% 15년 - - - - - - - - 99.0% 97.0% 20년 - - - - - - - - - 98.5% 30년 - - - - - - - - - - (2) 무위험금리 와 인플레이션율 간 상관계수 은 40%를 적용한다. (3) 무위험금리 와 이종통화 베이시스 간 상관계수 은 0%를 적용한다. (4) 인플레이션율 와 간 상관계수 은 99.90%를 적용한다. (5) 인플레이션율 와 이종통화 베이시스 간 상관계수 은 0%를 적용한다. (6) 이종통화 베이시스 와 간 상관계수 은 0%를 적용한다. 다만, 48.나.(3)에도 불구하고 통화가 같은 역내 및 역외 통화 베이시스에 대한 소요자기자본은 단순 합산할 수 있다. 라. 일반금리 델타리스크의 버킷 와 간 상관계수 는 50%를 적용한다."},{"n":"65","t":"비유동화 신용스프레드 델타리스크의 버킷ㆍ위험가중치ㆍ상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 비유동화 신용스프레드 델타리스크의 버킷은 다음에 따라 결정한다. (1) 비유동화 신용스프레드 델타리스크의 버킷은 신용도와 산업부문에 따라 정의되며 다음 표와 같다. 이 경우 \"이중 상환청구권부 채권\"이란 「이중상환청구권부 채권 발행에 관한 법률」에 따라 발행되며 <별표3>35의2.다.부터 마. 까지의 요건을 모두 충족하는 채권을 말한다. 버킷 번호 신용도 산업부문 1 정부(중앙은행 포함), 국제개발은행 2 지방정부, 정부 보증 비금융, 교육, 공공행정 3 금융(정부 보증 금융 포함) 4 5 투자등급 원자재, 에너지, 산업, 농업, 제조업, 광업･채굴업 소비재･서비스, 운송･보관, 행정･보조 서비스 6 기술, 통신 7 의료, 수도･전기･가스 등, 전문직･기술직 8 이중상환청구권부 채권 9 정부(중앙은행 포함), 국제개발은행 10 지방정부, 정부 보증 비금융, 교육, 공공행정 11 금융(정부 보증 금융 포함) 12 투기등급･무등급 원자재, 에너지, 산업, 농업, 제조업, 광업･채굴업 13 소비재･서비스, 운송･보관, 행정･보조 서비스 14 기술, 통신 15 의료, 수도･전기･가스 등, 전문직･기술직 16 기타(신용도 무관) 17 투자등급 지수 18 투기등급 지수 (2) (1)에서 산업부문은 다음 요건을 모두 충족하여 결정해야 한다. (가) 시장에서 발행자의 산업부문을 그룹화할 때 통용되는 분류기준을 이용할 것 (나) 하나의 발행자는 하나의 산업부문에만 할당하며, 산업이 같은 발행자는 모두 같은 산업부문에 할당할 것 (다) 특정 산업부문에 할당할 수 없는 발행자는 버킷 16(기타)에 할당할 것 나. 비유동화 신용스프레드 델타 위험가중치는 버킷별로 다음 표에 따라 적용한다. 다만, 버킷 8에서 표준신용등급이 AA- 이상인 이중상환청구권부 채권은 위험가중치 1.5%를 적용할 수 있다. 버킷 번호 1 2 3 4 5 6 7 8 9 위험가중치 0.5% 1.0% 5.0% 3.0% 3.0% 2.0% 1.5% 2.5% 2.0% 버킷 번호 10 11 12 13 14 15 16 17 18 위험가중치 4.0% 12.0% 7.0% 8.5% 5.5% 5.0% 12.0% 1.5% 5.0% 다. 비유동화 신용스프레드 델타 리스크요소 와 간 상관계수 는 다음에 따라 적용한다. (1) 버킷 1에서 15의 리스크요소 간 상관계수는 다음 식에 따라 적용한다.31) - - 발행자가 같으면 100%, 그렇지 않으면 35% : 만기가 같으면 100%, 그렇지 않으면 65% : 커브가 같으면 100%, 그렇지 않으면 99.90% (2) 버킷 17에서 18(지수)의 리스크요소 간 상관계수는 다음 식에 따라 적용한다. - - 발행자가 같으면 100%, 그렇지 않으면 80% : 만기가 같으면 100%, 그렇지 않으면 65% : 커브가 같으면 100%, 그렇지 않으면 99.90% (3) 버킷 16(기타) 단위의 소요자기자본은 다음에 따라 산출한다. (가) 델타･베가리스크의 경우, 다음 식에 따라 절댓값을 단순 합산하여 산출한다. = 22.73%이다. (나) 커버쳐리스크의 경우, 다음 식에 따라 합산하여 산출한다. max max max 라. 비유동화 신용스프레드 델타리스크의 버킷 , 간 상관계수 는 다음 식에 따라 적용한다. 버킷 1에서 15이고 신용도가 다르면 50%, 그렇지 않으면 100% : 산업부문이 같으면 100%, 그렇지 않으면 다음 표에 따라 결정 - 버 킷 1, 9 2, 10 3, 11 4, 12 5, 13 6, 14 7, 15 8 16 17 18 1, 9 - 75% 10% 20% 25% 20% 15% 10% 0% 45% 45% 2, 10 - - 5% 15% 20% 15% 10% 10% 0% 45% 45% 3, 11 - - - 5% 15% 20% 5% 20% 0% 45% 45% 4, 12 - - - - 20% 25% 5% 5% 0% 45% 45% 5, 13 - - - - - 25% 5% 15% 0% 45% 45% 6, 14 - - - - - - 5% 20% 0% 45% 45% 7, 15 - - - - - - - 5% 0% 45% 45% 8 - - - - - - - - 0% 45% 45% 16 - - - - - - - - - 0% 0% 17 - - - - - - - - - - 75% 18 - - - - - - - - - - -"},{"n":"66","t":"유동화(CTP 제외","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"신용스프레드 델타리스크의 버킷･위험가중치･상관계수) 가. 유동화(CTP 제외) 신용스프레드 델타리스크의 버킷은 다음에 따라 결정한다. (1) 유동화(CTP 제외) 신용스프레드 델타리스크의 버킷은 신용도와 상품유형에 따라 정의되며 다음 표와 같다. 버킷 번호 신용도 1 2 상품유형 RMBS － 프라임 선순위 RMBS － 미드프라임 투자등급 3 RMBS － 서브프라임 4 CMBS 5 ABS － 학자금 대출 6 ABS － 신용카드 대출 7 ABS － 자동차 대출 8 CLO(CTP 제외) 9 RMBS － 프라임 10 RMBS － 미드프라임 11 RMBS － 서브프라임 12 비선순위 CMBS 13 투자등급 ABS － 학자금 대출 14 ABS － 신용카드 대출 15 ABS － 자동차 대출 16 CLO(CTP 제외) 17 RMBS － 프라임 18 RMBS － 미드프라임 19 RMBS － 서브프라임 20 21 투기등급･무등급 CMBS ABS － 학자금 대출 22 ABS － 신용카드 대출 23 ABS － 자동차 대출 24 CLO(CTP 제외) 25 기타(신용도 무관) (2) (1)에서 상품유형은 다음 요건을 모두 충족하여 결정해야 한다. (가) 시장에서 트렌치의 상품유형을 그룹화할 때 통용되는 분류기준을 이용할 것 (나) 하나의 트렌치는 하나의 상품유형에만 할당하며, 상품유형이 같은 트렌치는 모두 같은 상품유형에 할당할 것 (다) 특정 상품유형에 할당할 수 없는 트렌치는 버킷 25(기타)에 할당할 것 나. 유동화(CTP 제외) 신용스프레드 델타 위험가중치는 버킷별로 다음에 따라 적용한다. (1) 버킷 1에서 8(선순위 투자등급)의 위험가중치는 다음 표에 따라 적용한다. 버킷 번호 1 2 3 4 5 6 7 8 위험가중치 0.9% 1.5% 2.0% 2.0% 0.8% 1.2% 1.2% 1.4% (2) 버킷 9에서 16(비선순위 투자등급)의 위험가중치는 버킷 1에서 8(선순위 투자등급)중 상품유형이 같은 버킷의 위 험가중치에 1.25를 곱하여 적용한다. (3) 버킷 17에서 24(투기등급･무등급)의 위험가중치는 버킷 1에서 8(선순위 투자등급)중 상품유형이 같은 버킷의 위 험가중치에 1.75를 곱하여 적용한다. (4) 버킷 25(기타)의 위험가중치는 3.5%를 적용한다. 다. 유동화(CTP 제외) 신용스프레드 델타 리스크요소 와 간 상관계수 는 다음에 따라 적용한다. (1) 버킷 1에서 24의 리스크요소 간 상관계수는 다음 식에 따라 적용한다. 이 경우 \"트렌치가 같다\"란 명목금액 기준 으로 80% 이상 중복되는 경우를 말한다. - - 트렌치가 같으면 100%, 그렇지 않으면 40% : 만기가 같으면 100%, 그렇지 않으면 80% : 커브가 같으면 100%, 그렇지 않으면 99.90% (2) 버킷 25(기타) 단위의 소요자기자본은 다음에 따라 산출한다. (가) 델타･베가리스크의 경우, 다음 식에 따라 절댓값을 단순 합산하여 산출한다. (나) 커버쳐리스크의 경우, 다음 식에 따라 합산하여 산출한다. max max max 라. 유동화(CTP 제외) 신용스프레드 델타리스크의 버킷 와 간 상관계수 는 버킷 1에서 24에 해당하는 두 버킷 은 0%를 적용한다. 다만, 버킷 25(기타)는 다른 버킷과의 분산효과를 고려하지 않으며, 버킷 1에서 24의 소요자 기자본을 합산한 후 버킷 25의 소요자기자본을 단순 합산하여 리스크군 단위의 소요자기자본을 산출한다."},{"n":"67","t":"유동화(CTP","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"신용스프레드 델타리스크의 버킷, 위험가중치 및 상관계수) 가. 유동화(CTP) 신용스프레드 델타리스크의 버킷은 65.가.의 비유동화 신용스프레드 델타리스크의 경우와 같다. 다 만, 버킷 17에서 18(지수)은 제외한다. 나. 유동화(CTP) 신용스프레드 델타 위험가중치는 버킷별로 다음 표에 따라 적용한다. 버킷 번호 1 2 3 4 5 6 7 8 위험가중치 4.0% 4.0% 8.0% 5.0% 4.0% 3.0% 2.0% 6.0% 버킷 번호 9 10 11 12 13 14 15 16 위험가중치 13.0% 13.0% 16.0% 10.0% 12.0% 12.0% 12.0% 13.0% 다. 유동화(CTP) 신용스프레드 델타 리스크요소 와 간 상관계수 는 65.다.의 비유동화 신용스프레드 델타리스크 의 경우와 같다. 다만, 의 경우 커브가 다르면 99.00%로 적용한다. 라. 유동화(CTP) 신용스프레드 델타리스크의 버킷 와 간 상관계수 는 65.라.의 비유동화 신용스프레드 델타리 스크의 경우와 같다."},{"n":"68","t":"주식 델타리스크의 버킷･위험가중치･상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 주식 델타리스크의 버킷은 다음에 따라 결정한다. (1) 주식 델타리스크의 버킷은 시가총액, 경제수준 및 산업부문에 따라 정의되며 다음 표와 같다. 버킷 번호 시가총액 경제수준 1 소비재･서비스, 운송･보관, 행정･보조 서비스, 의료, 수도,･전기･가스 등 2 신흥시장 3 4 5 8 10 원자재, 에너지, 농업, 제조업, 광업･채굴업 소비재･서비스, 운송･보관, 행정･보조 서비스, 의료, 수도,･전기･가스 등 선진시장 7 통신, 산업 금융(정부 보증 금융 포함), 부동산, 기술 대형주 6 9 산업부문 통신, 산업 원자재, 에너지, 농업, 제조업, 광업･채굴업 금융(정부 보증 금융 포함), 부동산, 기술 소형주 신흥시장 버킷 1에서 4의 모든 산업부문 선진시장 버킷 5에서 8의 모든 산업부문 11 기타(시가총액, 경제수준 무관) 12 선진시장 대형주 지수(산업부문 무관) 13 기타 지수(산업부문 무관) (2) (1)에서 시가총액은 발행자와 같은 상장법인 또는 법인그룹이 글로벌 주식시장에서 발행한 총 발행주식의 시장가 치의 합이 2조원 이상이면 대형주로, 그렇지 않으면 소형주로 결정한다. 이 경우 \"법인그룹의 총 발행주식\"이란 해당 법인그룹의 모회사인 상장법인의 총 발행주식을 말하며, 어떠한 경우에도 상장법인인 여러 관계회사의 시 가총액을 합하여 대형주 또는 소형주인지를 결정할 수는 없다. (3) (1)에서 경제수준은 발행자의 소재국이 캐나다･미국･멕시코･유로존･비유로존 서유럽 국가(영국･노르웨이･스웨덴･ 덴마크･스위스)･일본･오세아니아(호주･뉴질랜드)･싱가포르･홍콩 특별행정구 중 하나이면 선진시장으로, 그렇지 않 으면 신흥시장으로 결정한다. (4) (1)에서 산업부문은 다음 요건을 모두 충족하여 결정해야 한다. (가) 시장에서 발행자의 산업부문을 그룹화할 때 통용되는 분류기준을 이용할 것 (나) 하나의 발행자는 하나의 산업부문에만 할당하며, 산업이 같은 발행자는 모두 같은 산업부문에 할당할 것 (다) 특정 산업부문에 할당할 수 없는 발행자는 버킷 11(기타)에 할당할 것 (5) (2)부터 (4)까지에서 다국적 또는 여러 산업부문에 해당하는 발행자는 주된 영업활동을 영위하는 국가 또는 산업 부문을 고려하여 버킷을 결정해야 한다. 나. 주식 델타 위험가중치는 버킷별로 다음 표에 따라 적용한다. 버킷 번호 1 2 3 4 5 6 7 현물가격 55% 60% 45% 55% 30% 35% 40% 환매조건부금리 0.55% 0.60% 0.45% 0.55% 0.30% 0.35% 0.40% 버킷 번호 8 9 10 11 12 13 - 현물가격 50% 70% 50% 70% 15% 25% - 환매조건부금리 0.50% 0.70% 0.50% 0.70% 0.15% 0.25% - 다. 주식 델타 리스크요소 와 간 상관계수 는 다음에 따라 적용한다. (1) 버킷 1에서 10의 리스크요소 간 상관계수는 다음에 따라 적용한다. (가) 현물가격 간 상관계수와 환매조건부금리 간 상관계수는 버킷 1에서 4(신흥시장 대형주)는 15%, 버킷 5에서 8 (선진시장 대형주)은 25%, 버킷 9(신흥시장 소형주)는 7.5%, 버킷 10(선진시장 소형주)은 12.5%, 버킷 12에서 13(지수)은 80%를 적용한다. (나) 현물가격과 환매조건부금리 간 상관계수는 발행자가 같으면 99.90%, 발행자가 다르면 (1)의 상관계수에 99.90%를 곱하여 적용한다. (2) 버킷 11(기타) 단위의 소요자기자본은 다음에 따라 산출한다. (가) 델타･베가리스크의 경우, 다음 식에 따라 절댓값을 단순 합산하여 산출한다. (나) 커버쳐리스크의 경우, 다음 식에 따라 합산하여 산출한다. max max max 라. 주식리스크 델타의 버킷 와 간 상관계수 는 버킷 1에서 10에 해당하는 두 버킷은 15%, 버킷 11과 다른 버 킷은 0%, 버킷 12에서 13에 해당하는 두 버킷은 75%, 그 밖의 두 버킷은 45%를 적용한다."},{"n":"69","t":"외환 델타리스크의 버킷･위험가중치･상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 외환 델타리스크의 버킷은 개별 통화 쌍이다. 나. 외환 델타 위험가중치는 15%를 적용한다. 다만, 고유동성 통화 쌍과 해당 통화 쌍의 1차 조합인 통화 쌍32)의 위 험가중치는 를 나눈 것을 적용할 수 있다. 이 경우 \"고유동성 통화 쌍\"이란 USD/EUR･USD/JPY･USD/GBP･ USD/AUD･USD/CAD･USD/CHF･USD/MXN･USD/CNY･USD/NZD･USD/RUB･USD/HKD･USD/SGD･ USD/TRY･USD/KRW･USD/SEK･USD/ZAR･USD/INR･USD/NOK･USD/BRL을 말한다. 다. 외환리스크 델타의 버킷 와 간 상관계수 는 60%를 적용한다."},{"n":"70","t":"일반상품 델타리스크의 버킷, 위험가중치 및 상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 일반상품 델타리스크의 버킷과 위험가중치는 다음 표에 따라 적용한다. 버킷 번호 1 일반상품 종류 에너지 (고체 인화물질) 위험가중치 30% 일반상품 예시 석탄, 숯, 목재, 우라늄 원유(경질스윗오일･중질유･서부텍사스유(WTI 2 에너지 (액체 인화물질) 유)･브렌트유 등), 바이오연료(바이오에탄올･ 35% 바이오디젤 등), 석유화학(프로판･에탄올･가 솔린･메탄올･부탄 등), 정제연료(제트유･등 유･휘발유･중유･나프타･난방유･디젤 등) 전력(현물전력･하루전전력･피크전력･오프피크 에너지 3 (전력･ 60% 탄소배출권 거래) 전력 등), 탄소배출권(온실가스 감축량･ In-delivery month EU 허용량･RGGI CO2 허용량･신재생에너지 공급 인증서 등) 드라이 벌크 노선(케이프사이즈･파나막스･핸 4 화물 운송 80% 디사이즈･수프라막스 등), 액체･기체화물 수 송 노선(수에즈막스･아프라막스･초대형유조 선 등) 기초금속(알루미늄･구리･납･니켈･주석･아연 등), 금속 5 40% (귀금속 제외) 철강(강철빌렛･강선･강철코일･강철스크 랩･강철봉･철광석･텅스텐･바나듐･티타늄･탄 탈륨 등), 희소금속(코발트･망간･몰리브덴 등) 6 가스 인화물질 귀금속 7 (금 포함) 45% 천연가스, 액화 천연가스 20% 금, 은, 백금, 팔라듐 옥수수, 밀, 대두 종자, 대두유, 대두박분, 귀 8 곡물･기름종자 리, 팜 오일, 카놀라, 보리, 유채 종자, 유채 35% 유, 유채박분, 붉은 콩, 수수, 야자유, 올리브 유, 땅콩유, 해바라기유, 쌀 9 축산･낙농 생우, 비육용 소, 돼지, 가금류, 양, 물고기, 25% 새우, 우유, 유청, 계란, 버터, 치즈 코코아, 아라비카 커피, 로부스타 커피, 차, 10 기타 농산물 35% 유자 쥬스, 오렌지 쥬스, 감자, 설탕, 목화, 울, 목재, 펄프, 고무 11 기 타 산업용 원자재(탄산칼륨･비료･인회암 등), 희 50% 토류, 테레프탈산, 유리판 나. 일반상품 델타 리스크요소 와 간 상관계수 은 다음 식에 따라 적용한다.33) 이 경우 다른 조건이 모두 같고 인도하는 일반상품만 다른 두 계약을 시장에서 다른 계약으로 보는 경우, 해당 두 계약과 관련된 일반상품은 다른 일반상품으로 본다.34) - 일반상품이 같으면 100%, 그렇지 않으면 다음 표에 따라 결정 : 만기가 같으면 100%, 그렇지 않으면 99.00% 인도지역이 같으면 100%, 그렇지 않으면 99.90% 버킷 번호 1 2 3 4 5 6 7 8 9 10 11 상관계수 55% 95% 40% 80% 60% 65% 55% 45% 15% 40% 15% 다. 일반상품 델타리스크의 버킷 와 간 상관계수 는 버킷 1에서 10에 해당하는 두 버킷은 20%, 버킷 11과 다 ① 버킷 2(에너지 - 액체 인화물질): WTI유와 브렌트유 ② 버킷 3(에너지 － 전력, 탄소배출권 거래): 피크전력과 오프피크전력과 같이 전력이 인도될 수 있으며 계약상 명시된 시간대 가 다른 두 계약 또는 전력의 생산 지역이 다른 두 계약 ③ 버킷 4(화물 운송): 화물 유형과 운송 경로의 조합이 다른 두 계약 또는 화물을 인도하는 주일이 다른 두 계약 른 버킷은 0%를 적용한다."},{"n":"71","t":"베가리스크의 버킷･위험가중치･상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 베가리스크의 버킷은 델타리스크의 경우와 같다. 나. 베가 위험가중치는 주식리스크 버킷 1에서 8(대형주)과 버킷 12에서 13(지수)은 77.78%, 그 밖의 버킷은 100%를 적용한다. 다. 베가 리스크요소 간 상관계수는 다음에 따라 적용한다. (1) 일반금리 베가 리스크요소 와 간 상관계수 는 다음 식에 따라 적용한다. min (가) 는 다음 식에 따라 결정한다. exp min 1% - , : 옵션 만기(연 단위) (나) 는 다음 식에 따라 결정한다. exp min 1% - , : 옵션 만기 시 기초자산 잔여만기(연 단위) (2) 일반금리리스크를 제외한 리스크군의 베가 리스크요소 와 간 상관계수 는 다음 식에 따라 적용한다. min 베가 리스크요소 와 에 대응하는 두 델타 리스크요소 간 상관계수 (1)(가)의 라. 베가리스크의 버킷 와 간 상관계수 는 델타리스크의 경우와 같다."},{"n":"72","t":"커버쳐리스크의 버킷･위험가중치･상관계수","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 커버쳐리스크의 버킷은 델타리스크의 경우와 같다. 나. 커버쳐 위험가중치는 다음에 따라 적용한다. (1) 일반금리･신용스프레드･일반상품리스크의 경우, 버킷이 같은 여러 델타 위험가중치 중에서 가장 큰 값을 커버쳐 위험가중치로 적용하며 이에 따라 커브를 해당 위험가중치만큼 평행이동하여 소요자기자본을 산출한다. (2) 주식･외환리스크의 경우, 델타 위험가중치를 커버쳐 위험가중치로 적용하며 이에 따라 리스크요소를 해당 위험 가중치만큼 변동하여 소요자기자본을 산출한다. 다. 기초자산이 보고통화(또는 기준통화)가 아닌 외환 옵션은 외환 리스크요소 단위의 커버쳐리스크 소요자기자본을 1.5로 나눈 것으로 할 수 있으며, 감독원장의 승인을 받아 보고통화(또는 기준통화)에 대해서도 다른 통화 대비 충격을 적용하여 외환 커버쳐리스크 소요자기자본을 산출하는 경우에는 모든 상품의 외환 리스크요소 단위의 커 버쳐리스크 소요자기자본을 1.5로 나눈 것으로 할 수 있다. 라. 커버쳐 리스크요소 와 간 상관계수 은 대응하는 두 델타 리스크요소 간 상관계수의 제곱을 적용하며, 46. 의 상관관계 시나리오는 이에 따라 결정되는 상관계수에 적용한다. 이 경우 신용스프레드･일반상품리스크와 같이 델타 리스크요소와 커버쳐 리스크요소가 달리 정의되는 리스크군은 공통적인 부분만 고려하여 상관계수를 결정 한다.35) 마. 커버쳐리스크의 버킷 와 간 상관계수 는 대응하는 두 델타리스크의 버킷 간 상관계수의 제곱을 적용하며, 46.의 상관관계 시나리오는 이에 따라 결정되는 상관계수에 적용한다. 제5관 지수상품, 복수 기초자산 상품 및 집합투자증권의 처리"},{"n":"73","t":"지수상품･복수 기초자산 상품의 처리","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 지수상품과 복수 기초자산 상품의 델타･커버쳐리스크 소요자기자본은 기초자산접근법을 적용하여 산출해야 한다. 다만, CTP에 포함되는 지수상품은 기초자산접근법을 적용하지 않고 해당 지수를 리스크요소로 지정해야 한다. 나. 가.에도 불구하고 지수상품의 기초자산이 잘 알려지고 인정되는 상장 신용 또는 주식 지수로서 다음 요건을 모두 충족하는 경우 또는 감독원장이 인정하는 경우, 기초자산접근법을 적용하지 않고 해당 지수를 리스크요소로 지정 할 수 있다. (1) 모든 기초자산과 기초자산별 비중을 파악할 수 있을 것 (2) 기초자산이 20개 이상일 것 버쳐 리스크요소 간 상관계수는 발행자만 고려하여 결정한다. (3) 모든 기초자산의 비중이 25% 미만일 것 (4) 상위 10%에 해당하는 기초자산의 비중의 합계가 60% 미만일 것 (5) 기초자산의 시가총액 합계가 40조원 이상일 것 다. 지수상품과 복수 기초자산 상품의 베가리스크 소요자기자본은 기초자산접근법을 적용하여 산출하거나, 이를 적용 하지 않고 해당 지수의 내재변동성을 리스크요소로 지정할 수 있다. 라. 나. 또는 다.에서 특정 지수에 대하여 기초자산접근법 적용하기로 선택한 경우, 은행은 기초자산이 해당 지수인 모든 상품에 이를 일관되게 적용해야 하며, 이를 취소하려면 감독원장의 승인을 받아야 한다. 마. 기초자산접근법을 적용하는지와 무관하게 소요자기자본 산출에 이용되는 민감도는 일관되어야 한다."},{"n":"74","t":"집합투자증권의 처리","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 7.나.(5)(가)의 요건을 충족하는 집합투자증권은 기초자산접근법을 적용하여 소요자기자본을 산출해야 한다. 이 경 우 기초자산별 포지션 금액은 은행의 지분투자 금액에 집합투자기구의 자본구조를 적용하여 결정해야 한다. 나. 7.나.(5)(가)의 요건을 충족하지 않으나 7.나.(5)(나)의 요건을 충족하는 집합투자증권은 기초자산접근법을 적용하지 않고 다음 중 어느 하나에 따라 소요자기자본을 산출해야 한다. (1) 감독원장의 승인을 받아 약정서기반접근법을 적용하여, 허용되는 투자대상과 투자한도를 고려했을 때 민감도방법 에 의한 소요자기자본이 최대로 산출(적용할 수 있는 위험가중치가 복수인 경우 최댓값을 적용한다)되는 가상 포 트폴리오로 처리한다. 이 경우 기초자산별 포지션 금액은 은행의 지분투자 금액에 집합투자기구의 자본구조를 적용하여 결정해야 하며, 가상 포트폴리오의 소요자기자본은 모든 기초자산에 대하여 개별기준으로 산출해야 한 다.36) (2) 무등급 주식으로 처리하고, 버킷은 주식리스크의 버킷 11(기타)로 한다. 다. 가. 및 나.에도 불구하고 지수를 추종하는 집합투자증권은 추적오차(보수･수수료는 고려하지 않는다)의 절댓값이 1% 미만인 경우, 기초자산접근법을 적용하지 않고 해당 지수를 리스크요소로 지정할 수 있다. 이 경우 은행은 적 어도 연 단위로 추적오차를 점검해야 한다. 라. 7.나.(5)(가) 및 (나)의 요건을 모두 충족하지 않는 집합투자증권의 순매도포지션37)은 시장리스크 소요자기자본 산 출대상에서 제외하고 순포지션에 위험가중치 100%를 적용해야 한다. 출해야 한다. 3>44.에 따라 소요자기자본을 산출해야 한다."},{"n":"75","t":"지수 리스크요소의 버킷","p":"제6장 시장리스크 표준방법 제2절 민감도방법에 의한 소요자기자본","b":"가. 73. 또는 74.에서 지수 또는 지수 내재변동성을 리스크요소로 지정하는 경우, 해당 리스크요소의 버킷은 다음에 따라 결정해야 한다. (1) 비중이 75% 이상에 해당하는 기초자산이 하나의 산업부문 버킷에 할당될 수 있으면 해당 버킷으로 한다. 이 경 우 \"산업부문 버킷\"이란 비유동화 신용스프레드리스크의 경우 66.가.의 버킷 1에서 16, 주식리스크의 경우 68.가. 의 버킷 1에서 11을 말한다. (2) 그렇지 않으면 다음에 따라 버킷을 결정한다. 이 경우 \"지수 버킷\"이란 비유동화 신용스프레드리스크의 경우 66. 가.의 버킷 17에서 18, 주식리스크의 경우 68.가.의 버킷 12에서 13을 말한다. (가) 비유동화 신용스프레드리스크의 경우, 비중이 75% 이상에 해당하는 기초자산이 투자등급 버킷에 할당될 수 있 으면 버킷 17(투자등급 지수), 그렇지 않으면 버킷 18(투기등급 지수)로 한다. 이 경우 \"투자등급 버킷\"이란 버 킷 1에서 8을 말한다. (나) 주식리스크의 경우, 비중이 75% 이상에 해당하는 기초자산이 선진시장 대형주 버킷에 할당될 수 있으면 버킷 12(선진시장 대형주 지수), 그렇지 않으면 버킷 13(기타 지수)로 한다. 이 경우 \"선진시장 대형주 버킷\"이란 버 킷 5에서 8을 말한다. 나. 가.에 따라 특정 버킷에 할당된 지수 또는 지수 내재변동성에 대한 민감도는 해당 버킷의 다른 단일 기초자산에 대한 민감도와 제한 없이 상쇄할 수 있다. 제1관 개요"},{"n":"76","t":"정의","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"이 절에서 사용하는 용어의 뜻은 다음과 같다. (1) \"매입 익스포져\"란 부도 시 손실이 발생하는 신용 또는 주식 익스포져를 말한다. (2) \"매도 익스포져\"란 부도 시 이익이 발생하는 신용 또는 주식 익스포져를 말한다. (3) \"총불연속부도\"(이하 \"총JTD\"(gross jump-to-default)라 한다)란 갑작스러운 부도로 인하여 익스포져 단위에서 발생하는 부도 시 손실 또는 이익을 말한다. (4) \"순불연속부도\"(이하 \"순JTD\"(net jump-to-default)라 한다)란 갑작스러운 부도로 인하여 차주 단위에서 발생하는 부도 시 손실 또는 이익을 말한다."},{"n":"77","t":"부도리스크 소요자기자본의 산출대상","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"부도리스크 소요자기자본은 채무상품, 지분상품 및 기초자산 차주의 부도가 상품의 가치에 영향을 미치는 파생상품을 대상으로 산출하며, 다음에 따라 구분한다. (1) 비유동화상품 (2) 유동화상품(CTP 제외) (3) 유동화상품(CTP). 이 경우 36.다.의 헤지거래 또한 포함한다.38)"},{"n":"78","t":"부도리스크 소요자기자본의 산출방법","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 부도리스크 소요자기자본은 제2관부터 제4관까지에 따라 산출되는 다음 소요자기자본을 단순 합산하여 산출한다. (1) 비유동화상품의 부도리스크 소요자기자본 (2) 유동화상품(CTP 제외)의 부도리스크 소요자기자본 (3) 유동화상품(CTP)의 부도리스크 소요자기자본 나. 가.(1)부터 (3)까지의 소요자기자본은 다음 절차에 따라 산출한다. (1) 익스포져별로 총JTD를 산출한다. (2) 차주가 같은 매입 익스포져와 매도 익스포져의 총JTD를 상쇄하여 순JTD를 산출한다. (3) 순JTD를 버킷에 할당하고, 헤지효과율을 산출한다. (4) 같은 버킷의 순JTD에 위험가중치와 헤지효과율을 적용하고 합산하여 버킷 단위의 소요자기자본을 산출한다. (5) 버킷 단위의 소요자기자본을 합산한다. 제2관 비유동화상품의 부도리스크 소요자기자본"},{"n":"79","t":"비유동화상품의 총JTD","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 비유동화상품의 매입 익스포져의 총JTD 과 매도 익스포져의 총JTD 는 다음 식에 따라 산출한다. max × & , min × & 부도 시 손실률 명목원금. 이 경우 매입 익스포져는 양수, 매도 익스포져는 음수로 한다. - & : 이미 발생한 누적 시가평가 손익. 이 경우 이익은 양수, 손실은 음수로 한다. (1) 부도 시 손실률은 다음에 따라 결정한다. (가) 지분상품과 비선순위 채무상품은 100%를 적용한다. (나) 선순위 채무상품은 75%를 적용한다. (다) 이중상환청구권부 채권은 25%를 적용한다. (2) 명목원금과 이미 발생한 누적 시가평가 손익은 상품 유형별로 다음 표와 같다. 상품 유형 명목원금 이미 발생한 누적 시가평가 손익 채권 매입 액면금액 시장가치 － 액면금액 CDS 매도 명목원금 － 시장가치 채권 콜옵션 매입 0 시장가치 채권 풋옵션 매도 명목원금 행사가격 － 시장가치 － 명목원금 (3) 계약상 또는 법적 조항에 따라 부도 시에도 손실 없이 청산할 수 있는 파생상품의 총JTD는 0이다. 나. 가.에도 불구하고 부도 시 손실률이나 명목원금이 상품의 가치에 영향을 미치지 않는 상품39) 또는 가.에서 구체적 인 사항을 정하지 않는 상품에 대해서는 다른 적정한 방법으로 총JTD를 산출해야 한다."},{"n":"80","t":"만기를 고려한 총JTD의 조정","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 만기가 1년 미만인 익스포져의 총JTD는 연 단위 만기를 곱하여 조정해야 한다.40) 다만, 만기가 3개월 미만이면 3 개월을 적용해야 한다.41) 나. 가.에서 현물 지분상품은 만기를 3개월 또는 1년으로 할 수 있다."},{"n":"81","t":"비유동화상품의 순JTD","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 비유동화상품의 순JTD는 익스포져의 만기를 고려하여 80.에 따라 총JTD를 조정하고, 차주가 같은 매입 익스포져 와 매도 익스포져의 총JTD를 상쇄하여 산출한다. 다만, 매입 익스포져가 매도 익스포져에 비하여 상환순위가 우 선이거나 같아야 상쇄할 수 있다.42) 나. <별표3>88. 및 89.의 요건을 모두 충족하는 보증부 채권의 경우, 가.에서 차주가 아닌 보증인에 대한 익스포져로 옵션이 내재된 스왑이 있다. 져의 총JTD는 상쇄할 수 없다. 대체하여 보증인의 다른 익스포져와 총JTD를 상쇄할 수 있다."},{"n":"82","t":"비유동화상품의 버킷･위험가중치･헤지효과율","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 비유동화상품의 버킷은 다음과 같다. (1) 기업 (2) 정부 (3) 지방정부･지방자치단체 나. 비유동화상품의 위험가중치는 다음 표에 따라 적용한다. 다만, <별표3>29.나.의 대한민국 정부(한국은행을 포함한 다), <별표3>30.의 국제결제은행 등, <별표3>31.가.의 국내 지방자치단체, <별표3>34.나.의 국제개발은행 익스포 져는 위험가중치 0%를 적용할 수 있으며, <별표3>29.다.의 해외 정부(중앙은행을 포함한다) 익스포져는 해당 국 가의 감독당국이 정하는 위험가중치를 적용할 수 있다. 표준신용등급 AAA AA A BBB BB B CCC 무등급 부도 위험가중치 0.5% 2% 3% 6% 15% 30% 50% 15% 100% 다. 비유동화상품의 버킷 에 대한 헤지효과율 는 다음 식에 따라 산출한다. ∈ ∈ - ∈ : 버킷 의 양수인 순JTD - ∈ : 버킷 의 음수인 순JTD ∈"},{"n":"83","t":"지수상품･집합투자증권의 처리","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 73.가.에 따라 처리하는 지수상품･복수 기초자산 상품은 동일하게 기초자산접근법을 적용하여 부도리스크 소요자 기자본을 산출해야 한다. 나. 집합투자증권은 다음에 따라 처리해야 한다. (1) 74.나.(1)에 따라 처리하는 집합투자증권은 동일하게 약정서기반접근법을 적용하여, 허용되는 투자대상과 투자한 도를 고려했을 때 부도리스크 소요자기자본이 최대로 산출(적용할 수 있는 위험가중치가 복수인 경우 최댓값을 적용한다)되는 가상 포트폴리오로 처리한다.43) 순서대로 투자한도만큼 보유한다고 가정해야 한다. (2) 74.나.(2)에 따라 처리하는 집합투자증권은 무등급 지분상품으로 처리한다."},{"n":"84","t":"비유동화상품의 부도리스크 소요자기자본","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"가. 비유동화상품의 부도리스크 소요자기자본은 모든 버킷 단위의 소요자기자본을 단순 합산하여 산출한다. 나. 가.의 버킷 단위의 소요자기자본 는 버킷 의 모든 순JTD를 다음 식에 따라 합산하여 산출한다. 이 경우 버 킷 , 위험가중치 및 헤지효과율 는 82.에 따라 결정한다. max ∈ - ∈ : 버킷 의 양수인 순JTD - ∈ : 버킷 의 음수인 순JTD ∈ 제3관 유동화상품(CTP 제외)의 부도리스크 소요자기자본"},{"n":"85","t":"유동화상품(CTP 제외","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 총JTD) 유동화상품(CTP 제외)의 총JTD는 해당 상품의 시장가치이다.44)"},{"n":"86","t":"유동화상품(CTP 제외","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 순JTD) 가. 유동화상품(CTP 제외)의 순JTD는 익스포져의 만기를 고려하여 80.에 따라 총JTD를 조정하고, 기초자산과 트렌치 가 모두 같은 매입 익스포져와 매도 익스포져의 총JTD를 상쇄하여 산출한다. 이 경우 손실시작점과 손실종료점이 모두 같은 두 트렌치는 같은 트렌치로 본다. 나. 가.에도 불구하고 다음 경우에 해당하는 매입 익스포져와 매도 익스포져의 총JTD는 상쇄할 수 있다. (1) 여러 익스포져를 분해･합성하여 다른 익스포져를 완전히 복제할 수 있는 경우 (2) 유동화상품이 아닌 단일 기초자산 상품 또는 지수상품의 익스포져를 분해･합성하여 유동화상품의 익스포져를 완 전히 복제할 수 있는 경우. 이 경우 해당 단일 기초자산 상품 또는 지수상품은 비유동화상품의 부도리스크 소요 자기자본 산출대상에서 제외해야 한다."},{"n":"87","t":"유동화상품(CTP 제외","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 버킷･위험가중치･헤지효과율) 가. 유동화상품(CTP 제외)의 버킷은 다음에 따라 결정한다. (1) 유동화상품(CTP 제외)의 버킷은 다음에 따라 정의된다. (가) 일반기업(중소기업 제외) (나) 기타. 이 경우 다시 자산군(ABCP･자동차 대출 및 리스･RMBS･신용카드･CMBS･CLO･CDO스퀘어･중소기업･학 자금대출･기타 소매･기타 도매)과 지역(아시아･유럽･북아메리카･기타)에 따라 구분된다. (2) (1)(나)의 자산군･지역은 다음 요건을 모두 충족하여 결정해야 한다. (가) 시장에서 유동화상품의 자산군･지역을 그룹화할 때 통용되는 분류기준을 이용할 것 (나) 하나의 익스포져는 하나의 버킷에만 할당하며, 자산군･지역이 같은 익스포져는 모두 같은 자산군･지역에 할당 할 것 (다) 특정 자산군･지역에 할당할 수 없는 익스포져는 기타 자산군･지역에 할당할 것 나. 유동화상품(CTP 제외)의 위험가중치는 만기를 1년으로 가정하고 <별표3>제4장에 따라 결정되는 위험가중치를 12.5로 나누어 적용한다. 다만, 현물 유동화상품은 시장가치를 위험가중치가 적용된 순JTD의 상한으로 적용할 수 있다. 다. 유동화상품(CTP 제외)의 버킷 의 헤지효과율 는 82.다.의 비유동화상품의 경우와 같이 산출한다."},{"n":"88","t":"유동화상품(CTP 제외","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 부도리스크 소요자기자본) 유동화상품(CTP 제외)의 부도리스크 소요자기자본은 84.의 비 유동화상품의 경우와 같이 산출한다. 제4관 유동화상품(CTP)의 부도리스크 소요자기자본"},{"n":"89","t":"유동화상품(CTP","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 총JTD) CTP에 포함되는 유동화상품과 헤지거래의 총JTD는 해당 상품의 시장가치이다."},{"n":"90","t":"유동화상품(CTP","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 순JTD) 가. 유동화상품(CTP)의 순JTD는 익스포져의 만기를 고려하여 80.에 따라 총JTD를 조정하고 만기를 제외한 다른 조건 이 모두 같은 매입 익스포져와 매도 익스포져의 총JTD를 상쇄하여 산출한다. 나. NTD 신용파생상품은 손실시작점과 손실종료점이 다음 식과 같은 트렌치상품으로 처리해야 한다. 손실시작점 , 손실종료점 기초자산의 수 기초자산의 수 다. 가.에도 불구하고 다음 경우에 해당하는 매입 익스포져와 매도 익스포져의 총JTD는 상쇄할 수 있다. (1) 패밀리, 시리즈 및 트렌치가 모두 같은 지수상품(지수 트렌치를 포함한다) (2) 정형 유동화상품45)의 익스포져를 가치평가모형을 이용하여 단일 기초자산 상품의 익스포져로 분해하여 다른 익 스포져를 완전히 복제할 수 있는 경우. 이 경우 가치평가모형을 이용하여 분해된 단일 기초자산 상품의 총JTD는 해당 단일 기초자산의 부도와 부도 시 손실률이 100%임을 가정했을 때 가치평가모형으로 산출된 유동화상품의 손실로 산출해야 하며, 분해된 모든 익스포져의 총JTD의 합은 분해 전 익스포져의 총JTD와 일관성이 있어야 한 다. (3) 지수상품의 여러 익스포져를 분해･합성하여 패밀리와 시리즈가 같은 지수상품의 다른 익스포져를 완전히 복제할 수 있는 경우46) (4) 단일 기초자산의 익스포져를 합성하여 지수상품의 익스포져를 완전히 복제할 수 있는 경우.47) 이 경우 부분적으 로 복제할 수 있으면 복제되는 부분만 상쇄하고 잔여 부분을 별도 익스포져로 처리할 수 있다.48)"},{"n":"91","t":"유동화상품(CTP","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 버킷･위험가중치･헤지효과율) 가. 유동화상품(CTP)의 버킷은 CDX North America IG, iTraxx Europe IG, CDX HY, iTraxx XO, LCDX, iTraxx LevX, Asia Corp, Latin America Corp, Other Regions Corp, Major Sovereign(G7, 서유럽) 및 Other Sovereign 등 개별 지수이다. 나. 유동화상품(CTP)의 위험가중치는 트렌치상품이면 82.나.의 비유동화상품의 경우와 같이, 그렇지 않으면 87.나.의 유동화상품(CTP 제외)의 경우와 같이 산출한다. 다. 유동화상품(CTP)의 헤지효과율은 버킷을 구분하지 않고 모든 순JTD에 대하여 82.다.의 비유동화상품의 경우와 같 이 산출한다."},{"n":"92","t":"유동화상품(CTP","p":"제6장 시장리스크 표준방법 제3절 부도리스크 소요자기자본","b":"의 부도리스크 소요자기자본) 가. 유동화상품(CTP)의 부도리스크 소요자기자본 는 모든 버킷 단위의 소요자기자본 를 다음 식에 따 라 합산하여 산출한다. max min max 나. 가.의 버킷 단위의 소요자기자본 는 버킷 의 모든 순JTD를 다음 식에 따라 합산하여 산출한다. 이 경우 버 킷 , 위험가중치 및 헤지효과율 는 91.에 따라 결정한다.49) 형 유동화상품에 해당한다. 비정형 유동화상품의 익스포져를 가치평가모형을 이용하여 단일 기초자산 상품의 익스포져로 분 해하여 다른 익스포져와 상쇄하는 것은 허용되지 않는다. 그리고 지수상품의 매입 익스포져와 이를 완전히 복제하는 여러 트렌치상품의 대한 매도 익스포져는 상쇄할 수 있다. 다만, 지수의 패밀리와 시리즈가 같아야 한다. 쇄할 수 있다. 이 경우 상쇄 후 나머지 1개 기초자산 익스포져에 대해서만 소요자기자본을 산출한다. ∈ - ∈ : 버킷 의 양수인 순JTD - ∈ : 버킷 의 음수인 순JTD ∈"},{"n":"93","t":"잔여리스크 소요자기자본의 산출대상","p":"제6장 시장리스크 표준방법 제4절 잔여리스크 소요자기자본","b":"잔여리스크 소요자기자본은 다음 상품을 대상으로 산출해야 한다. (1) 비정형 기초자산 상품: 기초자산이 민감도방법에 의한 소요자기자본과 부도리스크 소요자기자본 산출대상이 아닌 상품50) (2) 기타 잔여리스크 상품: 다음 중 어느 하나에 해당하는 상품 (가) 베가･커버쳐리스크 소요자기자본 산출대상이고, 유한개의 단일 기초자산 정형 옵션의 일차결합에 의해서도 손 익구조가 완전히 복제되지 않는 상품 (나) CTP에 포함되는 상품. 다만, 36.다.의 헤지거래는 제외한다."},{"n":"94","t":"기타 잔여리스크 간주 상품 등","p":"제6장 시장리스크 표준방법 제4절 잔여리스크 소요자기자본","b":"가. 다음 리스크와 관련되는 상품은 기타 잔여리스크 상품으로 본다.51) (1) 갭리스크: 기초자산의 작은 변동에도 베가 민감도가 크게 변동하여 불완전 헤지를 야기하는 리스크 (2) 상관관계리스크: 복수 기초자산 상품의 가치에 영향을 미치는 상관관계가 변동하는 리스크 (3) 행동리스크: 옵션의 행사 및 대출의 조기상환 등 의사결정과 관련된 리스크 나. 다음 리스크와 관련되는 상품일지라도 반드시 잔여리스크 소요자기자본 산출대상인 것은 아니다. (1) 최저가인도옵션리스크 (2) 스마일리스크 이 음수가 될 수 있다. ① 갭리스크: 배리어옵션 등 경로의존형 옵션, 아시아형 옵션, 디지털옵션 등 ② 상관관계리스크: 바스켓옵션, 베스트오브옵션, 스프레드옵션, 베이시스옵션, 버뮤다형 옵션, 콴토옵션 등 ③ 행동리스크: 소매고객이 조기상환권을 갖는 채권 (3) 지수옵션과 같은 복수 기초자산 유럽형･미국형 정형 옵션과 해당 옵션의 일차결합으로 복제할 수 있는 옵션의 상관관계리스크 (4) 오직 배당만이 기초자산인 것이 아닌 파생상품의 배당리스크 다. 다음 상품은 잔여리스크 소요자기자본 산출대상에서 제외할 수 있다. (1) 제3자와의 거래와, 해당 거래와 완전히 매치되는 백투백 거래 (2) 비정형 기초자산 상품이 아니며, 상장되었거나 적격 중앙청산소를 통한 상품"},{"n":"95","t":"지수상품･집합투자증권의 처리","p":"제6장 시장리스크 표준방법 제4절 잔여리스크 소요자기자본","b":"가. 지수상품과 복수 기초자산 상품은 그 밖의 상품과 동일하게 93.(1) 또는 (2) 중 어느 하나에 해당하는 경우에만 잔여리스크 소요자기자본 산출대상이다. 나. 74.나.(1)에 따라 처리하는 집합투자증권은 약정서기반접근법을 적용하여 허용되는 투자한도까지 잔여리스크 소요 자기자본 산출대상으로 처리해야 한다."},{"n":"96","t":"잔여리스크 소요자기자본의 산출방법","p":"제6장 시장리스크 표준방법 제4절 잔여리스크 소요자기자본","b":"잔여리스크 소요자기자본은 다음에 따라 산출대상별 명목원금에 위험가중치 를 적용하고, 이를 단순 합산하여 산출한다. (1) 비정형 기초자산 상품은 1.0%를 적용한다. (2) 기타 잔여리스크 상품은 0.1%를 적용한다."},{"n":"97","t":"간편법에 의한 소요자기자본의 구조","p":"제7장 시장리스크 간편법 제1절 개요","b":"가. 간편법에 의한 시장리스크 소요자기자본은 금리･주식･외환･일반상품리스크 소요자기자본으로 구분된다. 나. 가.의 각 소요자기자본은 다시 다음 소요자기자본으로 구분된다. 다만, 외환･일반상품리스크 소요자기자본의 경우 개별리스크 소요자기자본은 제외한다. (1) 일반시장리스크 소요자기자본: 금리･주가･환율･일반상품 가격 등의 비우호적인 변동으로 발생할 수 있는 선형 손 실에 대한 소요자기자본 (2) 개별리스크 소요자기자본: 채무상품･지분상품의 발행자 관련 요인으로 발생할 수 있는 손실에 대한 소요자기자본 (3) 옵션리스크 소요자기자본: 금리･주가･환율･일반상품 가격 등의 비우호적인 변동으로 발생할 수 있는 비선형 손실 에 대한 소요자기자본"},{"n":"98","t":"간편법에 의한 소요자기자본의 산출방법","p":"제7장 시장리스크 간편법 제1절 개요","b":"가. 간편법에 의한 시장리스크 소요자기자본은 제2절부터 제5절까지 및 제6절에 따라 산출되는 리스크 종류별 소요자 기자본을 이용하여 다음 식에 따라 산출한다. 소요자기자본 금 리 금 리 주 식 주 식 외 환 외 환 일 반 상 품 일 반 상 품 리스크 종류별 소요자기자본 리스크 종류별 조정계수. 이 경우 다음 표에 따라 결정한다. 리스크 종류 금 리 주 식 외 환 조정계수 1.30 3.50 1.20 나. 간편법에 의한 시장위험가중자산은 가.에 따라 산출되는 소요자기자본에 12.5를 곱하여 산출한다."},{"n":"99","t":"간편법에 의한 소요자기자본의 산출대상","p":"제7장 시장리스크 간편법 제1절 개요","b":"가. 시장리스크 중 금리리스크 산출대상 포지션은 은행의 트레이딩계정 포지션 중 다음 각 호의 어느 하나에 해당하 는 것으로 한다. (1) 고정 또는 변동금리부 채권, 유통 양도성예금증서, 기업어음 및 채권과 유사한 가격변동을 나타내는 전환사채52)･ 우선주･수익증권53) 및 그 밖의 금리 관련 금융상품의 매입 및 매도포지션(대여유가증권54)을 포함한다) (2) 기초자산이 (1)에 해당하는 파생상품 포지션 나. 시장리스크 중 주식리스크 산출대상 포지션은 은행의 트레이딩계정 포지션 중 다음 각 호의 어느 하나에 해당하 는 것으로 한다. (1) 주식, 주식예탁증서, 주식과 유사한 가격변동을 나타내는 전환증권･수익증권, 주식매매에 관한 약정 및 그 밖의 주식 관련 금융상품의 매입 및 매도포지션(금리포지션으로 처리되는 전환권이 없는 우선주는 제외한다) 로 처리하고 그렇지 않으면 주식으로 처리한다. 있으나 어떠한 경우에도 수익증권의 시장리스크 산출을 위해 사용하고자 하는 방법은 합리적이고 일관성이 있어야 한다. 에 대해서도 시장리스크를 산출해야 한다. (2) 기초자산이 (1)에 해당하는 파생상품 포지션 다. 시장리스크 중 외환리스크 산출대상 포지션은 은행이 보유한 통화별 외환포지션과 금포지션으로 한다. 라. 시장리스크 중 일반상품리스크 산출대상 포지션은 은행이 보유한 포지션 중 다음 각 호의 어느 하나에 해당하는 것으로 한다. (1) 농산물･축산물･수산물･임산물･광산물(금 제외)･에너지 및 그 밖의 일반상품 관련 금융상품의 매입 및 매도포지션 (2) 기초자산이 (1)에 해당하는 파생상품 포지션"},{"n":"100","t":"금리리스크 소요자기자본","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"금리포지션의 시장리스크에 대한 소요자기자본은 통화별로 산출한 개별리스크와 일반 시장리스크를 합산한 금액으로 한다. 다만, 99.가.(2)에 의한 파생상품 포지션 중 옵션 관련 포지션은 제6절에 따 라 시장리스크를 산출한다."},{"n":"101","t":"금리 일반시장리스크 소요자기자본","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 일반시장리스크는 만기법 또는 듀레이션법을 사용하여 통화별로 산출한다. 다만, 듀레이션법을 사용하고자 하는 경우에는 감독원장의 승인을 받아야 한다. 나. 은행은 각 통화별로 만기표를 작성하여 통화별 일반시장리스크 소요자기자본을 산출하고, 이를 상쇄없이 단순 합 산하여 총 일반시장리스크 소요자기자본을 산출해야 한다. 다. 은행은 중요통화가 아닌 통화55)에 대해서는 나.에도 불구하고 통화별로 별도의 일반시장리스크를 산출하지 않고 하나의 만기표에서 산출할 수 있다. 다만, 각 통화의 기간별 순매입 또는 순매도포지션을 해당 기간대에 함께 배 분하되 같은 기간대에 배정된 통화별 순포지션은 매입 및 매도포지션 간 상쇄없이 절대값으로 합산하여 기간대별 단일 총포지션을 산출한 후 104.나.의 자본할당률을 적용하여 일반시장리스크를 산출해야 한다."},{"n":"102","t":"만기법","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 만기법에 의한 금리 일반시장리스크는 다음 절차에 따라 산출한다. (1) 금리 관련 매입 및 매도포지션에 대하여 잔여만기(변동금리상품은 차기 금리변경일까지의 잔여기간)에 따라 104. 가.의 기간대 및 소그룹에 배정하고, 기간대별 위험가중치를 곱하여 가중 매입 또는 매도포지션을 산출한다. (2) 가중 매입 또는 매도포지션을 대상으로 나.에 따라 순포지션과 상쇄분에 대한 자본할당액을 산출하여 합산한 금 액을 일반시장리스크로 한다. 당 통화는 중요 통화로, 나머지 통화 포지션 규모가 미미한 통화로 구분할 수 있다. 나. 가.에서 순포지션과 상쇄분에 대한 자본할당액은 다음에 따라 산출한다. (1) 순포지션: 각 기간대의 가중 매입포지션 합계액과 가중 매도포지션 합계액의 차액 (2) 상쇄분에 대한 자본할당액: 다음 금액의 합계액 (가) 동일 기간대 내 상쇄분에 대한 자본할당액: 동일 기간대의 가중 매입포지션과 매도포지션을 상쇄하고, 기간대 별 상쇄되는 포지션 가액에 10%를 곱하여 구한 금액의 합계액 (나) 동일 소그룹 내 상쇄분에 대한 자본할당액: (가)에서 상쇄되지 않은 동일 소그룹의 가중 매입포지션과 매도포지 션을 상쇄하고, 상쇄되는 포지션 가액에 104.나.의 자본할당률을 곱하여 구한 금액의 합계액 (다) 인접 소그룹 간 상쇄분에 대한 자본할당액: (나)에서 상쇄되지 않은 소그룹 1의 가중 매입 또는 매도포지션에 대해서는 소그룹 2의 반대되는 포지션과 상쇄하고, 소그룹 2의 가중 매입 또는 매도포지션에 대해서는 소그룹 3의 반대되는 포지션과 상쇄하여, 상쇄되는 포지션 가액에 104.나.의 자본할당률을 곱하여 구한 금액의 합계액 (라) 소그룹 1과 소그룹 3 간 상쇄분에 대한 자본할당액: (다)에서 상쇄되지 않은 소그룹 1의 가중 매입 또는 매도 포지션에 대하여 소그룹 3의 반대되는 포지션을 상쇄하여, 상쇄되는 포지션 가액에 104.나.의 자본할당률을 곱 하여 구한 금액"},{"n":"103","t":"듀레이션법","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 듀레이션법에 의한 금리 일반시장리스크는 다음 절차에 따라 산출한다. (1) 금리 관련 매입포지션 또는 매도포지션에 대하여 수정 듀레이션에 따라 104.가.의 기간대 및 소그룹에 배정하고, 수정 듀레이션 및 기간대별 상정 금리변동폭을 곱하여 매입 또는 매도포지션에 대한 가치변동 규모를 산출한다. (2) 매입 또는 매도포지션에 대한 가치변동 규모를 대상으로 순포지션과 상쇄분에 대한 자본할당액을 산출하여 합산 한 금액을 일반시장리스크로 한다. 나. 가.에서 순포지션과 상쇄분에 대한 자본할당액은 다음에 따라 산출한다. (1) 순포지션: 각 기간대의 매입포지션의 가치변동 규모의 합계액과 매도포지션의 가치변동 규모의 합계액의 차액 (2) 상쇄분에 대한 자본할당액: 다음 금액의 합계액 (가) 동일 기간대 내 상쇄분에 대한 자본할당액: 동일 기간대의 매입포지션과 매도포지션의 가치변동 규모를 상쇄하 고, 기간대별 상쇄되는 포지션의 가치변동 규모에 5%를 곱하여 산출한 금액의 합계액 (나) 동일 소그룹 내 상쇄분에 대한 자본할당액: (가)에서 상쇄되지 않은 동일 소그룹의 매입포지션과 매도포지션의 가치변동 규모를 상쇄하고, 상쇄되는 포지션의 가치변동 규모에 104.나.의 자본할당률을 곱하여 구한 금액의 합계액 (다) 인접 소그룹 간 상쇄분에 대한 자본할당액: (나)에서 상쇄되지 않은 소그룹 1의 매입 또는 매도포지션의 가치 변동 규모에 대해서는 소그룹 2의 반대되는 포지션에 대한 가치변동 규모와 상쇄하고, 소그룹 2의 매입 또는 매도포지션의 가치변동 규모에 대해서는 소그룹 3의 반대되는 포지션에 대한 가치변동 규모와 상쇄하여, 상쇄 되는 포지션의 가치변동 규모에 104.나.의 자본할당률을 곱하여 구한 금액의 합계액 (라) 소그룹 1과 소그룹 3 간 상쇄분에 대한 자본할당액: (다)에서 상쇄되지 않은 소그룹 1의 매입 또는 매도포지션 에 대하여 가치변동 규모에 대하여 소그룹 3의 반대되는 포지션에 대한 가치변동 규모를 상쇄하여, 상쇄되는 포지션의 가치변동 규모에 104.나.의 자본할당률을 곱하여 구한 금액"},{"n":"104","t":"만기표","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 만기법 또는 듀레이션법에서 기간대, 위험가중치 및 상정 금리변동폭은 다음 표와 같다. 기간대 소그룹 만기법에서 위험가중치 상정 금리변동폭 이표금리 ≥ 3% 소그룹 1 소그룹 2 소그룹 3 1개월 이하 1개월 이하 0.00% 100bp 1~3개월 1~3개월 0.20% 100bp 3~6개월 3~6개월 0.40% 100bp 6~12개월 6~12개월 0.70% 100bp 1.0~1.9년 1~2년 1.25% 90bp 1.9~2.8년 2~3년 1.75% 80bp 2.8~3.6년 3~4년 2.25% 75bp 3.6~4.3년 4~5년 2.75% 75bp 4.3~5.7년 5~7년 3.25% 70bp 5.7~7.3년 7~10년 3.75% 65bp 7.3~9.3년 10~15년 4.50% 60bp 9.3~10.6년 15~20년 5.25% 60bp 10.6~12년 20년 초과 6.00% 60bp 12~20년 - 8.00% 60bp 20년 초과 - 12.50% 60bp 나. 만기법 또는 듀레이션법에서 소그룹 내 또는 소그룹 간 상쇄분에 대한 자본할당액을 산출하기 위한 자본할당률은 다음 표와 같다. 소그룹 소그룹 1 자본할당률 동일 소그룹 내 인접 소그룹 간 40% 40% 소그룹 1과 3 간 소그룹 2 30% 소그룹 3 30% 100% 40%"},{"n":"105","t":"금리 개별리스크 소요자기자본","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 개별리스크는 매입 또는 매도포지션인지 여부와 관계없이 각 증권에 대하여 산출하며, 시가로 평가된 각 금리포지 션에 표준신용등급 및 잔여만기에 따라 다음 표의 위험가중치를 곱하여 산출한다. 구 분 표준신용등급 잔여만기 위험가중치 AAA~AA- - 0.00% 6개월 이하 0.25% 6~24개월 1.00% 24개월 초과 1.60% BB+~B- - 8.00% B- 미만 - 12.00% 무등급 - 8.00% 6개월 이하 0.25% 6~24개월 1.00% 24개월 초과 1.60% BB+~BB- - 8.00% BB- 미만 - 12.00% 무등급 - 8.00% A+~BBB정부발행채권 우량채권 그 밖의 경우 - 나. 정부발행채권은 각국 중앙정부 및 중앙은행, 국내 지방자치단체, 국내 공공기관 발행채권을 말한다. 다만, 가.에도 불구하고 대한민국 정부(한국은행을 포함한다) 및 지방공공단체가 발행한 원화표시채권에 대해서는 0%의 위험가 중치를 적용한다. 다. 우량채권은 다음 각 호의 어느 하나에 해당하는 채권을 말한다. (1) 둘 이상의 적격 신용평가기관에 의하여 투자등급으로 평가된 채권 (2) 하나의 적격 신용평가기관에 의하여 투자등급으로 평가되고 다른 어떠한 적격 신용평가기관에 의해서도 투자등 급 미만으로 평가되지 않은 채권 (3) 무등급채권으로서 다음 각 호의 요건을 모두 충족하는 채권 (가) 발행자가 상장기업이거나 공인된 증권거래소에 상장된 발행채권을 가지고 있을 것 (나) 감독원장의 승인을 받은 신용평가시스템에서 산출된 무등급채권의 부도율이 투자등급의 부도율 이하일 것 라. 감독원장은 특정 채권의 개별리스크가 현저히 과소 산출된다고 판단되는 경우 은행에 다음 처리를 요구할 수 있 다. (1) 해당 채권에 더 높은 개별리스크 위험가중치 부여 (2) 포지션의 상쇄 제한"},{"n":"106","t":"유동화상품의 처리","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"유동화상품은 순포지션에 <별표3>제4장에서 정하는 위험가중치를 12.5로 나눈 것을 적용하 여 개별리스크 소요자기자본을 산출한다."},{"n":"107","t":"유동화상품 등의 개별리스크 소요자기자본의 상한","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 개별 신용파생상품 또는 유동화 포지션의 개별리스크 소요자기자본은 다음에 따라 최대손실가능액을 상한으로 적 용할 수 있다. (1) 매입포지션의 최대손실가능액: 모든 기초자산에서 회수율 0%의 부도가 발생할 때 가치변동 (2) 매도포지션의 최대손실가능액: 모든 기초자산의 부도 가능성이 즉시 제거될 때 가치변동 나. 가.의 최대손실가능액은 개별 포지션에 대하여 산출･적용해야 한다."},{"n":"108","t":"신용파생상품을 이용한 개별리스크 상쇄","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 헤지 대상 포지션과 신용파생상품의 가치변화가 헤지하고자 하는 신용사건의 발생에 대하여 항상 반대방향으로 동일하게 움직이면서 다음 각 호의 어느 하나에 해당하는 경우는 해당 포지션들의 개별리스크를 완전 상쇄할 수 있다. (1) 헤지 대상 포지션과 신용파생상품의 기초자산이 동일한 경우 (2) 헤지 대상 포지션이 총수익스왑에 의하여 헤지되고(또는 그 반대의 경우) 해당 파생상품의 기초자산과 헤지 대상 포지션이 정확히 대응되는 경우(만기는 제외한다) 나. 헤지 대상 포지션과 신용파생상품의 가치변화가 헤지하고자 하는 신용사건의 발생에 대하여 그 변동금액은 동일 하지 않지만 항상 반대방향으로 움직이면서 다음 요건을 모두 충족하는 경우는 개별리스크가 큰 포지션의 개별리 스크 중 80%와 다른 포지션의 개별리스크를 서로 상쇄할 수 있다. (1) 헤지 대상 포지션이 신용부도스왑 또는 신용연계채권으로 헤지되는 경우(또는 그 반대의 경우) (2) 신용파생상품과 기초자산의 만기가 일치 (3) 신용파생상품의 기초자산과 헤지 대상 포지션의 통화가 일치 (4) 신용파생상품의 신용사건, 결제방법 등 주요 계약 조건으로 인한 신용파생상품의 가격변동이 헤지 대상 포지션의 가격변동과 큰 차이가 발생하지 않는 경우 다. 헤지 대상 포지션과 신용파생상품의 가치변화가 항상 반대방향으로 움직이면서 다음 각 호의 어느 하나에 해당하 는 경우는 개별리스크가 큰 포지션에 대한 개별리스크만 산출하고 다른 포지션의 개별리스크는 상쇄할 수 있다. (1) 가.(2)에 해당하는 경우로서 헤지 대상 포지션이 총수익스왑의 기초자산과 일치하지 않는 경우. 다만, <별표 3>90.(5)의 요건을 충족해야 한다. (2) 가.(1) 또는 나.에 해당하는 경우로서 파생상품의 신용보장 부분과 헤지 대상 포지션 간의 통화 또는 만기가 불일 치하는 경우 (3) 나.에 해당하는 경우로서 헤지 대상 포지션과 신용파생상품의 기초자산이 불일치하지만 파생상품계약서상 기초자 산이 인도 가능한 자산으로 포함되는 경우"},{"n":"109","t":"NTD 신용파생상품의 개별리스크 소요자기자본","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. NTD 신용파생상품 중 1차부도종결조건(이하 \"FTD\"(first-to-default)라 한다) 신용파생상품은 다음에 따라 처리한 다. (1) FTD 신용파생상품의 개별리스크 소요자기자본은 다음 중 작은 값을 적용한다. (가) 바스켓에 있는 기초자산 각각의 개별리스크 소요자기자본의 합 (나) 해당 신용파생상품의 계약금액 (2) 은행이 FTD 신용파생상품 바스켓 내 기초자산에 포함되는 자산 중 하나를 보유하고 있고 해당 신용파생상품이 해당 자산의 리스크를 헤지할 경우, 은행은 해당 자산의 개별리스크 소요자기자본 및 해당 신용파생상품의 개별 리스크 소요자기자본 산출시 헤지된 부분을 각각 제외할 수 있다. 이 경우 은행이 FTD 신용파생상품 바스켓 내 기초자산에 포함되는 복수의 자산을 보유하고 있으면 상쇄는 개별리스크 소요자기자본이 가장 작은 하나의 기초 자산에 대하여만 적용한다. 나. FTD가 아닌 NTD 신용파생상품은 다음에 따라 처리한다. (1) FTD가 아닌 NTD 신용파생상품의 개별리스크 소요자기자본은 다음 중 작은 값을 적용한다. (가) 바스켓에 있는 기초자산 각각의 개별리스크 소요자기자본의 합. 다만, 개별리스크 소요자기자본이 가장 작은 (N － 1)개 자산은 제외한다. (나) 해당 신용파생상품의 계약금액 (2) FTD가 아닌 NTD 신용파생상품에 대해서는 은행이 보유한 다른 자산과의 개별리스크 소요자기자본을 상쇄 할 수 없다. 다. 적격 신용평가기관의 신용등급이 존재하는 경우 순포지션에 <별표3>제4장에서 정하는 위험가중치를 12.5로 나눈 것을 적용하여 개별리스크 소요자기자본을 산출한다. 라. 은행은 매입 또는 매도포지션인지와 무관하게 NTD 신용파생상품의 순포지션에 대하여 소요자기자본을 산출해야 한다."},{"n":"110","t":"금리 관련 파생상품의 처리","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 금리 관련 파생상품은 기초자산의 포지션으로 변환하여 101. 및 105.에 따라 개별리스크 및 일반시장리스크를 산 출한다. 나. 금리스왑, 통화스왑, FRA(forward rate agreements), 선도환, 금리선물 및 금리지수선물은 개별리스크 산출대상 에서 제외한다. 다만, 기초자산이 특정 채권인 선물 또는 특정 채권 관련 지수선물인 경우에는 105.에 따라 개별 리스크를 산출한다. 다. 선물 및 선도거래의 경우 정부 발행 채권의 매입 및 매도포지션의 결합으로 처리한다.56) 회사채지수선물의 경우, 포지션은 해당 지수를 구성하는 기초자산 포트폴리오의 시가로 포지션을 산출한다. 라. 스왑은 다음에 따라 처리한다. (1) 스왑은 적절한 만기를 가지는 두 개의 정부발행채권 포지션의 결합으로 처리한다.57) (2) 주가지수 변동을 대가로 고정금리 또는 변동금리를 수수하는 경우에는 금리부문은 금리변경일을 기준으로 104. 가.의 기간대에 배정하고 주가지수부문은 주식포지션에 배정한다. (3) 통화스왑의 경우에는 통화별로 104.가.의 기간대에 배정한다."},{"n":"111","t":"파생상품 관련 포지션 간의 상쇄","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 발행인, 이표금리, 표시통화 및 만기 등이 일치하는 동일한 금리 관련 상품에 대한 매입 및 매도포지션은 완전히 상쇄하여 시장리스크 산출대상에서 제외할 수 있다. 나. 선물 또는 선도 거래의 포지션과 이와 일치되는 기초자산의 반대 포지션은 상쇄하여 시장리스크 산출대상에서 제 외할 수 있다. 다만, 선물 또는 선도 거래의 계약이행 조건상 일정 범위의 기초자산을 인도할 수 있는 경우에는 매도자에게 가장 유리한 기초자산(cheapest-to-deliver)만 상쇄하여 시장리스크 산출대상에서 제외할 수 있다. 의 정부발행채권을 매도한 것으로 처리한다. 스왑계약 종료일을 만기로 하는 정부채를 매도한 것으로 처리한다. 다. 통화스왑 또는 선도환 포지션은 각 통화 포지션으로 분해하여 처리한다. 라. 기초자산, 통화 및 금액이 일치하는 동일한 범주의 반대 포지션(델타 가중 포지션을 포함한다)은 다음 요건을 충 족할 때 상쇄할 수 있다. (1) 선물: 만기차가 7일 이내일 것 (2) 스왑 및 FRA: 다음 요건을 모두 충족할 것 (가) 변동금리에 대한 기초자산이 동일하고, 이표금리의 차이가 15bp 이내일 것 (나) 잔여만기 또는 차기 금리변경일까지 잔여기간이 1개월 미만이면서 차기 금리변경일 또는 만기가 같거나, 1개월 이상 1년 미만이면서 차기 금리변경일 또는 만기차가 7일 이내이거나, 또는 1년 이상이면서 차기 금리변경일 또는 만기차가 30일 이내일 것 (3) 선도 거래: (2)(나)의 요건을 충족할 것"},{"n":"112","t":"사전처리법","p":"제7장 시장리스크 간편법 제2절 금리리스크 소요자기자본","b":"가. 은행은 111.가.부터 라.까지에도 불구하고 통화별 만기표에 배정할 포지션을 다음 방법(이하 \"사전처리법\"이라 한 다)을 사용하여 산출할 수 있다. 사전처리법은 모든 금리 관련 상품(옵션의 경우 델타 가중 포지션을 대상으로 한 다)에 대하여 적용할 수 있다. (1) 각 거래로부터 요구되는 현금흐름을 무이표금리를 사용하여 현재가치로 산출한 후 각각의 현재가치를 104.가.의 무이표채에 대하여 적용되는 위험가중치를 곱하여 산출한 가중 포지션을 102.에 따라 일반시장리스크를 산출한 다. 이 경우 가중 포지션은 다른 금리 관련 포지션과 별도로 만기표를 작성해야 한다. (2) 각 거래로부터 요구되는 현금흐름을 무이표금리를 사용하여 현재가치로 산출한 후 각각의 현재가치를 104.가.의 무이표채에 대하여 적용되는 상정 금리변동폭을 곱하여 가치변동 규모를 산출하고 이를 다른 금리 관련 포지션 과 함께 103.에 따라 일반시장리스크를 산출한다. (3) (1)과 (2)와 유사한 결과를 가져오는 그 밖의 방법 나. 사전처리법을 적용하려는 은행은 다음 요건을 모두 충족해야 한다. (1) 은행은 사용하고자 하는 사전처리기법의 정확성에 대하여 감독원장으로부터 사전에 인정받을 것 (2) 계산된 포지션은 금리변화에 대한 민감도를 충분히 반영하여 야 하며 적절한 기간대에 배정될 것 (3) 하나의 만기표에 배정된 포지션들은 동일한 통화로 표시될 것"},{"n":"113","t":"주식리스크 소요자기자본","p":"제7장 시장리스크 간편법 제3절 주식리스크 소요자기자본","b":"가. 주식포지션의 시장리스크는 주식시장 또는 국가별로 주식포지션을 구분하여 개별리스크 및 일반시장리스크를 산 출하며, 이를 합산한 금액을 주식리스크에 대한 소요자기자본으로 한다. 다만, 99.나.(2)에 의한 파생상품 포지션 중 옵션 관련 포지션은 제6절에 따라 시장리스크를 산출한다. 나. 일반시장리스크는 매입포지션 합계와 매도포지션 합계의 차액의 절대값에 대하여 8%를 곱하여 산출한다. 다. 개별리스크는 매입포지션과 매도포지션의 합계에 대하여 8%를 곱하여 산출한다."},{"n":"114","t":"주식 관련 파생상품의 처리","p":"제7장 시장리스크 간편법 제3절 주식리스크 소요자기자본","b":"가. 주식 관련 파생상품은 기초자산으로 변환하여 동일한 주식의 반대 포지션을 상쇄한 후의 순매도 또는 순매입포지 션에 대하여 113.에 따라 개별리스크 및 일반시장리스크를 산출한다. 다만, 주식선물 등의 반대 레그에서 발생하 는 금리･외환 익스포져는 각각 금리･외환리스크 소요자기자본 산출대상에 포함해야 한다. 나. 주식포지션은 다음에 따라 산출한다. (1) 개별 주식 관련 선물 또는 선도거래는 관련 주식의 시가로 포지션을 계산한다. (2) 주가지수 선물거래는 해당 지수를 구성하는 기초자산 포트폴리오의 시가로 포지션을 산출한다. (3) 주식스왑은 두 개의 포지션으로 인식한다.58)"},{"n":"115","t":"주가지수의 처리","p":"제7장 시장리스크 간편법 제3절 주식리스크 소요자기자본","b":"가. 지수 관련 약정은 다음에 따라 처리한다. (1) 「금융투자업규정시행세칙」<별표5><표2>의 지수 관련 약정에 대해서는 순매입포지션 또는 순매도포지션에 대하여 2%를 곱하여 산출한 금액을 개별리스크에 대한 소요자기자본으로 하고, 일반시장리스크에 대한 소요자기자본은 113.나.에 따라 산출한다. (2) 「금융투자업규정시행세칙」<별표5><표2>의 지수가 아닌 지수 관련 약정은 지수를 그 구성 주식으로 분해하거나 그 기초주식의 시장가치 합계액을 하나의 포지션으로 하여 처리한다. 지수 관련 약정을 하나의 포지션으로 처리 하는 경우에는 해당 포지션에 대하여 8%를 곱하여 산출한 금액을 개별리스크에 대한 소요자기자본으로 하고 일 반시장리스크에 대한 소요자기자본은 113.나.에 따라 산출한다. 포지션, 후자는 매도포지션으로 인식한다. 나. 다음 중 어느 하나에 해당하는 선물 관련 차익거래에 대해서는 한쪽 지수거래에 대하여 2%를 곱하여 산출한 금 액을 가.(1)에 의한 개별리스크 소요자기자본으로 산출한다. 이 경우 다른 쪽 지수에 대한 포지션에 대해서는 개 별리스크와 일반시장리스크를 산출하지 않는다. (1) 동일지수에 대하여 다른 일자 또는 다른 시장에서 반대 포지션을 취하는 경우 (2) 유사한 성격의 다른 지수에 대하여 같은 날에 반대 포지션을 취하는 경우로서 감독원장이 두 지수의 유사성을 인정하는 경우 다. 주가지수선물 포지션과 지수에 상응하는 주식바스켓을 이용하여 반대 포지션을 취하는 의도적인 차익거래는 다음 중 어느 하나를 선택하여 소요자기자본을 산출할 수 있다. (1) 주가지수선물 포지션을 해당 지수를 구성하는 각각의 주식에 대한 명목 포지션으로 분해하여 이를 주식바스켓을 구성하는 주식 중 일치하는 주식포지션과 상쇄한 후 남는 포지션을 은행의 국별 주식포트폴리오에 합산하여 113.에 따라 개별리스크와 일반시장리스크를 산출한다. (2) 주식바스켓과 주가지수선물 포지션의 가치가 일치하는 경우에는 각각의 포지션에 대하여 2%를 곱하여 산출한 금 액을 시장리스크 소요자기자본으로 하고, 어느 한쪽의 포지션 가치가 다른 쪽 포지션 가치를 초과하는 경우 해 당 초과액에 대해서는 가.에 따라 소요자기자본을 산출한다. 이 경우 다음 요건을 모두 충족해야 한다. (가) 다른 포지션과 분리되어 별도로 관리될 것 (나) 차익거래 목적으로 계획되고 매매･거래됨을 입증할 것 (다) 주식의 바스켓 구성이 지수의 기초자산 주식포트폴리오의 90%이상을 대표할 것59)"},{"n":"116","t":"주식예탁증서의 처리","p":"제7장 시장리스크 간편법 제3절 주식리스크 소요자기자본","b":"주식예탁증서는 전환비용 감안 후 동일한 주식의 반대 포지션과 상쇄할 수 있다. 다만, 해 당 포지션에서 발생하는 외환 익스포져는 외환리스크 소요자기자본 산출대상에 포함해야 한다."},{"n":"117","t":"외환리스크 소요자기자본","p":"제7장 시장리스크 간편법 제4절 외환리스크 소요자기자본","b":"외환포지션에 대한 시장리스크 소요자기자본은 다음과 같이 산출한다. (1) 외환포지션을 통화별로 순매입포지션과 순매도포지션으로 나누어 각각의 포지션에 대하여 기준일 현재 관련 시 장의 현물환율을 적용하여 보고통화로 환산한다. (2) 금포지션은 전체 포지션을 표준측정단위로 표시한 후 순매입 또는 순매도포지션을 단위당 시장가격과 현물환율 을 적용하여 금액으로 산출한다. ① 현물바스켓과 지수간의 직전 1년간의 상관관계가 90% 이상인 경우 ② 각 주식의 현물바스켓 내의 비중과 지수 내의 비중 간 차이(percentage slippage)의 절댓값을 합계한 것이 10% 이내인 경 우 (3) (1)의 통화별 순매입포지션의 합계액과 통화별 순매도포지션의 합계액 중 큰 금액과 (2)의 순매입 또는 순매도포 지션을 합한 금액에 8%를 곱하여 시장리스크에 대한 소요자기자본을 산출한다."},{"n":"118","t":"통화별 순포지션","p":"제7장 시장리스크 간편법 제4절 외환리스크 소요자기자본","b":"가. 116.가.(1)의 통화별 순매입 또는 순매도포지션은 다음 사항을 모두 합산하여 산출한다. (1) 「외국환거래업무 취급세칙」 제2-1조에 규정된 각 외국통화별 종합포지션 (2) 대지급이 확실시되고 회수 불가능한 외화지급보증 (3) 이미 완전히 헤지되어 있으나 현재까지 발생하지 아니한 미래의 순수입 또는 지불액 (4) 통화옵션거래는 126.에 의하여 델타 가중 포지션으로 환산한 금액 나. 복합통화 포지션은 그 자체를 개별통화로 취급하거나 구성 통화군을 분해하여 처리하며, 금포지션은 121.에 따라 산출한다. 다만, 금선물 등의 반대 레그에서 발생하는 금리･외환 익스포져는 각각 금리･외환리스크 소요자기자본 산출대상에 포함해야 한다. 다. 은행은 현재까지 발생하지 아니 하였으나 미래에 수입 또는 지급의 발생이 기대되는 포지션으로 외환선도계약에 의하여 완전히 헤지된 포지션을 시장리스크 산출대상에 포함시킬지 여부를 결정할 수 있다. 다만, 일관성 있는 기 준에 따라 이에 해당하는 모든 포지션을 시장리스크 산출대상에 포함시키거나 제외시켜야 한다. 라. 선도거래의 경우 현물환율을 적용하여 평가하되, 은행이 관리회계상 순현재가치 사용 시 이를 사용할 수 있다."},{"n":"119","t":"일반상품리스크 소요자기자본","p":"제7장 시장리스크 간편법 제5절 일반상품리스크 소요자기자본","b":"가. 일반상품포지션의 시장리스크에 대한 소요자기자본은 일반상품별로 일반상품포지션을 구분하여 일반시장리스크를 산출하며, 이를 합산한 금액을 일반상품리스크에 대한 소요자기자본으로 한다. 다만, 99.라.(2)에 의한 파생상품 포지션 중 옵션 관련 포지션은 제6절에 따라 시장리스크를 산출한다. 나. 일반시장리스크는 만기사다리법 또는 간편법을 사용하여 일반상품별로 산출한다. 다만, 일반상품들 서로 간의 대 용관계가 밀접하고 적어도 1년 이상 가격의 상관관계가 0.9 이상 지속되는 경우, 감독원장의 승인을 받아 해당 일반상품들을 동일한 일반상품으로 처리할 수 있다."},{"n":"120","t":"간편법","p":"제7장 시장리스크 간편법 제5절 일반상품리스크 소요자기자본","b":"가. 간편법에 의한 일반상품 일반시장리스크 소요자기자본은 다음 절차에 따라 산출한다. (1) 각 일반상품을 표준측정단위로 변환시킨 후, 현물환율을 적용하여 보고통화로 환산한다. (2) 매입 및 매도포지션의 상쇄 후 순포지션과 총포지션에 대하여 나.에 따라 자본할당액을 산출하여 합산한 금액을 일반시장리스크로 한다. 나. 가.에서 순포지션과 총포지션에 대한 자본할당액은 다음에 따라 산출한다. (1) 순포지션에 대한 자본할당액: 일반상품별로 매입 및 매도포지션 상쇄 후 잔여 순포지션에 15%의 위험가중치를 곱하여 구한 금액 (2) 총포지션에 대한 자본할당액: 일반상품별로 매입 및 매도포지션 각각에 3%의 위험가중치를 곱하여 합산한 금액"},{"n":"121","t":"만기사다리법","p":"제7장 시장리스크 간편법 제5절 일반상품리스크 소요자기자본","b":"가. 만기사다리법에 의한 일반상품 일반시장리스크 소요자기자본은 다음 절차에 따라 산출한다. (1) 각 일반상품을 표준측정단위로 변환시킨 후, 현물환율을 적용하여 보고통화로 환산한다. (2) 매입 및 매도포지션을 잔여만기에 따라 다.의 기간대에 배정한 후 기간대별로 매입 및 매도포지션을 상쇄하고, 남은 포지션은 차기 기간대로 이월시켜 해당 기간대의 포지션과 상쇄한다. (3) 최종 기간대까지 위의 과정을 반복하여 진행한 후, 나.에 따라 상쇄분과 순포지션에 대한 자본할당액을 산출하여 합산한 금액을 일반시장리스크로 한다. 나. 가.에서 순포지션과 상쇄분에 대한 자본할당액은 다음에 따라 산출한다. (1) 순포지션에 대한 자본할당액: 기간대별 포지션 상쇄 후, 최종 기간대의 잔여 순포지션에 대하여 15%의 위험가중 치를 곱하여 구한 금액 (2) 상쇄분에 대한 자본할당액: 다음 금액의 합계액 (가) 동일 기간대 내 상쇄분에 대한 자본할당액: 동일 기간대 내의 매입포지션 및 매도포지션을 상쇄하고, 상쇄되는 매입 및 매도포지션 각각에 대하여 다.의 자본할당률을 곱하여 구한 금액의 합계액 (나) 기간대별 잔여 순포지션에 대한 자본할당액: 동일 기간대별로 차기 기간대로 이월되는 잔여 순포지션에 대하여 0.6%의 자본할당률을 곱하여 구한 금액의 합계액 다. 만기사다리법에서 기간대와 자본할당률은 다음에 따라 결정한다. 기간대 자본할당률 1개월 이하(현물포함) 1.5% 1~3개월 1.5% 3~6개월 1.5% 6~12개월 1.5% 1~2년 1.5% 2~3년 1.5% 3년 초과 1.5%"},{"n":"122","t":"일반상품 관련 파생상품의 처리","p":"제7장 시장리스크 간편법 제5절 일반상품리스크 소요자기자본","b":"가. 일반상품 관련 파생상품은 기초자산 포지션으로 변환하여 119.에 따라 일반시장리스크를 산출한다. 다만, 일반상 품선물 등의 반대 레그에서 발생하는 금리･외환 익스포져는 각각 금리･외환리스크 소요자기자본 산출대상에 포함 해야 한다. 나. 선물 및 선도거래의 경우 액면금액 기준으로 해당 기간대별 매입 및 매도포지션으로 처리한다. 다. 동일 일반상품의 고정가격과 시장가격을 교환하는 일반상품스왑의 경우 해당 스왑거래 액면금액과 동일한 여러 포지션의 결합으로 처리한다. (1) 분해된 포지션들은 해당 스왑거래에서 발생하는 현금흐름 교환일에 해당하는 기간대로 분류한다. (2) 고정가격을 지불하고 시장가격을 수취하는 스왑거래는 매입포지션, 그 반대의 경우는 매도포지션으로 처리한다. 라. 서로 다른 일반상품의 가격을 교환하는 일반상품스왑의 경우 일반상품별로 분류한 후, 현금흐름 교환일별 여러 포 지션으로 분해하여 매입 및 매도포지션으로 분류한다."},{"n":"123","t":"옵션리스크 소요자기자본","p":"제7장 시장리스크 간편법 제6절 옵션리스크 소요자기자본","b":"가. 은행은 124.부터 128.까지의 간편법, 델타플러스법 또는 시나리오법에 따라 옵션의 시장리스크를 산출할 수 있다. 다만, 매도옵션을 취급하는 은행은 간편법을 사용할 수 없으며, 시나리오법을 사용하려면 감독원장의 승인을 받아 야 한다. 나. 은행은 다음 각 호의 어느 하나에 따라 옵션리스크에 대한 소요자기자본을 산출할 수 있다. (1) 금리포지션, 주식포지션, 외환포지션, 일반상품포지션 등 대상 포지션에서 옵션 관련 기초자산 포지션을 분리하여 해당 옵션과 함께 간편법 또는 시나리오법을 사용하여 옵션리스크에 대한 소요자기자본을 산출 (2) 옵션 관련 기초자산 포지션에 대한 시장리스크 소요자기자본은 금리포지션, 주식포지션, 외환포지션, 일반상품포 지션 등 해당 대상 포지션과 함께 산출하고, 옵션에 대한 소요자기자본은 델타플러스법을 사용하여 별도로 산출"},{"n":"124","t":"간편법","p":"제7장 시장리스크 간편법 제6절 옵션리스크 소요자기자본","b":"간편법에 의한 소요자기자본은 다음과 같이 포지션을 구분하여 산출한다. (1) 기초자산 매입 및 풋옵션 매입, 또는 기초자산 매도 및 콜옵션 매입: 기초자산의 시장가치60)에 기초자산별 개별 리스크 위험가중치와 일반시장리스크 위험가중치의 합계61)를 곱한 금액에서 옵션 내재가치62)를 차감하여 구한 금액 (2) 콜옵션 매입 또는 풋옵션 매입: 다음 중 작은 금액 (가) 기초자산의 시장가치에 기초자산별 개별리스크 위험가중치와 일반시장리스크 위험가중치의 합계를 곱한 금액 (나) 옵션의 시장가치"},{"n":"125","t":"델타플러스법","p":"제7장 시장리스크 간편법 제6절 옵션리스크 소요자기자본","b":"가. 델타플러스법에 의한 소요자기자본은 델타리스크, 감마리스크 및 베가리스크 각각에 대한 소요자기자본을 합산하 여 산출한다. 나. 델타플러스법에 의한 소요자기자본 산정 시 적용하는 델타, 감마 및 베가는 증권시장, 파생상품시장 또는 공신력 있는 외부기관에서 제공하는 것을 사용하거나 은행 자체 가격모형을 사용하여 산출해야 한다. 다만, 은행이 자체 가격모형을 사용하여 산출하는 경우, 감독원장은 해당 가격모형의 적정성 등에 대하여 점검할 수 있다."},{"n":"126","t":"델타플러스법에 의한 델타리스크","p":"제7장 시장리스크 간편법 제6절 옵션리스크 소요자기자본","b":"델타리스크에 대해서는 기초자산의 시가에 옵션의 델타값을 곱하여 구한 델타 가중 포지션을 대상으로 기초자산 종류별로 다음에 따라 소요자기자본을 산출한다. (1) 금리: 델타 가중 포지션을 금리리스크 대상자산에 포함하여 제2절에 따라 일반시장리스크 및 개별리스크에 대한 소요자기자본을 산출한다. 이 경우 델타 가중 포지션은 매입 및 매도포지션의 결합으로 처리한다.63) (2) 주식: 델타 가중 포지션을 주식리스크 대상자산에 포함하여 제3절에 따라 일반시장리스크 및 개별리스크에 대한 소요자기자본을 산출한다. 이 경우 각 국가별 주식시장은 개별 기초자산으로 처리한다. (3) 외환(금을 포함한다): 델타 가중 포지션을 외환리스크 대상자산에 포함하여 제4절에 따라 일반시장리스크에 대한 소요자기자본을 산출한다. 이때 델타 가중 포지션은 해당 통화(또는 금) 익스포져에 포함한다. (4) 일반상품: 델타 가중 포지션을 일반상품리스크 대상자산에 포함하여 제5절에 따라 일반시장리스크에 대한 소요자 기자본을 산출한다. 션 등과 같이 기초자산의 가치가 0이 될 수 있는 상품에 대해서는 명목가치를 사용한다. 션, 회사채지수옵션, 주식옵션, 주가지수옵션에는 개별리스크 위험가중치를 적용한다. 통화옵션의 경우 8%, 일반상품옵션의 경우 15%의 일반시장리스크 위험가중치를 적용한다. 내재가치를 0으로 한다. 타 가중 포지션으로 처리한다."},{"n":"127","t":"델타플러스법에 의한 감마･베가리스크","p":"제7장 시장리스크 간편법 제6절 옵션리스크 소요자기자본","b":"가. 감마리스크는 각 옵션에 대하여 다음 식에 따라 산출되는 감마 충격(gamma impact) 중 음수인 금액의 절댓값을 합산하여 산출한다. 이 경우 기초자산 가치변동 는 기초자산 종류별로 다음에 따라 정한다. 감마 충격 × × 옵션 감마 기초자산 가격변동 (1) 금리: 기초자산의 시장가격에 104.가.의 상정 금리변동폭(기초자산이 채권인 경우 위험가중치)을 곱하여 산출 (2) 주식･외환(금을 포함한다): 기초자산의 시장가격에 8%를 곱하여 산출 (3) 일반상품: 기초자산의 시장가격에 15%를 곱하여 산출 나. 베가리스크는 각 기초자산에 대하여 모든 옵션 베가를 합산하고 변동성의 ±25% 상대적 변동을 곱하여 산출되는 금액의 절댓값을 합산하여 산출한다. 다. 가. 및 나.에서 기초자산이 다음 각 호에 해당하는 경우 동일한 기초자산으로 처리한다. (1) 금리: 104.가.의 동일한 기간대에 속하는 것 (2) 주식: 동일한 국가 내 시장에서 거래되는 주식 또는 주가지수 (3) 외환(금을 포함한다): 각각의 통화 쌍 및 금 (4) 일반상품: 개별 일반상품"},{"n":"128","t":"시나리오법","p":"제7장 시장리스크 간편법 제6절 옵션리스크 소요자기자본","b":"가. 시나리오법을 사용하는 경우 각 기초자산별로 기초자산 가격 변동구간과 변동성 변동구간을 양 축으로 하는 매트 릭스 형태의 시나리오를 만들어 시나리오별로 옵션과 헤지포지션의 순손익을 산출하여 최대의 손실액을 소요자기 자본으로 한다. 나. 가.의 기초자산의 가격 변동구간은 기초자산별로 다음과 같이 변동률을 상정하되 7개 이상의 등간격 변동구간을 설정한다. (1) 금리: 104.가.의 상정 금리변동폭 (2) 주식･외환(금을 포함한다): ±8% (3) 일반상품: ±15% 다. 가.의 기초자산의 변동성 변동구간은 ±25%의 변동률을 상정하여 7개 이상의 등간격 변동구간을 설정한다. 다만, 감독원장은 필요시 다른 변동률을 상정하도록 요구하거나 변동구간 사잇값을 시나리오로 하여 순손익을 산출하도 록 요구할 수 있다. [시행일: 2023. 1. 1.]"}];
+const FOOTNOTES = {"1":"트레이딩계정 합계액은 다음에 따라 산출한다.","2":"\"금융상품\"이란 계약의 일종으로 거래당사자 중 하나에는 금융자산을, 다른 하나에는 금융부채 또는 지분상품을 동시에 발생","3":"\"은행계정의 신용 또는 주식 순매도포지션\"이란 채무상품의 발행자 신용스프레드가 확대되거나 주가가 하락함에 따라 현재가","4":"이에 따라 「한국채택국제회계기준」에 따라 사업모형이 단기매매 목적으로 분류되어 당기손익-공정가치측정 항목으로 분류","5":"은행은 성과급 이연 제도, 전환사채, 지분참여 방식(equity kicker)으로 이자가 지급되는 대출상품, 계약을 체결할 때에는 채","6":"유동성관리 목적이고 발생기준으로 회계처리되는 환매조건부거래는 트레이딩계정 상품으로 추정되지 않는다.","7":"내재파생상품은 주계약과 함께 복합상품의 구성요소이며, 주계약이 은행계정으로 발행하는 채무상품이면 회계기준에 따라 내","8":"예를 들어, 구조조정에 따라 영구적으로 해당 상품과 관련된 트레이딩데스크를 폐쇄하고 사업부문에서 철수하는 경우 또는 특","9":"은행계정과 트레이딩계정 간 증권을 다시 배분하는 행위는 가까운 시일 내 매매할 것이 명백할지라도 계정변경에 해당하므로,","10":"<별표3>91.에 따라 채무재조정이 신용사건에 포함되지 않는 신용파생상품에 적용되는 상한 60%는 오직 은행계정 상품의","11":"내부 리스크 이전으로 은행계정 상품이 초과헤지되면 해당 순매도포지션이 발생할 수 있다.","12":"포지션의 유동성 감소는 시장사건뿐만 아니라 포지션이 편중되었거나 처음 의도한 보유기간을 초과하여 포지션을 보유하는","13":"경제상황, 주요활동 및 매매ㆍ헤지전략에 포함될 수 있는 내용은 다음과 같다.","14":"예를 들어, 트레이딩데스크 단위의 리스크 보고에는 트레이딩데스크 단위의 VaRㆍES, 리스크요소에 대한 VaRㆍES의 민감","15":"\"양방향시장\"(two-way markets)이란 독립적이고 신뢰할 수 있는 매입ㆍ매도호가가 존재하여 가격이 가장 최근의 체결가격","16":"은행은 외환포지션을 매치함으로써 환율 변동으로 인한 손실은 헤지할 수 있으나 자기자본비율의 변동은 그렇지 않다. 예를","17":"콜옵션ㆍ풋옵션ㆍ캡ㆍ플로어ㆍ스왑션ㆍ배리어옵션ㆍ그 밖의 비정형 옵션은 옵션성 상품이며, 옵션뿐만 아니라 전환권, 금리","18":"채무자가 만기 이전에 이미 지급된 이자에 대한 보상 없이 원금의 일부나 전체를 상환하는 권리를 갖는 채무상품으로, 채무","19":"46.의 상관관계 시나리오에 따라 상방 충격에 대한 소요자기자본과 하방 충격에 대한 소요자기자본의 대소관계가 달라 선택","20":"인플레이션율 또는 이종통화 베이시스는 일반적으로 한 상품에서 무위험금리에 더하여 추가적으로 고려되므로 통화가 같고","21":"무위험금리 델타 리스크요소와 같이 리스크요소가 만기에 따라 정의되는 경우, 은행은 리스크요소를 특정 만기에 할당할 때","22":"인플레이션율 델타 리스크요소와 같이 리스크요소가 만기에 따라 정의되지 않는 경우 커브를 평행이동하여 민감도를 산출해","23":"이에 따라 USD 또는 EUR 기준이 아닌 베이시스는 USD 또는 EUR 기준 베이시스 중 하나로 분해해야 한다.","24":"예를 들어, 12개월 후 시작되고 기초자산이 USD 3개월 LIBOR인 4개 캡릿으로 구성되는 선도 캡은 옵션 만기가 12개월ㆍ","25":"이에 따라 통화가 같은 모든 무위험금리 커브는 하나의 리스크요소이므로 커버쳐리스크 소요자기자본은 해당 커브를 동시에","26":"예를 들어, 3개월 EURIBOR 커브와 다른 지표금리 커브, 3개월 EURIBOR 커브와 6개월 EURIBOR 커브, 그리고 INR에 대","27":"이에 따라 보고통화가 아닌 통화 간 환율은 보고통화와 해당 통화 간 두 환율로 분해해야 한다. 예를 들어, 보고통화가","28":"예를 들어, 전력(70.의 버킷 3(에너지 － 전력ㆍ탄소배출권 거래)에 해당)이 있다.","29":"예를 들어, 한 거래의 인도지역이 특정 5개 항구로 지정된 경우, 다른 거래를 해당 거래와 같은 거래로 보기 위해서는 적어","30":"예를 들어, EONIA 스왑커브 1년 금리와 3개월 EURIBOR 스왑커브 5년 금리 간 상관계수는 88.7%×99.9% = 88.6%이다.","31":"예를 들어, 만기 5년 Apple 채권금리와 만기 10년 Google CDS스프레드의 버킷내 합산 시 상관계수는 35%×65%×99.90%","32":"예를 들어, EUR/AUD는 고유동성 통화 쌍인 USD/EUR과 USD/AUD의 1차 조합에 해당한다.","33":"예를 들어, 만기 1년 브렌트유와 만기 5년 WTI유 간 상관계수는 95%×99.00%×99.90% = 93.96%이다.","34":"예를 들어, 다음은 다른 일반상품에 해당한다.","35":"예를 들어, 비유동화 신용스프레드 델타 리스크요소 간 상관계수는 65.다.에 따라 발행자･만기･커브를 고려하여 결정하나 커","36":"가상 포트폴리오가 보유하는 파생상품의 거래상대방 신용리스크와 CVA리스크 소요자기자본은 <별표3>44.나.(다)에 따라 산","37":"7.나.(5)(가) 및 (나)의 요건을 모두 충족하지 않는 집합투자증권의 순매입포지션은 7.나.에 따라 은행계정 상품이므로 <별표","38":"이에 따라 CTP에 포함되는 헤지거래는 비유동화상품의 소요자기자본 산출대상에서 제외해야 한다.","39":"예를 들어, 만기까지 EUR 표시 이자와 USD 표시 이자를 교환하며 특정 차주의 부도 시 종료되는 신용 및 외환 하이브리드","40":"파생상품 익스포져는 기초자산이 아니라 파생상품의 만기를 이용하여 조정해야 한다.","41":"예를 들어, 만기가 6개월인 익스포져의 총JTD는 0.5를 곱하여 조정한다.","42":"예를 들어, 채권 매입 익스포져와 주식 매도 익스포져의 총JTD는 상쇄할 수 있으나 주식 매입 익스포져와 채권 매도 익스포","43":"예를 들어, 투기등급채권 또는 부실채권에 우선적으로 투자하는 집합투자증권은 허용되는 투자대상 중 표준신용등급이 낮은","44":"유동화상품은 위험가중치에 부도 시 손실률이 반영되기 때문에 총JTD에서 이를 반영하지 않는다.","45":"예를 들어, 정형 CDO, 지수 트렌치상품 및 비스포크 유동화상품 등이 정형 유동화상품에 해당하며 CDO 스퀘어 등은 비정","46":"예를 들어, 10~15% 트렌치상품의 매입 익스포져와 10~12% 및 12~15% 트렌치상품의 매도 익스포져는 상쇄할 수 있다.","47":"예를 들어, 특정 지수를 완전히 복제하는 여러 단일 기초자산 상품의 매입 익스포져와 해당 지수상품의 매도 익스포져는 상","48":"예를 들어, 125개 기초자산의 지수 매입 익스포져와 124개 기초자산을 적절히 복제하는 매도 익스포져는 상쇄할 수 있으며,","49":"비유동화상품 및 유동화상품(CTP 제외)과 달리 유동화상품(CTP)은 하한을 적용하지 않기 때문에 버킷 단위의 소요자기자본","50":"예를 들어, 장수리스크･기후변화･자연재해･미래 실현변동성 등이 있다.","51":"예를 들어, 다음 상품이 해당 리스크와 관련된다.","52":"전환사채가 전환권 행사기간 내에 있고 전환사채의 시장가격이 기초주식의 시장가격을 10% 이상 초과하는 경우에는 채권으","53":"수익증권은 주식편입비율과 수익증권의 변동성 간 상관관계 분석에 따라 주식포지션 또는 금리포지션으로 구분 처리할 수","54":"대여유가증권, 환매조건부채권매도 등의 경우 은행이 대여기간 동안 증권을 계속적으로 보유하고 있는 것과 동일하므로 이들","55":"은행은 각 통화별 금리포지션을 포지션 규모 순으로 누적포지션을 산출하여 전체 누적 금리포지션의 90%에 달할 때까지 해","56":"예를 들어, 6월에 시작하는 3개월물 금리선물을 4월에 매입하였을 경우 5개월 만기의 정부발행채권을 매입하고 2개월 만기","57":"예를 들어, 변동금리를 수취하고 고정금리를 지급하는 스왑거래의 경우 차기 금리변경일을 만기로 하는 정부채를 매입하고","58":"예를 들어, 특정 주가지수의 가치변동과 관련된 금액을 수취하고 다른 주가지수와 관련된 금액을 지불하는 경우 전자는 매입","59":"다음 중 어느 하나에 해당하는 경우 90% 이상을 대표하는 것으로 인정된다.","60":"외환거래와 같이 어느 쪽이 기초자산인지 불분명한 경우 옵션 행사 시 받는 자산을 기초자산으로 처리하며, 캡･플로어･스왑","61":"기초자산이 금리, 통화, 일반상품인 경우에는 개별리스크가 없으므로 일반시장리스크 위험가중치만 적용한다. 반면, 회사채옵","62":"잔여만기가 6개월 이상인 옵션의 경우 내재가치는 행사가격을 선도가격과 비교하여 산출해야 한다. 이것이 곤란한 경우에는","63":"예를 들어, 잔여만기가 2개월인 3개월물 금리선물 콜옵션 매입포지션은 잔여만기가 각각 5개월 및 2개월인 매입 및 매도 델"};
+</script>
+
+<!-- ============================================================ -->
+<!-- APP (UI 렌더링)                                                -->
+<!-- ============================================================ -->
+<script>
+(function(){
+'use strict';
+// ---- 데이터 상태: 샘플 데이터로 시작, 업로드 시 교체 ----
+function cloneSample(){ return JSON.parse(JSON.stringify(FRTB_SAMPLE)); }
+let dataset = cloneSample();
+let dataMeta = { mode:'sample', fileName:null, warnings:[] };
+
+// 옵션 포지션의 델타(선형) 성분을 해당 리스크군 델타 배열에 병합.
+// [39조 취지] 옵션도 델타 소요자기자본 산출대상이며, 베가·커버쳐는 별도로 추가 산출되는 것이지 델타를 대체하지 않음.
+function withOptionDeltaMerged(ds){
+  const girrDelta = ds.girrDelta.concat(ds.girrVega.filter(x=>x.delta).map(x=>({currency:x.currency, kind:'rate', curve:x.curve||'IRS', tenor:x.optTenor, delta:x.delta})));
+  const csrNonSecDelta = ds.csrNonSecDelta.concat(ds.csrVega.filter(x=>x.delta).map(x=>({bucket:x.bucket, issuer:x.issuer, tenor:x.tenor, curve:x.curve||'BOND', delta:x.delta})));
+  const equityDelta = ds.equityDelta.concat(ds.eqVega.filter(x=>x.delta).map(x=>({bucket:x.bucket, issuer:x.issuer, kind:x.kind||'spot', delta:x.delta})));
+  const fxDelta = ds.fxDelta.concat(ds.fxVega.filter(x=>x.delta).map(x=>({pair:x.pair, delta:x.delta})));
+  const commodityDelta = ds.commodityDelta.concat(ds.ctyVega.filter(x=>x.delta).map(x=>({bucket:x.bucket, commodity:x.commodity, tenor:x.tenor, location:x.location, delta:x.delta})));
+  return Object.assign({}, ds, { girrDelta, csrNonSecDelta, equityDelta, fxDelta, commodityDelta });
+}
+
+const SCN = ['high','medium','low'];
+const SCN_LABEL = { high:'높은 상관관계', medium:'중간 상관관계', low:'낮은 상관관계' };
+
+function bestOf(fn){
+  let best=null;
+  for(const s of SCN){ const r=fn(s); if(!best || r.total>best.total) best={scenario:s, ...r}; }
+  const all={}; for(const s of SCN) all[s]=fn(s).total;
+  best.all=all; return best;
+}
+
+function fmt(x){
+  const sign = x<0 ? '-' : '';
+  x = Math.abs(x);
+  if(x>=1e12) return sign+(x/1e12).toFixed(2)+'조원';
+  if(x>=1e8) return sign+(x/1e8).toFixed(2)+'억원';
+  if(x>=1e4) return sign+Math.round(x/1e4).toLocaleString()+'만원';
+  return sign+Math.round(x).toLocaleString()+'원';
+}
+function fmtFull(x){ return (x<0?'-':'')+Math.round(Math.abs(x)).toLocaleString()+'원'; }
+
+// ---- 전 리스크군 계산 (mutable — 업로드 시 재호출) ----
+const R = {};
+const TOT = {};
+const classTotal = k => R[k+'_d'].total + (R[k+'_v']?R[k+'_v'].total:0) + (R[k+'_c']?R[k+'_c'].total:0);
+
+function recompute(){
+  const D = withOptionDeltaMerged(dataset);
+  R.girr_d   = bestOf(s=>FRTB.computeGIRR(D.girrDelta, s));
+  R.girr_v   = bestOf(s=>FRTB.computeGIRRVega(dataset.girrVega, s));
+  R.girr_c   = bestOf(s=>FRTB.computeGIRRCurvature(dataset.girrVega, s));
+  R.csr_d    = bestOf(s=>FRTB.computeCsrNonSec(D.csrNonSecDelta, s, false));
+  R.csr_v    = bestOf(s=>FRTB.computeCsrVega(dataset.csrVega, s, false));
+  R.csr_c    = bestOf(s=>FRTB.computeCsrCurvature(dataset.csrVega, s, false));
+  R.sec_d    = bestOf(s=>FRTB.computeSecNonCTP(dataset.secNonCTPDelta, s));
+  R.eq_d     = bestOf(s=>FRTB.computeEquity(D.equityDelta, s));
+  R.eq_v     = bestOf(s=>FRTB.computeEquityVega(dataset.eqVega, s));
+  R.eq_c     = bestOf(s=>FRTB.computeEquityCurvature(dataset.eqVega, s));
+  R.fx_d     = bestOf(s=>FRTB.computeFX(D.fxDelta, s));
+  R.fx_v     = bestOf(s=>FRTB.computeFXVega(dataset.fxVega, s));
+  R.fx_c     = bestOf(s=>FRTB.computeFXCurvature(dataset.fxVega, s));
+  R.cty_d    = bestOf(s=>FRTB.computeCommodity(D.commodityDelta, s));
+  R.cty_v    = bestOf(s=>FRTB.computeCommodityVega(dataset.ctyVega, s));
+  R.cty_c    = bestOf(s=>FRTB.computeCommodityCurvature(dataset.ctyVega, s));
+  R.drc_ns   = FRTB.computeDRC_NonSecLike(dataset.drcNonSec);
+  R.drc_ctp  = FRTB.computeDRC_CTP(dataset.drcSecCTP);
+  R.rrao     = FRTB.computeRRAO(dataset.rrao);
+
+  TOT.sbm = ['girr','csr','eq','fx','cty'].reduce((a,k)=>a+classTotal(k),0) + R.sec_d.total;
+  TOT.drc = R.drc_ns.total + R.drc_ctp.total;
+  TOT.capital = TOT.sbm + TOT.drc + R.rrao.total;
+  TOT.rwa = TOT.capital * 12.5;
+
+  document.getElementById('hdrCapital').textContent = fmt(TOT.capital);
+  document.getElementById('hdrRWA').textContent = fmt(TOT.rwa);
+}
+recompute();
+
+// ---- 조항 인용 데이터 ----
+const CITE = {
+  girr:  {art:'44·47·48·57·64조', txt:'통화별 무위험금리·인플레이션 커브를 만기 버킷에 배정, 만기간 상관계수는 지수감쇠식(θ=3%, 최저 40%)으로 산출 후 버킷(통화) 간 상관계수 50%로 합산.'},
+  csr:   {art:'44·58·65조', txt:'발행자·산업·신용도 기준 18개 버킷. 동일 발행자 100%/상이 35%, 동일 만기 100%/상이 65%를 곱하여 리스크요소 상관계수 산출.'},
+  sec:   {art:'44·66조', txt:'상품유형·신용도 기준 25개 버킷(공식 기반 위험가중치: 선순위IG 기준값×1.25(비선순위)/×1.75(투기)). 버킷 간 상관계수 0%(기타버킷 제외 단순합산).'},
+  eq:    {art:'44·59·68조', txt:'시가총액·경제수준·산업 기준 13개 버킷. 버킷 내 상관계수 15~80%, 버킷 간 15/45/75%.'},
+  fx:    {art:'44·60·69조', txt:'통화쌍별 위험가중치 15%, 버킷(통화쌍) 간 상관계수 60%.'},
+  cty:   {art:'44·61·70조', txt:'일반상품 종류별 11개 버킷, 버킷별 고유 위험가중치·상관계수표 적용.'},
+  vega:  {art:'62·71조', txt:'베가 리스크요소 상관계수는 대응 델타 리스크요소 상관계수를 원용(GIRR은 옵션만기 지수감쇠 근사). 위험가중치는 주식만 원문서 명시(대형주/지수 77.78%, 그 외 100%) — 그 외 리스크군은 100% 가정(검증 필요).'},
+  curv:  {art:'45·63·72조', txt:'커버쳐리스크요소 = 대응 델타요소, 위험가중치는 델타위험가중치(주식·외환) 또는 그 최댓값(GIRR·CSR·상품). 상관계수는 대응 델타 상관계수의 제곱을 사용.'},
+  scn:   {art:'46조', txt:'상관계수 시나리오: 중간(원값), 높음 min(2ρ,1), 낮음 max(2ρ-1, 0.75ρ). 3개 시나리오 중 소요자기자본이 가장 큰 값을 채택.'},
+  drc:   {art:'76~84조', txt:'익스포져별 총JTD(=LGD×명목원금+누적평가손익, 만기<1년 비례조정) 산출 → 동일차주 상쇄 → 순JTD → 버킷(기업/정부/지방정부)별 등급 위험가중치 적용, 헤지효과율 반영 후 버킷 단순합산.'},
+  drcctp:{art:'89~92조', txt:'CTP 버킷(지수)간 50% 상관계수를 인정하는 sqrt(ΣKb²+0.5ΣΣKbKc) 산식 적용.'},
+  rrao:  {art:'93~96조', txt:'비정형 기초자산 상품 1.0%, 그 외 잔여리스크 상품(갭·상관관계·행동리스크) 0.1%를 명목원금에 적용, 단순 합산.'},
+  total: {art:'39조', txt:'표준방법 소요자기자본 = 민감도법(델타+베가+커버쳐) + 부도리스크(DRC) + 잔여리스크(RRAO) 단순 합산.'},
+  rwa:   {art:'39조.나', txt:'시장위험가중자산 = 소요자기자본 × 12.5.'}
+};
+function cite(key){
+  const c = CITE[key]; if(!c) return '';
+  return `<details class="cite"><summary>${c.art}</summary><div class="panel">${c.txt}</div></details>`;
+}
+
+function scenarioRow(res){
+  return `<div class="scenario-row">${SCN.map(s=>`
+    <div class="sc ${s===res.scenario?'chosen':''}">
+      <div class="k">${SCN_LABEL[s]}</div>
+      <div class="v">${fmt(res.all[s])}</div>
+    </div>`).join('')}</div>`;
+}
+
+function bucketTable(res, labelFn, extraCols){
+  const rows = res.buckets.slice().sort((a,b)=>Math.abs(b.Sb||b.Kb)-Math.abs(a.Sb||a.Kb));
+  let head = `<tr><th>버킷</th><th>포지션수</th><th>순민감도(WS 합)</th><th>버킷 소요자기자본(Kb)</th></tr>`;
+  let body = rows.map(b=>`<tr><td>${labelFn(b)}</td><td>${b.items.length}</td><td class="${(b.Sb||0)<0?'neg':''}">${fmtFull(b.Sb||0)}</td><td>${fmtFull(b.Kb)}</td></tr>`).join('');
+  return `<table class="data">${head}<tbody>${body}</tbody><tfoot><tr><td>합계(리스크군 전체)</td><td></td><td></td><td>${fmtFull(res.total)}</td></tr></tfoot></table>`;
+}
+
+function componentCards(dKey, vKey, cKey, citeKey){
+  const parts = [];
+  parts.push(`<div class="card"><div class="lbl">델타 ${cite(citeKey)}</div><div class="amt">${fmt(R[dKey].total)}</div><div class="sub">채택 시나리오: ${SCN_LABEL[R[dKey].scenario]}</div></div>`);
+  if(vKey) parts.push(`<div class="card"><div class="lbl">베가 ${cite('vega')}</div><div class="amt">${fmt(R[vKey].total)}</div><div class="sub">채택 시나리오: ${SCN_LABEL[R[vKey].scenario]}</div></div>`);
+  if(cKey) parts.push(`<div class="card"><div class="lbl">커버쳐 ${cite('curv')}</div><div class="amt">${fmt(R[cKey].total)}</div><div class="sub">채택 시나리오: ${SCN_LABEL[R[cKey].scenario]}</div></div>`);
+  return `<div class="grid cols-3">${parts.join('')}</div>`;
+}
+
+// ---------------- 페이지 렌더 ----------------
+// ---------------- CSV 업로드: 파서 · 템플릿 · 데이터셋 빌더 ----------------
+function parseCSV(text){
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n')
+    .filter(l => l.trim().length>0 && !l.trim().startsWith('#'));
+  if(lines.length===0) return {header:[], rows:[]};
+  const splitLine = (line) => {
+    const out=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){
+        if(inQ && line[i+1]==='"'){ cur+='"'; i++; }
+        else inQ=!inQ;
+      } else if(c===',' && !inQ){ out.push(cur); cur=''; }
+      else cur+=c;
+    }
+    out.push(cur);
+    return out.map(s=>s.trim());
+  };
+  const header = splitLine(lines[0]).map(h=>h.trim().toLowerCase());
+  const rows = lines.slice(1).map(line=>{
+    const cells = splitLine(line);
+    const obj = {};
+    header.forEach((h,i)=> obj[h] = cells[i]!==undefined ? cells[i] : '');
+    return obj;
+  });
+  return {header, rows};
+}
+
+function buildDatasetFromRows(rows){
+  const ds = { girrDelta:[], csrNonSecDelta:[], secNonCTPDelta:[], equityDelta:[], fxDelta:[], commodityDelta:[],
+    girrVega:[], csrVega:[], eqVega:[], fxVega:[], ctyVega:[], drcNonSec:[], drcSecCTP:[], rrao:[] };
+  const warnings = [];
+  const counts = {};
+  const num = (v) => (v===undefined||v===null||v==='') ? undefined : Number(v);
+  const RC = ['GIRR','CSR_NS','SEC_NONCTP','EQ','FX','CTY','DRC_NS','DRC_CTP','RRAO'];
+
+  rows.forEach((r, idx) => {
+    const line = idx+2;
+    const rc = (r.risk_class||'').trim().toUpperCase();
+    if(!rc) return;
+    if(RC.indexOf(rc)===-1){ warnings.push(`${line}행: 알 수 없는 risk_class "${r.risk_class}" — 건너뜀`); return; }
+    const measure = (r.measure||'delta').trim().toLowerCase();
+    try{
+      switch(rc){
+        case 'GIRR':
+          if(measure==='option') ds.girrVega.push({currency:r.currency, curve:r.curve||'IRS', optTenor:num(r.opt_tenor), delta:num(r.delta), vega:num(r.vega)||0, cvrUp:num(r.cvr_up)||0, cvrDown:num(r.cvr_down)||0});
+          else ds.girrDelta.push({currency:r.currency, kind:r.kind||'rate', curve:r.curve||'IRS', tenor:num(r.tenor), delta:num(r.delta)});
+          break;
+        case 'CSR_NS':
+          if(measure==='option') ds.csrVega.push({bucket:num(r.bucket), issuer:r.issuer, tenor:num(r.tenor), curve:r.curve||'BOND', delta:num(r.delta), vega:num(r.vega)||0, cvrUp:num(r.cvr_up)||0, cvrDown:num(r.cvr_down)||0});
+          else ds.csrNonSecDelta.push({bucket:num(r.bucket), issuer:r.issuer, tenor:num(r.tenor), curve:r.curve||'BOND', delta:num(r.delta)});
+          break;
+        case 'SEC_NONCTP':
+          ds.secNonCTPDelta.push({bucket:num(r.bucket), tranche:r.tranche, tenor:num(r.tenor), curve:r.curve||'BOND', delta:num(r.delta)});
+          break;
+        case 'EQ':
+          if(measure==='option') ds.eqVega.push({bucket:num(r.bucket), issuer:r.issuer, kind:r.kind||'spot', delta:num(r.delta), vega:num(r.vega)||0, cvrUp:num(r.cvr_up)||0, cvrDown:num(r.cvr_down)||0});
+          else ds.equityDelta.push({bucket:num(r.bucket), issuer:r.issuer, kind:r.kind||'spot', delta:num(r.delta)});
+          break;
+        case 'FX':
+          if(measure==='option') ds.fxVega.push({pair:r.pair, delta:num(r.delta), vega:num(r.vega)||0, cvrUp:num(r.cvr_up)||0, cvrDown:num(r.cvr_down)||0});
+          else ds.fxDelta.push({pair:r.pair, delta:num(r.delta)});
+          break;
+        case 'CTY':
+          if(measure==='option') ds.ctyVega.push({bucket:num(r.bucket), commodity:r.commodity, tenor:num(r.tenor), location:r.location, delta:num(r.delta), vega:num(r.vega)||0, cvrUp:num(r.cvr_up)||0, cvrDown:num(r.cvr_down)||0});
+          else ds.commodityDelta.push({bucket:num(r.bucket), commodity:r.commodity, tenor:num(r.tenor), location:r.location, delta:num(r.delta)});
+          break;
+        case 'DRC_NS':
+          ds.drcNonSec.push({obligor:r.obligor, bucket:r.bucket, rating:(r.rating||'').toUpperCase(), notional:num(r.notional), mtm:num(r.mtm)||0, lgdType:r.lgd_type||'senior', maturityYears:num(r.maturity_years)});
+          break;
+        case 'DRC_CTP':
+          ds.drcSecCTP.push({bucket:r.bucket, rating:(r.rating||'').toUpperCase(), notional:num(r.notional), mtm:num(r.mtm)||0, lgdType:r.lgd_type||'senior', maturityYears:num(r.maturity_years)});
+          break;
+        case 'RRAO':
+          ds.rrao.push({name:r.name, notional:num(r.notional), kind:r.kind||'other'});
+          break;
+      }
+      counts[rc] = (counts[rc]||0)+1;
+    } catch(e){
+      warnings.push(`${line}행: 처리 오류 — ${e.message}`);
+    }
+  });
+
+  ['girrDelta','csrNonSecDelta','secNonCTPDelta','equityDelta','fxDelta','commodityDelta'].forEach(k=>{
+    const before = ds[k].length;
+    ds[k] = ds[k].filter(x => x.delta!==undefined && !isNaN(x.delta));
+    if(ds[k].length < before) warnings.push(`${k}: delta 값이 없거나 숫자가 아닌 행 ${before-ds[k].length}건을 제외했습니다.`);
+  });
+  ['drcNonSec','drcSecCTP'].forEach(k=>{
+    const before = ds[k].length;
+    ds[k] = ds[k].filter(x => x.notional!==undefined && !isNaN(x.notional) && x.maturityYears!==undefined && !isNaN(x.maturityYears) && x.rating);
+    if(ds[k].length < before) warnings.push(`${k}: notional·maturity_years·rating 중 누락된 행 ${before-ds[k].length}건을 제외했습니다.`);
+  });
+  ds.rrao = ds.rrao.filter(x => x.notional!==undefined && !isNaN(x.notional));
+
+  return { ds, warnings, counts };
+}
+
+const TEMPLATE_CSV =
+`# FRTB-SA position upload template. Lines starting with '#' are ignored as comments.
+# risk_class: GIRR / CSR_NS / SEC_NONCTP / EQ / FX / CTY / DRC_NS / DRC_CTP / RRAO
+# measure: delta (linear position) or option (position with vega/curvature). Leave blank for DRC/RRAO rows.
+# See the column reference table on the upload page for full field descriptions.
+risk_class,measure,bucket,currency,pair,issuer,obligor,curve,tranche,commodity,location,kind,tenor,opt_tenor,rating,lgd_type,maturity_years,notional,mtm,name,delta,vega,cvr_up,cvr_down
+GIRR,delta,,KRW,,,,IRS,,,,rate,1,,,,,,,,45000000,,,
+GIRR,delta,,KRW,,,,IRS,,,,rate,5,,,,,,,,-38000000,,,
+GIRR,option,,KRW,,,,IRS,,,,rate,,1,,,,,,,3000000,5000000,-1800000,2100000
+CSR_NS,delta,4,,,IssuerA,,BOND,,,,,5,,,,,,,,22000000,,,
+CSR_NS,option,4,,,IssuerA,,BOND,,,,,5,,,,,,,,,1200000,-700000,850000
+SEC_NONCTP,delta,1,,,,,BOND,RMBS_Prime_Senior,,,,5,,,,,,,,8000000,,,
+EQ,delta,5,,,StockA,,,,,,spot,,,,,,,,,30000000,,,
+EQ,option,5,,,StockA,,,,,,spot,,,,,,,,,,4000000,-2600000,3100000
+FX,delta,,,USD/KRW,,,,,,,,,,,,,,,,40000000,,,
+FX,option,,,USD/KRW,,,,,,,,,,,,,,,,,2500000,-1500000,1700000
+CTY,delta,7,,,,,,,Gold,LBMA,,1,,,,,,,,9000000,,,
+DRC_NS,,Corporate,,,,ObligorA,,,,,,,,AA,senior,5,500000000,4000000,,,,,
+DRC_CTP,,CDX_NA_IG,,,,,,,,,,,,A,senior,5,100000000,500000,,,,,
+RRAO,,,,,,,,,,,exotic,,,,,,150000000,,Barrier_Option_1,,,,
+`;
+
+function downloadTemplate(){
+  const blob = new Blob(['\uFEFF' + TEMPLATE_CSV], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'frtb_sa_position_template.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function handleFile(file){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const { rows } = parseCSV(String(e.target.result));
+      const { ds, warnings, counts } = buildDatasetFromRows(rows);
+      dataset = ds;
+      dataMeta = { mode:'upload', fileName:file.name, warnings, counts };
+      recompute();
+      render('upload');
+    } catch(err){
+      dataMeta = { mode:'sample', fileName:null, warnings:['파일을 읽는 중 오류가 발생했습니다: '+err.message] };
+      render('upload');
+    }
+  };
+  reader.onerror = () => {
+    dataMeta = { mode:'sample', fileName:null, warnings:['파일을 읽을 수 없습니다.'] };
+    render('upload');
+  };
+  reader.readAsText(file, 'utf-8');
+}
+function resetToSample(){
+  dataset = cloneSample();
+  dataMeta = { mode:'sample', fileName:null, warnings:[] };
+  recompute();
+  render('upload');
+}
+window.__frtbDownloadTemplate = downloadTemplate;
+window.__frtbFileChange = (input) => { if(input.files && input.files[0]) handleFile(input.files[0]); };
+window.__frtbReset = resetToSample;
+
+// ---------------- 규정 검색(Q&A) ----------------
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function countOcc(text, tok){
+  if(!tok) return 0;
+  let count=0, idx=0;
+  while((idx=text.indexOf(tok, idx))!==-1){ count++; idx+=tok.length; }
+  return count;
+}
+function tokenize(q){ return q.trim().toLowerCase().split(/\s+/).filter(Boolean); }
+
+function searchRegulation(query){
+  const tokens = tokenize(query);
+  if(tokens.length===0) return [];
+  const results = [];
+  for(const c of CLAUSES){
+    const tLower = c.t.toLowerCase();
+    const bLower = c.b.toLowerCase();
+    let score = 0;
+    for(const tok of tokens){
+      if(c.n === tok) score += 60;
+      score += countOcc(tLower, tok) * 8;
+      score += countOcc(bLower, tok) * 1;
+    }
+    if(score>0) results.push({kind:'clause', clause:c, score});
+  }
+  for(const fnum in FOOTNOTES){
+    const text = FOOTNOTES[fnum];
+    const lower = text.toLowerCase();
+    let score = 0;
+    for(const tok of tokens) score += countOcc(lower, tok) * 1;
+    if(score>0) results.push({kind:'footnote', num:fnum, text, score});
+  }
+  results.sort((a,b)=>b.score-a.score);
+  return results.slice(0,40);
+}
+
+function makeSnippet(rawText, tokens, windowSize=180){
+  const text = escapeHtml(rawText);
+  const lower = text.toLowerCase();
+  let pos=-1;
+  for(const tok of tokens){
+    const p = lower.indexOf(tok.toLowerCase());
+    if(p!==-1 && (pos===-1 || p<pos)) pos=p;
+  }
+  if(pos===-1) pos=0;
+  const start = Math.max(0, pos - Math.floor(windowSize/3));
+  const end = Math.min(text.length, start+windowSize);
+  let snippet = (start>0?'…':'') + text.slice(start,end) + (end<text.length?'…':'');
+  tokens.forEach(tok=>{
+    if(!tok) return;
+    const re = new RegExp(escapeRegExp(tok), 'gi');
+    snippet = snippet.replace(re, m=>'<mark>'+m+'</mark>');
+  });
+  return snippet;
+}
+
+function renderQnaResults(query){
+  const box = document.getElementById('qnaResults');
+  if(!box) return;
+  const tokens = tokenize(query);
+  if(tokens.length===0){
+    box.innerHTML = `<div class="notice">조항 번호(예: <b>44</b>) 또는 키워드(예: <b>커버쳐리스크</b>, <b>헤지효과율</b>, <b>상관관계 시나리오</b>)를 입력하십시오. &lt;별표3-2&gt; 제1장~제7장 128개 조항과 각주 63건을 검색합니다.</div>`;
+    return;
+  }
+  const results = searchRegulation(query);
+  if(results.length===0){
+    box.innerHTML = `<div class="notice">"${escapeHtml(query)}"에 대한 검색 결과가 없습니다. 다른 키워드로 시도해 보십시오.</div>`;
+    return;
+  }
+  const items = results.map(r=>{
+    if(r.kind==='clause'){
+      const snippet = makeSnippet(r.clause.b, tokens);
+      return `<div class="card" style="margin-bottom:10px;">
+        <div class="lbl">제${r.clause.n}조 · ${escapeHtml(r.clause.p)}</div>
+        <div style="font-size:14px;color:var(--text);margin:4px 0 6px;font-weight:600;">${escapeHtml(r.clause.t)}</div>
+        <div style="font-size:12.5px;color:var(--text-dim);line-height:1.7;">${snippet}</div>
+        <details class="cite" style="margin-top:8px;margin-left:0;"><summary>전문 보기</summary>
+          <div class="panel" style="max-width:none;">${escapeHtml(r.clause.b).replace(/(<mark>|<\/mark>)/g,'')}</div>
+        </details>
+      </div>`;
+    } else {
+      const snippet = makeSnippet(r.text, tokens);
+      return `<div class="card" style="margin-bottom:10px;border-left:2px solid var(--text-faint);">
+        <div class="lbl">각주 ${r.num})</div>
+        <div style="font-size:12.5px;color:var(--text-dim);line-height:1.7;">${snippet}</div>
+      </div>`;
+    }
+  }).join('');
+  box.innerHTML = `<div style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">검색결과 ${results.length}건</div>` + items;
+}
+window.__frtbSearch = renderQnaResults;
+
+const pages = {};
+
+pages.qna = () => `
+  <div class="page-head"><div class="eyebrow">Q&amp;A</div><h2>규정 검색</h2>
+  <p>은행업감독업무시행세칙 &lt;별표3-2&gt; 신용·운영·시장리스크 위험가중자산 산출기준 전문(제1장~제7장, 128개 조항·각주 63건)을 검색합니다. 조항 번호 또는 키워드로 검색하십시오.</p></div>
+  <div class="card">
+    <input type="text" id="qnaInput" placeholder="예: 커버쳐리스크, 헤지효과율, 상관관계 시나리오, 44" oninput="window.__frtbSearch(this.value)" autocomplete="off"
+      style="width:100%;padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;color:var(--text);font:inherit;font-size:14px;">
+  </div>
+  <div id="qnaResults" style="margin-top:16px;"></div>
+`;
+
+pages.upload = () => {
+  const totalCount = Object.values(dataMeta.counts||{}).reduce((a,b)=>a+b,0);
+  return `
+  <div class="page-head"><div class="eyebrow">Position Data</div><h2>포지션 데이터 업로드</h2>
+  <p>템플릿에 실제 포지션을 입력해 업로드하면 전체 화면이 해당 데이터 기준으로 즉시 재계산됩니다. 파일은 브라우저 내에서만 처리되며 외부로 전송되지 않습니다.</p></div>
+  <div class="notice"><b>현재 데이터 소스</b> — ${dataMeta.mode==='sample' ? '샘플 데이터 (데모)' : `업로드 파일: <b>${dataMeta.fileName}</b> · 총 ${totalCount}건 포지션 인식`}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="lbl">1단계 — 템플릿 다운로드</div>
+      <p style="font-size:12.5px;color:var(--text-dim);margin:6px 0 12px;">risk_class·measure 등 필수 컬럼과 예시 행이 포함된 CSV입니다. 엑셀에서 열어 포지션을 채운 뒤 CSV(UTF-8)로 저장하십시오.</p>
+      <button onclick="window.__frtbDownloadTemplate()" style="background:var(--panel-3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;font:inherit;font-size:12.5px;">템플릿 다운로드 (.csv)</button>
+    </div>
+    <div class="card">
+      <div class="lbl">2단계 — 포지션 파일 업로드</div>
+      <p style="font-size:12.5px;color:var(--text-dim);margin:6px 0 12px;">작성한 CSV 파일을 선택하면 즉시 파싱·재계산됩니다.</p>
+      <input type="file" accept=".csv,text/csv" onchange="window.__frtbFileChange(this)" style="font-size:12.5px;color:var(--text-dim);">
+    </div>
+  </div>
+  ${dataMeta.mode==='upload' ? `<div class="card" style="margin-top:14px;"><div class="lbl">인식된 포지션 건수</div>
+    <table class="data"><tr><th>risk_class</th><th>건수</th></tr>
+    <tbody>${Object.entries(dataMeta.counts||{}).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>
+  </div>` : ''}
+  ${(dataMeta.warnings||[]).length ? `<div class="notice" style="border-left-color:var(--red);margin-top:14px;"><b>처리 경고 (${dataMeta.warnings.length}건)</b><ul class="simple">${dataMeta.warnings.slice(0,30).map(w=>`<li>${w}</li>`).join('')}</ul>${dataMeta.warnings.length>30?'<p>...외 다수</p>':''}</div>` : ''}
+  <div class="card" style="margin-top:14px;">
+    <div class="lbl">컬럼 규격</div>
+    <table class="data" style="font-size:11.5px;">
+      <tr><th>컬럼</th><th>설명</th></tr>
+      <tbody>
+      <tr><td>risk_class</td><td>GIRR / CSR_NS / SEC_NONCTP / EQ / FX / CTY / DRC_NS / DRC_CTP / RRAO</td></tr>
+      <tr><td>measure</td><td>delta(선형) 또는 option(베가·커버쳐 보유 옵션성 포지션). DRC·RRAO 행은 비워둠</td></tr>
+      <tr><td>bucket / currency / pair</td><td>버킷 식별자 — 신용스프레드·주식·상품은 버킷번호, GIRR은 통화, FX는 통화쌍</td></tr>
+      <tr><td>issuer / obligor / commodity</td><td>발행자·차주·일반상품명(상관계수 산정 시 동일 여부 판단에 사용)</td></tr>
+      <tr><td>curve / tranche / location</td><td>커브 종류 / 유동화 트렌치 구분 / 일반상품 인도지역</td></tr>
+      <tr><td>kind</td><td>GIRR: rate/infl · 주식: spot/repo</td></tr>
+      <tr><td>tenor / opt_tenor</td><td>만기(연) / 옵션만기(연) — GIRR은 0.25,0.5,1,2,3,5,10,15,20,30 중 사용</td></tr>
+      <tr><td>rating / lgd_type / maturity_years</td><td>DRC 전용 — 신용등급(AAA~D,NR) / senior·covered·equity_or_subordinated / 만기(연)</td></tr>
+      <tr><td>notional / mtm / name</td><td>DRC·RRAO 전용 — 명목원금 / 누적평가손익 / RRAO 포지션명</td></tr>
+      <tr><td>delta / vega / cvr_up / cvr_down</td><td>리스크요소 1bp(금리) 또는 1%(그 외) 변동 시 가치변동액 / 변동성 1%p 변동 시 가치변동액 / 상방·하방 충격 재평가손익</td></tr>
+      </tbody>
+    </table>
+  </div>
+  ${dataMeta.mode==='upload' ? `<button onclick="window.__frtbReset()" style="margin-top:14px;background:none;color:var(--text-faint);border:1px solid var(--border);border-radius:6px;padding:7px 14px;cursor:pointer;font:inherit;font-size:12px;">샘플 데이터로 초기화</button>` : ''}
+`;
+};
+
+pages.overview = () => {
+  const wfItems = [
+    {name:'GIRR(금리)', val:classTotal('girr'), color:'var(--teal)'},
+    {name:'CSR 비유동화', val:classTotal('csr'), color:'var(--teal)'},
+    {name:'유동화(비CTP)', val:R.sec_d.total, color:'var(--teal)'},
+    {name:'주식', val:classTotal('eq'), color:'var(--teal)'},
+    {name:'외환', val:classTotal('fx'), color:'var(--teal)'},
+    {name:'일반상품', val:classTotal('cty'), color:'var(--teal)'},
+    {name:'부도리스크(DRC)', val:TOT.drc, color:'var(--red)'},
+    {name:'잔여리스크(RRAO)', val:R.rrao.total, color:'var(--violet)'},
+  ];
+  const max = Math.max(...wfItems.map(i=>i.val), 1);
+  const bars = wfItems.map(i=>`
+    <div class="wf-row">
+      <div class="name">${i.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,i.val/max*100)}%;background:${i.color}"></div></div>
+      <div class="amt">${fmt(i.val)}</div>
+    </div>`).join('');
+  return `
+  <div class="page-head">
+    <div class="eyebrow">Overview</div>
+    <h2>총괄 요약</h2>
+    <p>샘플 트레이딩계정 포지션 기준 시장리스크 표준방법(SA) 소요자기자본 산출 결과입니다. 각 구성요소는 저장된 조항(clause) 배지를 눌러 산출근거를 확인할 수 있습니다.</p>
+  </div>
+  <div class="notice"><b>참고</b> — 아래 수치는 샘플 데이터 기준 데모 결과이며 실제 귀행 규제보고 수치가 아닙니다. 산출 시 적용한 가정은 「산출근거·가정」 페이지를 확인하십시오.</div>
+  <div class="grid cols-3">
+    <div class="card"><div class="lbl">민감도법(SBM) 소요자기자본 ${cite('total')}</div><div class="amt">${fmt(TOT.sbm)}</div></div>
+    <div class="card"><div class="lbl">부도리스크(DRC) 소요자기자본 ${cite('drc')}</div><div class="amt">${fmt(TOT.drc)}</div></div>
+    <div class="card"><div class="lbl">잔여리스크(RRAO) 소요자기자본 ${cite('rrao')}</div><div class="amt">${fmt(R.rrao.total)}</div></div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="lbl">구성요소별 소요자기자본 ${cite('total')}</div>
+    <div class="waterfall">${bars}
+      <div class="wf-row total">
+        <div class="name">총 소요자기자본</div>
+        <div class="bar-track"></div>
+        <div class="amt">${fmt(TOT.capital)}</div>
+      </div>
+      <div class="wf-row total">
+        <div class="name">위험가중자산(RWA) ${cite('rwa')}</div>
+        <div class="bar-track"></div>
+        <div class="amt">${fmt(TOT.rwa)}</div>
+      </div>
+    </div>
+  </div>`;
+};
+
+pages.girr = () => `
+  <div class="page-head"><div class="eyebrow">GIRR</div><h2>일반금리리스크 ${cite('girr')}</h2>
+  <p>통화별 무위험금리·인플레이션 커브 민감도. 버킷 = 통화, 리스크요소 = (커브,만기).</p></div>
+  ${componentCards('girr_d','girr_v','girr_c','girr')}
+  <div class="card" style="margin-top:14px;"><div class="lbl">델타 — 시나리오 비교</div>${scenarioRow(R.girr_d)}
+  ${bucketTable(R.girr_d, b=>b.ccy)}</div>
+`;
+pages.csrns = () => `
+  <div class="page-head"><div class="eyebrow">CSR · Non-Securitisation</div><h2>신용스프레드리스크(비유동화) ${cite('csr')}</h2>
+  <p>발행자·산업부문·신용도 기준 18개 버킷. 버킷 4=원자재/에너지/산업(IG), 버킷 3=금융(IG), 버킷 11=금융(투기/무등급).</p></div>
+  ${componentCards('csr_d','csr_v','csr_c','csr')}
+  <div class="card" style="margin-top:14px;"><div class="lbl">델타 — 시나리오 비교</div>${scenarioRow(R.csr_d)}
+  ${bucketTable(R.csr_d, b=>'버킷 '+b.bucket)}</div>
+`;
+pages.secnonctp = () => `
+  <div class="page-head"><div class="eyebrow">Securitisation · Non-CTP</div><h2>유동화 신용스프레드리스크(비CTP) ${cite('sec')}</h2>
+  <p>위험가중치는 공식 기반(선순위IG 기준값 × 1.25(비선순위IG)/×1.75(투기·무등급))으로 산출. 버킷 간 상관계수 0%.</p></div>
+  ${componentCards('sec_d', null, null, 'sec')}
+  <div class="card" style="margin-top:14px;"><div class="lbl">델타 — 시나리오 비교</div>${scenarioRow(R.sec_d)}
+  ${bucketTable(R.sec_d, b=>'버킷 '+b.bucket)}</div>
+  <div class="notice" style="margin-top:14px;"><b>데이터 공백 안내</b> — 유동화(CTP 제외) 신용스프레드 위험가중치는 원칙적으로 &lt;별표3&gt;제4장 유동화 신용위험가중치(12.5로 나눈 값)를 참조해야 하나, 해당 별표3 문서가 업로드되지 않아 여기서는 Basel 표준 선순위 위험가중치 공식으로 근사했습니다. 정확한 수치는 &lt;별표3&gt;제4장 확인 후 교체가 필요합니다.</div>
+`;
+pages.secctp = () => `
+  <div class="page-head"><div class="eyebrow">Securitisation · CTP</div><h2>유동화 신용스프레드리스크(CTP) ${cite('sec')}</h2>
+  <p>상관관계 트레이딩 포트폴리오(CTP). 귀행 트레이딩계정 내 CTP 지정 포지션이 일반적으로 소규모/부재인 경우가 많아 참고용으로 별도 표시합니다.</p></div>
+  <div class="notice"><b>참고</b> — 현재 샘플 데이터에는 CTP 델타/베가/커버쳐 포지션이 없습니다(DRC-CTP만 예시 포함). CTP 델타 산출은 「신용스프레드(비유동화)」와 동일한 엔진 로직(버킷 1~16 + 지수버킷 제외, 커브상이 상관계수 99.00%)을 재사용할 수 있습니다.</div>
+`;
+pages.eq = () => `
+  <div class="page-head"><div class="eyebrow">Equity</div><h2>주식리스크 ${cite('eq')}</h2>
+  <p>시가총액·경제수준·산업부문 기준 13개 버킷. 버킷 5=선진시장 대형주(소비재 등), 버킷 12=선진시장 대형주 지수.</p></div>
+  ${componentCards('eq_d','eq_v','eq_c','eq')}
+  <div class="card" style="margin-top:14px;"><div class="lbl">델타 — 시나리오 비교</div>${scenarioRow(R.eq_d)}
+  ${bucketTable(R.eq_d, b=>'버킷 '+b.bucket)}</div>
+`;
+pages.fx = () => `
+  <div class="page-head"><div class="eyebrow">FX</div><h2>외환리스크 ${cite('fx')}</h2>
+  <p>버킷 = 통화쌍(보고통화 KRW 기준). 위험가중치 15%, 버킷 간 상관계수 60%.</p></div>
+  ${componentCards('fx_d','fx_v','fx_c','fx')}
+  <div class="card" style="margin-top:14px;"><div class="lbl">델타 — 시나리오 비교</div>${scenarioRow(R.fx_d)}
+  ${bucketTable(R.fx_d, b=>b.bucket)}</div>
+`;
+pages.cty = () => `
+  <div class="page-head"><div class="eyebrow">Commodity</div><h2>일반상품리스크 ${cite('cty')}</h2>
+  <p>버킷 7=귀금속(금 포함), 버킷 2=에너지(액체 인화물질, 원유 등). 11개 버킷 고유 위험가중치·상관계수 적용.</p></div>
+  ${componentCards('cty_d','cty_v','cty_c','cty')}
+  <div class="card" style="margin-top:14px;"><div class="lbl">델타 — 시나리오 비교</div>${scenarioRow(R.cty_d)}
+  ${bucketTable(R.cty_d, b=>'버킷 '+b.bucket)}</div>
+`;
+pages.drc = () => {
+  const nsRows = R.drc_ns.buckets.map(b=>`<tr><td>${b.bucket}</td><td>${b.items.length}</td><td>${fmtFull(b.longSum)}</td><td>${fmtFull(b.shortSum)}</td><td>${fmtFull(b.Kb)}</td></tr>`).join('');
+  const ctpRows = R.drc_ctp.buckets.map(b=>`<tr><td>${b.bucket}</td><td>${b.items.length}</td><td>${fmtFull(b.Kb)}</td></tr>`).join('');
+  return `
+  <div class="page-head"><div class="eyebrow">Default Risk Charge</div><h2>부도리스크(DRC) ${cite('drc')}</h2>
+  <p>버킷 = 기업/정부/지방정부(비유동화), 개별 지수(CTP). 헤지효과율(HBR)은 완전헤지(1.0)로 간이화했습니다 — 실제 <b>82.다</b> 산식(순공매도÷총공매도) 적용 시 조정 필요.</p></div>
+  <div class="grid cols-2">
+    <div class="card"><div class="lbl">비유동화 DRC</div><div class="amt">${fmt(R.drc_ns.total)}</div></div>
+    <div class="card"><div class="lbl">유동화(CTP) DRC ${cite('drcctp')}</div><div class="amt">${fmt(R.drc_ctp.total)}</div></div>
+  </div>
+  <div class="card" style="margin-top:14px;"><div class="lbl">비유동화 — 버킷별 순JTD·소요자기자본</div>
+    <table class="data"><tr><th>버킷</th><th>차주수</th><th>매입(Long) 가중JTD</th><th>매도(Short) 가중JTD</th><th>버킷 Kb</th></tr>
+    <tbody>${nsRows}</tbody>
+    <tfoot><tr><td>합계</td><td></td><td></td><td></td><td>${fmtFull(R.drc_ns.total)}</td></tr></tfoot></table>
+  </div>
+  <div class="card" style="margin-top:14px;"><div class="lbl">유동화(CTP) — 버킷(지수)별 소요자기자본</div>
+    <table class="data"><tr><th>버킷(지수)</th><th>포지션수</th><th>버킷 Kb</th></tr>
+    <tbody>${ctpRows}</tbody>
+    <tfoot><tr><td>합계</td><td></td><td>${fmtFull(R.drc_ctp.total)}</td></tr></tfoot></table>
+  </div>`;
+};
+pages.rrao = () => {
+  const rows = R.rrao.detail.map(p=>`<tr><td>${p.name}</td><td>${p.kind==='exotic'?'비정형 기초자산':'기타 잔여리스크'}</td><td>${(p.rw*100).toFixed(1)}%</td><td>${fmtFull(Math.abs(p.notional))}</td><td>${fmtFull(p.charge)}</td></tr>`).join('');
+  return `
+  <div class="page-head"><div class="eyebrow">Residual Risk Add-On</div><h2>잔여리스크 소요자기자본(RRAO) ${cite('rrao')}</h2>
+  <p>갭·상관관계·행동리스크 등 민감도법·부도리스크로 포착되지 않는 잔여리스크에 대한 소요자기자본.</p></div>
+  <div class="card"><div class="lbl">RRAO 합계</div><div class="amt">${fmt(R.rrao.total)}</div></div>
+  <div class="card" style="margin-top:14px;"><div class="lbl">포지션별 내역</div>
+  <table class="data"><tr><th>포지션</th><th>구분</th><th>위험가중치</th><th>명목원금</th><th>소요자기자본</th></tr>
+  <tbody>${rows}</tbody></table></div>`;
+};
+pages.method = () => `
+  <div class="page-head"><div class="eyebrow">Methodology</div><h2>산출근거 · 가정 · 데이터 공백</h2>
+  <p>이 도구는 은행업감독업무시행세칙 &lt;별표3-2&gt; 제6장(표준방법)과 바젤III 최종안 시장리스크 규제체계를 근거로 산출 로직을 구현했습니다. 원문서에 값이 없거나 다른 별표를 참조하는 항목은 아래와 같이 간이화했습니다.</p></div>
+  <div class="card">
+    <div class="lbl">주요 간이화 · 가정 사항</div>
+    <ul class="simple">
+      <li><b>베가 위험가중치</b> — 원문서는 주식(71.나: 대형주·지수 77.78%, 그 외 100%)만 명시. GIRR·CSR·외환·일반상품 베가 위험가중치는 유동성기간 기반 산식이 본 문서에 없어 100%로 가정했습니다 — 실제 값 확인 후 조정 필요.</li>
+      <li><b>GIRR 베가·커버쳐 상관계수</b> — 원문서는 옵션만기×기초자산 잔여만기 이중 지수감쇠식(α)을 규정하나, 여기서는 옵션만기 단일축 지수감쇠(근사)로 단순화했습니다.</li>
+      <li><b>유동화(CTP 제외) 위험가중치</b> — &lt;별표3&gt;제4장 유동화 신용위험가중치표가 본 문서에 포함되어 있지 않아, Basel 표준 공식(선순위IG 기준값 × 1.25/1.75 배수)으로 근사했습니다.</li>
+      <li><b>DRC 헤지효과율(HBR)</b> — 82.다 산식(순공매도÷총공매도)을 완전헤지(1.0) 가정으로 간이화했습니다. 공매도(숏) 헤지 포지션이 많은 북에서는 실제보다 소요자기자본이 낮게 산출될 수 있습니다.</li>
+      <li><b>유동화(CTP) 버킷</b> — 91.가의 개별 지수(CDX/iTraxx 등) 목록 중 예시 1개만 반영했습니다.</li>
+      <li><b>커버쳐리스크 산출 방식</b> — 실제 옵션 재평가(가격모형)를 이 도구에서 수행하지 않고, 프론트오피스 가치평가시스템이 산출한 상방·하방 재평가손익(CVR up/down)을 입력값으로 받는 구조로 설계했습니다. 이는 실제 은행 시스템의 일반적인 아키텍처(가치평가 엔진과 규제자본 집계 엔진의 분리)와 일치합니다.</li>
+      <li><b>등급기반 위험가중치(DRC)</b> — 82.나 표(AAA~D)를 그대로 적용했으며, 대한민국 정부·국내 지방자치단체 등에 대한 0% 예외는 별도 태그가 없는 한 반영되지 않습니다.</li>
+      <li><b>옵션 포지션의 델타 반영</b> — 옵션성 포지션의 선형(델타) 노출도 해당 리스크군의 델타 소요자기자본에 함께 합산됩니다(베가·커버쳐는 별도 가산이며 델타를 대체하지 않음).</li>
+      <li><b>구조적 외환포지션·기준통화법(37·54조)</b>, <b>내부 리스크 이전(15~18조)</b>, <b>계정분류(제2장)</b> 등 소요자기자본 산출 이전 단계의 정성적 요건은 이 도구의 범위 밖입니다(입력 데이터가 이미 트레이딩계정으로 분류·확정되었다고 가정).</li>
+    </ul>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="lbl">상관관계 시나리오 처리 ${cite('scn')}</div>
+    <p style="margin:6px 0 0;color:var(--text-dim);">모든 리스크군에서 높음·중간·낮음 3개 시나리오를 계산하여 소요자기자본이 가장 큰 시나리오를 채택합니다. 리스크군별 채택 시나리오는 각 상세 페이지의 "시나리오 비교" 표에서 확인할 수 있습니다.</p>
+  </div>
+`;
+
+// ---------------- 네비게이션/렌더 ----------------
+const main = document.getElementById('main');
+const rail = document.getElementById('rail');
+function render(view){
+  main.innerHTML = pages[view] ? pages[view]() : '<p>준비 중입니다.</p>';
+  rail.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  if(view==='qna') renderQnaResults('');
+}
+rail.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-view]');
+  if(!btn) return;
+  render(btn.dataset.view);
+  window.scrollTo({top:0, behavior:'instant'});
+});
+render('overview');
+})();
+</script>
+</body>
+</html>
