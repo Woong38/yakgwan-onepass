@@ -33,3 +33,12 @@
 부서별 작성분을 원문 순서대로 자동 취합·서식 통일하는 도구 외부 테스트 페이지.
 
 페이지: https://woong38.github.io/yakgwan-onepass/mergeana/
+
+
+---
+
+# News Risk Radar 체험판
+
+뉴스·정책 텍스트 채점 기반 시장리스크 위기상황 조기경보 리포트 뷰어.
+
+페이지: https://woong38.github.io/yakgwan-onepass/newsradar/
