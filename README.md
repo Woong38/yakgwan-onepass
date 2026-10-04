@@ -24,3 +24,12 @@
 시장리스크 표준방법(FRTB-SA) 자기자본 필요액 산출 및 근거 규정 조회 도구 외부 테스트 페이지.
 
 페이지: https://woong38.github.io/yakgwan-onepass/marketrisk-q/
+
+
+---
+
+# 머지않아(Merge-Ana) 체험판
+
+부서별 작성분을 원문 순서대로 자동 취합·서식 통일하는 도구 외부 테스트 페이지.
+
+페이지: https://woong38.github.io/yakgwan-onepass/mergeana/

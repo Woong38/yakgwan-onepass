@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보고서 취합기 — 부서별 작성분 통합·서식 통일</title>
+<style>
+/* ── 검수대(檢收臺) — 원문과 사본을 나란히 놓고 짝을 맞추는 화면 ───────── */
+:root{
+  --paper:#edeff2; --panel:#fff; --ink:#1b2027; --muted:#6f7883; --faint:#98a1ab;
+  --rule:#dde1e6; --rule-soft:#eef0f3;
+  --seal:#1c3557; --seal-soft:#ecf0f6; --seal-deep:#11223c;
+  --ok:#2f6552; --warn:#8a5a12; --err:#9c3a2f;
+  --tag1:#7fa653; --tag2:#c08a2e; --tag3:#45a3a3; --tag4:#a86a92;
+  --tag5:#a08464; --tag6:#8d82d4; --tag7:#5b93c4; --tag8:#c4735e;
+  --serif:"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,"Times New Roman",serif;
+  --sans:"Pretendard","Apple SD Gothic Neo","맑은 고딕","Malgun Gothic",system-ui,sans-serif;
+  --mono:"D2Coding",ui-monospace,Consolas,"Courier New",monospace;
+  --shadow:0 0 0 1px rgba(27,32,39,.06), 0 1px 2px rgba(27,32,39,.05), 0 8px 24px -18px rgba(27,32,39,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper); color:var(--ink); font-family:var(--sans);
+  font-size:13.5px; line-height:1.62; -webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.94em}
+
+/* ── 틀 ───────────────────────────────────────────────── */
+.shell{display:grid; grid-template-columns:236px 1fr; min-height:100vh}
+.sidebar{background:var(--panel); border-right:1px solid var(--rule);
+  padding:26px 0 22px; position:sticky; top:0; height:100vh; display:flex; flex-direction:column}
+.brand{padding:0 22px 22px; border-bottom:1px solid var(--rule-soft)}
+.brand .mark{display:inline-block; font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.02em;
+  color:var(--seal); border:1px solid var(--seal); padding:3px 9px 4px; border-radius:2px; margin:0 0 12px}
+.brand p{margin:0; font-size:11.5px; color:var(--muted); line-height:1.5}
+nav.steps{display:flex; flex-direction:column; padding:14px 0; flex:1}
+nav.steps button{appearance:none; background:none; border:0; border-left:2px solid transparent;
+  display:flex; align-items:flex-start; gap:11px; text-align:left; width:100%;
+  padding:10px 20px; font:inherit; font-size:13px; color:var(--muted); cursor:pointer; transition:.14s}
+nav.steps button .t{display:flex; flex-direction:column; line-height:1.35}
+nav.steps button em{font-style:normal; font-size:10.5px; color:var(--faint); line-height:1.4; margin-top:2px; font-weight:400}
+nav.steps button[aria-selected="true"] em{color:var(--muted)}
+nav.steps button .n{font-family:var(--serif); font-size:12.5px; color:var(--faint); font-feature-settings:"lnum"; padding-top:1px}
+nav.steps button:hover{background:#f6f7f9; color:var(--ink)}
+nav.steps button[aria-selected="true"]{color:var(--ink); font-weight:600;
+  border-left-color:var(--seal); background:linear-gradient(90deg,var(--seal-soft),transparent 72%)}
+nav.steps button[aria-selected="true"] .n{color:var(--seal)}
+.offline{margin:0; padding:16px 22px 0; border-top:1px solid var(--rule-soft);
+  font-size:11px; color:var(--faint); line-height:1.55}
+main{padding:34px 40px 64px; max-width:1320px}
+section.step[hidden]{display:none}
+section.step{animation:rise .18s ease-out}
+@keyframes rise{from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:none}}
+
+/* ── 패널 ─────────────────────────────────────────────── */
+.panel{background:var(--panel); border-radius:4px; box-shadow:var(--shadow); padding:22px 26px 24px; margin-bottom:18px}
+.panel > h2{font-size:12px; margin:0 0 3px; letter-spacing:.05em; font-weight:700; color:var(--ink)}
+.panel > .hint{font-size:12.5px; color:var(--muted); margin:0 0 16px; max-width:76ch}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+
+/* ── 올리기 ───────────────────────────────────────────── */
+.drop{border:1px dashed #c6ccd3; border-radius:4px; background:#fbfcfd;
+  padding:30px 22px; text-align:center; color:var(--muted); cursor:pointer; transition:.15s}
+.drop:hover,.drop.over{border-color:var(--seal); background:var(--seal-soft); color:var(--seal-deep)}
+.drop b{display:block; font-size:13.5px; color:var(--ink); margin-bottom:4px; font-weight:600}
+.drop:hover b,.drop.over b{color:var(--seal-deep)}
+.drop small{font-size:11.5px; color:var(--faint)}
+
+/* ── 조작 ─────────────────────────────────────────────── */
+button.act{appearance:none; border:1px solid var(--seal); background:var(--seal); color:#fff;
+  padding:7px 15px; border-radius:3px; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition:.14s}
+button.act:hover{background:var(--seal-deep); border-color:var(--seal-deep)}
+button.ghost{background:#fff; color:var(--ink); border-color:var(--rule)}
+button.ghost:hover{background:#f6f7f9; border-color:#c6ccd3; color:var(--ink)}
+button.tiny{padding:4px 9px; font-size:11.5px; font-weight:500}
+button.act[disabled]{opacity:.4; cursor:not-allowed}
+select,input[type=text],input[type=number],textarea{font:inherit; font-size:12.5px; padding:5px 8px;
+  border:1px solid var(--rule); border-radius:3px; background:#fff; color:var(--ink); transition:.12s}
+select:hover,input:hover{border-color:#c6ccd3}
+select:focus,input:focus,textarea:focus,button:focus-visible,.drop:focus-visible{outline:2px solid var(--seal); outline-offset:1px}
+textarea{width:100%; min-height:150px; padding:10px; line-height:1.6}
+label.chk{display:flex; align-items:center; gap:8px; font-size:12.5px; padding:4px 0; cursor:pointer}
+.toolbar{display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.spacer{flex:1}
+.stat{font-size:12.5px; color:var(--muted)}
+.stat b{color:var(--ink); font-variant-numeric:tabular-nums}
+
+/* ── 표 ───────────────────────────────────────────────── */
+table.tbl{width:100%; border-collapse:collapse; font-size:12.5px}
+table.tbl th{text-align:left; font-weight:600; font-size:11px; letter-spacing:.05em; color:var(--faint);
+  border-bottom:1px solid var(--rule); padding:0 10px 7px; white-space:nowrap}
+table.tbl td{border-bottom:1px solid var(--rule-soft); padding:8px 10px; vertical-align:top}
+table.tbl tr:hover td{background:#fafbfc}
+
+/* ── 상태 ─────────────────────────────────────────────── */
+.badge{display:inline-block; font-size:10.5px; padding:1px 7px; border-radius:2px; border:1px solid; line-height:1.6; font-weight:500}
+.b-ok{color:var(--ok); border-color:#bcd5cb; background:#f1f7f4}
+.b-warn{color:var(--warn); border-color:#e2d0ac; background:#fdf8ee}
+.b-err{color:var(--err); border-color:#e0c0ba; background:#fdf2f0}
+.b-info{color:var(--seal); border-color:#c4cfe0; background:var(--seal-soft)}
+.warnbox,.okbox,.errbox{padding:11px 15px; font-size:12.5px; margin:12px 0; border-radius:3px}
+.warnbox{border-left:2px solid var(--warn); background:#fdf8ee; color:#6b4712}
+.okbox{border-left:2px solid var(--ok); background:#f1f7f4; color:#24503f}
+.errbox{border-left:2px solid var(--err); background:#fdf2f0; color:#7d2c22}
+.filechip{display:inline-flex; align-items:center; gap:7px; font-size:12px; padding:4px 10px 4px 9px;
+  border-radius:3px; border:1px solid var(--rule); border-left:3px solid; background:#fff; margin:0 6px 6px 0}
+.meta{font-size:11.5px; color:var(--faint); font-variant-numeric:tabular-nums}
+
+/* ── 취합 현황 — 이 화면의 얼굴 ───────────────────────── */
+.rail{display:grid; grid-template-columns:minmax(250px,1fr) 34px minmax(300px,1.35fr); align-items:stretch}
+.rail-h{font-size:10.5px; color:var(--faint); letter-spacing:.09em; padding:0 0 9px; font-weight:600}
+.cellL,.cellR{border-bottom:1px solid var(--rule-soft); padding:11px 12px; min-height:52px}
+.cellL{display:flex; gap:10px; align-items:baseline}
+.cellL.lv1{font-weight:700}
+.cellL.lv2{padding-left:26px}
+.cellL.lv3{padding-left:44px; color:var(--muted)}
+.cellL.lv4{padding-left:60px; color:var(--muted); font-size:12.5px}
+.itemno{font-family:var(--serif); font-size:14px; color:var(--seal); white-space:nowrap; letter-spacing:.01em}
+.link{position:relative}
+.link svg{position:absolute; inset:0; width:100%; height:100%}
+.cellR{border-left:1px solid var(--rule-soft)}
+.cellR.empty{background:linear-gradient(180deg,#fbfbfc,#fbfbfc)}
+.src{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+.srcname{font-size:12.5px; border-left:3px solid; padding-left:8px; font-weight:500}
+
+/* ── 서식 규칙 ────────────────────────────────────────── */
+.settings{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:16px}
+.fset{border:1px solid var(--rule); border-radius:4px; padding:14px 16px 15px; background:#fdfdfe}
+.fset h3{font-size:11px; margin:0 0 11px; color:var(--faint); letter-spacing:.07em; font-weight:700}
+.frow{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:4px 0; font-size:12.5px}
+.frow select,.frow input{max-width:132px}
+
+/* ── 미리보기 ─────────────────────────────────────────── */
+#preview{background:#fff; border-radius:3px; box-shadow:var(--shadow);
+  padding:44px 52px; max-height:74vh; overflow:auto; margin-top:4px}
+#preview .blk{position:relative; padding-left:14px; margin-left:-14px; border-left:3px solid transparent}
+#preview .blk.tagged{border-left-color:var(--c)}
+#preview .srcmark{position:absolute; right:0; top:1px; font-size:9.5px; color:#fff; background:var(--c);
+  padding:1px 6px; border-radius:2px; letter-spacing:.02em}
+#preview table{border-collapse:collapse; width:100%; margin:8px 0}
+#preview table td,#preview table th{border:1px solid #b9bfc6; padding:5px 7px; vertical-align:top}
+#preview table th{background:#f4f6f8}
+.log{max-height:230px; overflow:auto; border:1px solid var(--rule); border-radius:3px;
+  background:#fbfcfd; padding:10px 12px; font-size:12px}
+.log div{padding:5px 0; border-bottom:1px solid var(--rule-soft)}
+.log div:last-child{border-bottom:0}
+del{background:#fbeceb; text-decoration:line-through; color:#8a3128; padding:0 2px}
+ins{background:#eef5f1; text-decoration:none; color:#24503f; padding:0 2px}
+
+/* ── 좁은 화면 ────────────────────────────────────────── */
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:static; height:auto; padding:18px 0 0; border-right:0; border-bottom:1px solid var(--rule)}
+  .brand{padding:0 18px 14px}
+  nav.steps{flex-direction:row; overflow-x:auto; padding:0}
+  nav.steps button{border-left:0; border-bottom:2px solid transparent; white-space:nowrap; padding:11px 15px}
+  nav.steps button em{display:none}
+  nav.steps button[aria-selected="true"]{border-left:0; border-bottom-color:var(--seal); background:var(--seal-soft)}
+  .offline{display:none}
+  main{padding:20px 18px 48px}
+  .rail{grid-template-columns:1fr}
+  .link{display:none}
+  .cellR{border-left:0; padding-left:26px}
+  .grid2{grid-template-columns:1fr}
+  #preview{padding:24px 20px}
+}
+.fset.caution{border-color:#e8d4ae; background:#fffdf8}
+.fset.caution h3{color:var(--warn)}
+/* ── 어두운 화면 ─────────────────────────────────────── */
+[data-theme="dark"]{
+  --paper:#12161c; --panel:#1a1f27; --ink:#e4e8ee; --muted:#9aa4b1; --faint:#6d7784;
+  --rule:#2c333e; --rule-soft:#232a33;
+  --seal:#7ea6d8; --seal-soft:#1d2734; --seal-deep:#9fc0e8;
+  --ok:#5ec59a; --warn:#d9a441; --err:#e07f6d;
+  --shadow:0 0 0 1px rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -20px rgba(0,0,0,.9);
+}
+[data-theme="dark"] .drop{border-color:#3a434f; background:#161b22}
+[data-theme="dark"] .drop:hover,[data-theme="dark"] .drop.over{border-color:var(--seal); background:var(--seal-soft)}
+[data-theme="dark"] button.ghost{background:#20262f; border-color:var(--rule)}
+[data-theme="dark"] button.ghost:hover{background:#262d37; border-color:#414b58}
+[data-theme="dark"] button.act{color:#0f151c; background:var(--seal); border-color:var(--seal)}
+[data-theme="dark"] button.act:hover{background:var(--seal-deep); border-color:var(--seal-deep)}
+[data-theme="dark"] select,[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=number],[data-theme="dark"] textarea{background:#161b22; color:var(--ink); border-color:var(--rule)}
+[data-theme="dark"] select:hover,[data-theme="dark"] input:hover{border-color:#414b58}
+[data-theme="dark"] table.tbl th{color:var(--faint)}
+[data-theme="dark"] table.tbl tr:hover td{background:#1f252e}
+[data-theme="dark"] .fset{background:#171c23; border-color:var(--rule)}
+[data-theme="dark"] .fset.caution{background:#221c11; border-color:#5c4a24}
+[data-theme="dark"] .fset.caution h3{color:#e0b25c}
+[data-theme="dark"] .fset.caution .meta{color:#a89468}
+[data-theme="dark"] .fset.caution .meta b{color:#e0b25c}
+[data-theme="dark"] .log{background:#161b22; border-color:var(--rule)}
+[data-theme="dark"] .filechip{background:#20262f; border-color:var(--rule)}
+[data-theme="dark"] .cellL{background:#171c23}
+[data-theme="dark"] .cellR.empty{background:linear-gradient(180deg,#161b22,#161b22)}
+[data-theme="dark"] nav.steps button:hover{background:#20262f}
+[data-theme="dark"] .b-ok{background:#16261f; border-color:#2f5344}
+[data-theme="dark"] .b-warn{background:#241d10; border-color:#54431f}
+[data-theme="dark"] .b-err{background:#261815; border-color:#563029}
+[data-theme="dark"] .b-info{background:var(--seal-soft); border-color:#33475d}
+[data-theme="dark"] .okbox{background:#16261f; color:#8fd9b8}
+[data-theme="dark"] .warnbox{background:#241d10; color:#e3c07a}
+[data-theme="dark"] .errbox{background:#261815; color:#eda294}
+[data-theme="dark"] del{background:#3a1e1b; color:#eda294}
+[data-theme="dark"] ins{background:#16311f; color:#8fd9b8}
+[data-theme="dark"] .skips code{background:#20262f; border-color:#54431f}
+/* 출력 미리보기는 인쇄물과 같은 흰 종이로 유지 */
+[data-theme="dark"] #preview{background:#1b212a; color:#e2e7ee}
+[data-theme="dark"] #preview table td,
+[data-theme="dark"] #preview table th{border-color:#59636f !important}
+[data-theme="dark"] #preview table th{background:#252c37}
+[data-theme="dark"] #preview .miss{color:#f0907f !important}
+[data-theme="dark"] #preview .approxnote{color:#dda845 !important}
+.themebtn{appearance:none; margin:0 20px 14px; padding:6px 10px; border:1px solid var(--rule);
+  background:none; color:var(--muted); font:inherit; font-size:11.5px; border-radius:3px; cursor:pointer;
+  display:flex; align-items:center; gap:7px; transition:.14s}
+.themebtn:hover{border-color:var(--seal); color:var(--seal)}
+.themebtn i{width:9px; height:9px; border-radius:50%; background:currentColor; display:block; opacity:.75}
+@media (max-width:900px){ .themebtn{display:none} }
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand">
+    <h1 class="mark">보고서 취합기</h1>
+    <p>원문 항목 순서대로 배열하고<br>서식만 통일합니다</p>
+  </div>
+  <nav class="steps" role="tablist">
+    <button role="tab" aria-selected="true"  data-go="0"><span class="n">01</span><span class="t">원문 올리기<em>항목 목차 자동 인식</em></span></button>
+    <button role="tab" aria-selected="false" data-go="1"><span class="n">02</span><span class="t">부서별 작성분<em>여러 파일 · 붙여넣기</em></span></button>
+    <button role="tab" aria-selected="false" data-go="2"><span class="n">03</span><span class="t">취합 현황<em>자동 배정 · 수동 교정</em></span></button>
+    <button role="tab" aria-selected="false" data-go="3"><span class="n">04</span><span class="t">서식 규칙<em>글꼴 · 번호 · 표기</em></span></button>
+    <button role="tab" aria-selected="false" data-go="4"><span class="n">05</span><span class="t">미리보기<em>복사 · HTML · 문서 · 내역</em></span></button>
+  </nav>
+  <button class="themebtn" id="themeBtn" type="button"><i></i><span>밝게 보기</span></button>
+  <p class="offline">외부 연결 없이 이 브라우저 안에서만 처리합니다. 올린 파일은 어디로도 전송되지 않습니다.</p>
+</aside>
+<main>
+<!-- ───────── STEP 1 ───────── -->
+<section class="step" id="s0">
+  <div class="panel">
+    <h2>원문(질문지) 올리기</h2>
+    <p class="hint">항목 순서의 기준이 되는 파일입니다. 지원 형식: <b>.hwpx / .docx / .hwp / .txt</b>. 업로드하면 번호 체계를 읽어 항목 목차를 만듭니다.</p>
+    <div class="drop" id="dropQ" tabindex="0" role="button">
+      <b>여기에 원문 파일을 끌어다 놓기</b>
+      <small>또는 클릭해서 선택 · 한 개만 올립니다</small>
+    </div>
+    <input type="file" id="fileQ" hidden accept=".hwp,.hwpx,.docx,.txt,.md">
+    <div id="qStatus" style="margin-top:10px"></div>
+  </div>
+  <div class="panel" id="qItemsPanel" hidden>
+    <h2>항목 목차 <span class="badge b-info" id="qCount"></span></h2>
+    <p class="hint">배정 단위로 쓸 항목만 체크하세요. 제목은 직접 고칠 수 있습니다(원문 파일은 바뀌지 않습니다).</p>
+    <div class="toolbar">
+      <button class="act ghost tiny" data-lvsel="1">1단계까지</button>
+      <button class="act ghost tiny" data-lvsel="2">2단계까지</button>
+      <button class="act ghost tiny" data-lvsel="3">3단계까지</button>
+      <button class="act ghost tiny" data-lvsel="9">전체</button>
+      <div class="spacer"></div>
+      <button class="act" id="toStep2">부서별 작성분 올리기 →</button>
+    </div>
+    <table class="tbl" id="qTable"></table>
+  </div>
+</section>
+
+<!-- ───────── STEP 2 ───────── -->
+<section class="step" id="s1" hidden>
+  <div class="panel">
+    <h2>부서별 작성분 올리기</h2>
+    <p class="hint">부서별로 작성한 파일을 여러 개 한 번에 올릴 수 있습니다. 파일 하나에 항목이 여러 개 있어도 번호 체계를 따라 자동으로 쪼갭니다.</p>
+    <div class="drop" id="dropS" tabindex="0" role="button">
+      <b>부서별 작성분을 끌어다 놓기</b>
+      <small>.hwpx / .docx / .hwp / .txt · 여러 개 동시 가능</small>
+    </div>
+    <input type="file" id="fileS" hidden multiple accept=".hwp,.hwpx,.docx,.txt,.md">
+    <div class="toolbar" style="margin-top:12px">
+      <button class="act ghost tiny" id="addPaste">붙여넣기로 추가</button>
+      <div class="spacer"></div>
+      <button class="act" id="toStep3">자동 배정 실행 → 취합 현황</button>
+    </div>
+    <div id="sList" style="margin-top:8px"></div>
+  </div>
+  <div class="panel" id="pastePanel" hidden>
+    <h2>붙여넣기로 추가</h2>
+    <p class="hint">한글에서 본문을 복사해 붙여넣으면 텍스트 작성분으로 등록됩니다. 표는 셀 구분이 탭으로 유지됩니다.</p>
+    <div class="frow" style="justify-content:flex-start"><span>작성분 이름</span><input type="text" id="pasteName" placeholder="예: 3-2_○○부" style="max-width:280px"></div>
+    <textarea id="pasteBody" placeholder="여기에 붙여넣기"></textarea>
+    <div class="toolbar" style="margin-top:8px"><button class="act" id="pasteOk">작성분으로 등록</button><button class="act ghost" id="pasteCancel">닫기</button></div>
+  </div>
+</section>
+
+<!-- ───────── STEP 3 ───────── -->
+<section class="step" id="s2" hidden>
+  <div class="panel">
+    <h2>취합 현황 — 어느 파일이 어느 항목으로 갔는지</h2>
+    <p class="hint">왼쪽이 원문 항목, 오른쪽이 배정된 작성분입니다. 색 띠가 파일을 뜻합니다. 배정이 틀리면 오른쪽에서 직접 바꾸세요.</p>
+    <div class="toolbar">
+      <span class="stat" id="mapStat"></span>
+      <div class="spacer"></div>
+      <button class="act ghost tiny" id="reAuto">자동 배정 다시 실행</button>
+      <button class="act" id="toStep4">서식 규칙 →</button>
+    </div>
+    <div id="railWrap"></div>
+  </div>
+  <div class="panel" id="orphanPanel" hidden>
+    <h2>배정되지 않은 작성분 <span class="badge b-warn" id="orphanCount"></span></h2>
+    <p class="hint">항목과 짝을 못 찾은 덩어리입니다. 항목을 직접 골라 붙이거나, 빼고 진행하세요.</p>
+    <table class="tbl" id="orphanTable"></table>
+  </div>
+</section>
+
+<!-- ───────── STEP 4 ───────── -->
+<section class="step" id="s3" hidden>
+  <div class="panel">
+    <h2>서식 규칙</h2>
+    <p class="hint">글자·번호·숫자 표기만 손댑니다. 본문 문장은 그대로 둡니다. 내용에 손이 닿는 항목(숫자·날짜 표기)은 <b>기본 꺼짐</b>이고, 켜면 바꾼 내역이 전부 기록됩니다.</p>
+    <div class="settings" id="settings"></div>
+    <div class="toolbar" style="margin-top:14px"><div class="spacer"></div><button class="act" id="toStep5">미리보기 →</button></div>
+  </div>
+</section>
+
+<!-- ───────── STEP 5 ───────── -->
+<section class="step" id="s4" hidden>
+  <div class="panel">
+    <div class="toolbar">
+      <label class="chk"><input type="checkbox" id="showSrc" checked> 출처 색 띠 보기</label>
+      <label class="chk"><input type="checkbox" id="showSrcName"> 출처 파일명 표시</label>
+      <div class="spacer"></div>
+      <button class="act ghost" id="btnCopy">서식 그대로 복사</button>
+      <button class="act ghost" id="btnHtml">HTML 저장</button>
+      <button class="act ghost" id="btnMap">배정내역(CSV)</button>
+      <button class="act ghost" id="btnHwpx">한글 문서(.hwpx)</button>
+      <button class="act" id="btnDoc">문서 파일로 저장(.doc)</button>
+    </div>
+    <p class="meta" style="margin:0 0 10px">한글에서 열려면 <b>한글 문서(.hwpx)</b>, 워드까지 함께 쓰려면 <b>문서(.doc)</b>를 받으세요. 미리보기는 화면 색을 따르고, 저장되는 문서는 흰 종이에 검은 글씨입니다.</p>
+    <div id="verify"></div>
+    <div id="preview"></div>
+  </div>
+  <div class="panel" id="logPanel" hidden>
+    <h2>표기 변경 내역 <span class="badge b-warn" id="logCount"></span></h2>
+    <p class="hint">숫자·날짜 표기 통일로 글자가 바뀐 곳입니다. 감사 대응 시 근거로 쓰세요.</p>
+    <div class="log" id="logBox"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+"use strict";
+/* ── 무의존 DEFLATE 해제 + ZIP 판독 (외부 라이브러리 없음) ───────────── */
+const LBASE=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+const LEXT=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+const DBASE=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+const DEXT=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+const CLCIDX=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+function buildTree(lengths,num){
+  const counts=new Int32Array(16),offs=new Int32Array(16),symbols=new Int32Array(num);
+  for(let i=0;i<num;i++) counts[lengths[i]]++;
+  counts[0]=0;
+  let sum=0; for(let i=0;i<16;i++){offs[i]=sum; sum+=counts[i];}
+  for(let i=0;i<num;i++) if(lengths[i]) symbols[offs[lengths[i]]++]=i;
+  return {counts,symbols};
+}
+let FIXED_LT=null,FIXED_DT=null;
+function fixedTrees(){
+  if(FIXED_LT) return;
+  const l=new Uint8Array(288);
+  for(let i=0;i<144;i++)l[i]=8; for(let i=144;i<256;i++)l[i]=9;
+  for(let i=256;i<280;i++)l[i]=7; for(let i=280;i<288;i++)l[i]=8;
+  FIXED_LT=buildTree(l,288);
+  const d=new Uint8Array(30).fill(5);
+  FIXED_DT=buildTree(d,30);
+}
+function inflateRaw(src){
+  fixedTrees();
+  let dst=new Uint8Array(Math.max(1024,src.length*4)),dlen=0,pos=0,bitbuf=0,bitcnt=0;
+  const put=b=>{ if(dlen===dst.length){const n=new Uint8Array(dst.length*2); n.set(dst); dst=n;} dst[dlen++]=b; };
+  const getbit=()=>{ if(!bitcnt){ if(pos>=src.length) throw new Error('압축 데이터가 중간에 끊겼습니다.'); bitbuf=src[pos++]; bitcnt=8; }
+                     const b=bitbuf&1; bitbuf>>=1; bitcnt--; return b; };
+  const getbits=n=>{ let v=0; for(let i=0;i<n;i++) v|=getbit()<<i; return v; };
+  const decodeSym=t=>{ let sum=0,cur=0,len=0;
+    do{ cur=2*cur+getbit(); len++; if(len>15) throw new Error('허프만 코드 오류');
+        sum+=t.counts[len]; cur-=t.counts[len]; }while(cur>=0);
+    return t.symbols[sum+cur]; };
+  function decodeTrees(){
+    const hlit=getbits(5)+257,hdist=getbits(5)+1,hclen=getbits(4)+4;
+    const clc=new Uint8Array(19);
+    for(let i=0;i<hclen;i++) clc[CLCIDX[i]]=getbits(3);
+    const ct=buildTree(clc,19);
+    const lengths=new Uint8Array(320); let num=0;
+    while(num<hlit+hdist){
+      const sym=decodeSym(ct);
+      if(sym===16){const prev=lengths[num-1]; let n=getbits(2)+3; while(n--) lengths[num++]=prev;}
+      else if(sym===17){let n=getbits(3)+3; while(n--) lengths[num++]=0;}
+      else if(sym===18){let n=getbits(7)+11; while(n--) lengths[num++]=0;}
+      else lengths[num++]=sym;
+    }
+    return [buildTree(lengths.subarray(0,hlit),hlit),buildTree(lengths.subarray(hlit,hlit+hdist),hdist)];
+  }
+  function block(lt,dt){
+    for(;;){
+      const sym=decodeSym(lt);
+      if(sym===256) return;
+      if(sym<256){ put(sym); continue; }
+      const s=sym-257, len=LBASE[s]+getbits(LEXT[s]);
+      const ds=decodeSym(dt), dist=DBASE[ds]+getbits(DEXT[ds]);
+      const start=dlen-dist;
+      if(start<0) throw new Error('압축 데이터 오류');
+      for(let i=0;i<len;i++) put(dst[start+i]);
+    }
+  }
+  let final=0;
+  do{
+    final=getbit();
+    const type=getbits(2);
+    if(type===0){
+      bitcnt=0;
+      const len=src[pos]|(src[pos+1]<<8); pos+=4;
+      for(let i=0;i<len;i++) put(src[pos++]);
+    } else if(type===1) block(FIXED_LT,FIXED_DT);
+    else if(type===2){ const [lt,dt]=decodeTrees(); block(lt,dt); }
+    else throw new Error('지원하지 않는 압축 블록입니다.');
+  }while(!final && pos<=src.length);
+  return dst.subarray(0,dlen);
+}
+function unzip(buf){
+  const u8=new Uint8Array(buf), dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  let eo=-1;
+  for(let i=u8.length-22;i>=0 && i>=u8.length-22-65557;i--){ if(dv.getUint32(i,true)===0x06054b50){eo=i;break;} }
+  if(eo<0) throw new Error('압축 구조(ZIP)를 읽지 못했습니다. 파일이 손상됐을 수 있습니다.');
+  const cnt=dv.getUint16(eo+10,true); let off=dv.getUint32(eo+16,true);
+  const files={}, dec=new TextDecoder('utf-8');
+  for(let i=0;i<cnt;i++){
+    if(off+46>u8.length || dv.getUint32(off,true)!==0x02014b50) break;
+    const method=dv.getUint16(off+10,true), csize=dv.getUint32(off+20,true);
+    const nlen=dv.getUint16(off+28,true), elen=dv.getUint16(off+30,true), clen=dv.getUint16(off+32,true);
+    const lho=dv.getUint32(off+42,true);
+    const name=dec.decode(u8.subarray(off+46,off+46+nlen));
+    const lnlen=dv.getUint16(lho+26,true), lelen=dv.getUint16(lho+28,true);
+    const start=lho+30+lnlen+lelen;
+    files[name]={method, raw:csize?u8.subarray(start,start+csize):u8.subarray(start)};
+    off+=46+nlen+elen+clen;
+  }
+  const api={
+    names:()=>Object.keys(files),
+    bytes:n=>{ const f=files[n]; if(!f) return null; return f.method===0?f.raw:inflateRaw(f.raw); },
+    text:n=>{ const b=api.bytes(n); return b?dec.decode(b):null; }
+  };
+  return api;
+}
+/* ═══════════════ 공통 ═══════════════ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TAGS=['--tag1','--tag2','--tag3','--tag4','--tag5','--tag6','--tag7','--tag8'].map(v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cmpKey=s=>String(s).replace(/\s+/g,'');
+function show(i){$$('section.step').forEach((s,k)=>s.hidden=(k!==i));$$('nav.steps button').forEach((b,k)=>b.setAttribute('aria-selected',String(k===i)));window.scrollTo(0,0);}
+$$('nav.steps button').forEach(b=>b.onclick=()=>show(+b.dataset.go));
+$('#themeBtn').onclick=()=>{
+  const 어둡게=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme', 어둡게?'light':'dark');
+  $('#themeBtn').querySelector('span').textContent = 어둡게?'어둡게 보기':'밝게 보기';
+};
+
+/* ═══════════════ 상태 ═══════════════ */
+const S={ question:null, items:[], sources:[], blocks:[], assign:{}, logs:[] };
+
+/* ═══════════════ 파일 읽기 ═══════════════ */
+async function readAny(file){
+  const ext=file.name.toLowerCase().split('.').pop();
+  const buf=await file.arrayBuffer();
+  if(ext==='docx') return {kind:'docx', paras:parseDocx(buf)};
+  if(ext==='hwpx') return {kind:'hwpx', paras:parseHwpx(buf)};
+  if(ext==='hwp')  return {kind:'hwp',  paras:parseHwp(buf)};
+  return {kind:'text', paras:new TextDecoder('utf-8').decode(buf).split(/\r?\n/).map(t=>({type:'p',text:t}))};
+}
+/* ---- DOCX ---- */
+function parseDocx(buf){
+  const zip=unzip(buf);
+  const xml=zip.text('word/document.xml');
+  if(!xml) throw new Error('워드 본문(document.xml)을 찾지 못했습니다.');
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  const out=[]; walkOO(doc.documentElement,out); return out;
+}
+function ooText(el){
+  let s='';
+  for(const n of el.getElementsByTagName('*')){
+    const ln=n.localName;
+    if(ln==='t') s+=n.textContent;
+    else if(ln==='tab') s+='\t';
+    else if(ln==='br'||ln==='cr') s+='\n';
+  }
+  return s;
+}
+function walkOO(node,out){
+  for(const ch of node.children){
+    const ln=ch.localName;
+    if(ln==='p'){ out.push({type:'p',text:ooText(ch)}); }
+    else if(ln==='tbl'){ out.push({type:'table',rows:ooTable(ch)}); }
+    else walkOO(ch,out);
+  }
+}
+function ooTable(tbl){
+  const rows=[];
+  for(const tr of [...tbl.children].filter(e=>e.localName==='tr')){
+    const cells=[];
+    for(const tc of [...tr.children].filter(e=>e.localName==='tc')){
+      const ps=[...tc.children].filter(e=>e.localName==='p').map(ooText);
+      cells.push(ps.join('\n'));
+    }
+    if(cells.length) rows.push(cells);
+  }
+  return rows;
+}
+/* ---- HWPX (OWPML) ---- */
+function parseHwpx(buf){
+  const zip=unzip(buf);
+  const names=zip.names().filter(n=>/section\d+\.xml$/i.test(n))
+    .sort((a,b)=>(+a.match(/(\d+)\.xml$/)[1])-(+b.match(/(\d+)\.xml$/)[1]));
+  if(!names.length) throw new Error('한글 본문(section.xml)을 찾지 못했습니다.');
+  const out=[];
+  for(const n of names){
+    const doc=new DOMParser().parseFromString(zip.text(n),'application/xml');
+    walkHx(doc.documentElement,out);
+  }
+  return out;
+}
+function hxText(p){
+  let s='';
+  for(const n of p.getElementsByTagName('*')){
+    const ln=n.localName;
+    if(ln==='t') s+=n.textContent;
+    else if(ln==='tab') s+='\t';
+    else if(ln==='lineBreak') s+='\n';
+  }
+  return s;
+}
+function walkHx(node,out){
+  for(const ch of node.children){
+    const ln=ch.localName;
+    if(ln==='p'){
+      const tbl=[...ch.getElementsByTagName('*')].find(e=>e.localName==='tbl');
+      if(tbl){ const before=hxTextExcl(ch,tbl); if(before.trim()) out.push({type:'p',text:before});
+               out.push({type:'table',rows:hxTable(tbl)}); }
+      else out.push({type:'p',text:hxText(ch)});
+    } else if(ln==='tbl'){ out.push({type:'table',rows:hxTable(ch)}); }
+    else walkHx(ch,out);
+  }
+}
+function hxTextExcl(p,skip){
+  let s='';
+  for(const n of p.getElementsByTagName('*')){
+    if(skip.contains(n)) continue;
+    if(n.localName==='t') s+=n.textContent;
+  }
+  return s;
+}
+function hxTable(tbl){
+  const rows=[];
+  for(const tr of [...tbl.children].filter(e=>e.localName==='tr')){
+    const cells=[];
+    for(const tc of [...tr.children].filter(e=>e.localName==='tc')){
+      const ps=[...tc.getElementsByTagName('*')].filter(e=>e.localName==='p');
+      cells.push(ps.map(hxText).join('\n'));
+    }
+    if(cells.length) rows.push(cells);
+  }
+  return rows;
+}
+/* ---- HWP 5.0 (CFB + 압축해제 + 레코드) ---- */
+function readCFB(buf){
+  const u8=new Uint8Array(buf), dv=new DataView(buf);
+  const sig=[0xD0,0xCF,0x11,0xE0,0xA1,0xB1,0x1A,0xE1];
+  for(let i=0;i<8;i++) if(u8[i]!==sig[i]) throw new Error('한글 2.x 이하 또는 손상된 파일로 보입니다.');
+  const ssz=1<<dv.getUint16(30,true), mssz=1<<dv.getUint16(32,true);
+  const dirStart=dv.getUint32(48,true), miniCut=dv.getUint32(56,true);
+  const miniStart=dv.getUint32(60,true), nMini=dv.getUint32(64,true);
+  const difStart=dv.getUint32(68,true), nDif=dv.getUint32(72,true);
+  const off=s=>512+s*ssz;
+  const fatSecs=[];
+  for(let i=0;i<109;i++){const v=dv.getUint32(76+i*4,true); if(v>=0xFFFFFFFE)break; fatSecs.push(v);}
+  let ds=difStart;
+  for(let k=0;k<nDif && ds<0xFFFFFFFE;k++){
+    const b=off(ds), cnt=(ssz/4)-1;
+    for(let i=0;i<cnt;i++){const v=dv.getUint32(b+i*4,true); if(v<0xFFFFFFFE) fatSecs.push(v);}
+    ds=dv.getUint32(b+cnt*4,true);
+  }
+  const per=ssz/4, fat=new Uint32Array(fatSecs.length*per);
+  fatSecs.forEach((s,i)=>{const b=off(s); for(let j=0;j<per;j++) fat[i*per+j]=dv.getUint32(b+j*4,true);});
+  const chain=(st,tab)=>{const o=[];let s=st,g=0;while(s<0xFFFFFFFA&&g++<400000){o.push(s);s=tab[s];}return o;};
+  const readCh=(st,size)=>{const secs=chain(st,fat),o=new Uint8Array(secs.length*ssz);let p=0;
+    for(const s of secs){o.set(u8.subarray(off(s),off(s)+ssz),p);p+=ssz;} return size!=null?o.subarray(0,size):o;};
+  const dirB=readCh(dirStart,null), ents=[];
+  for(let p=0;p+128<=dirB.length;p+=128){
+    const nl=dirB[p+64]|(dirB[p+65]<<8);
+    if(nl<=0){ents.push(null);continue;}
+    let nm=''; for(let i=0;i<nl-2;i+=2) nm+=String.fromCharCode(dirB[p+i]|(dirB[p+i+1]<<8));
+    const d=new DataView(dirB.buffer,dirB.byteOffset+p,128);
+    ents.push({name:nm,type:dirB[p+66],left:d.getUint32(68,true),right:d.getUint32(72,true),child:d.getUint32(76,true),start:d.getUint32(116,true),size:d.getUint32(120,true)});
+  }
+  const root=ents[0];
+  const mfB=nMini?readCh(miniStart,nMini*ssz):new Uint8Array(0);
+  const mFat=new Uint32Array(Math.floor(mfB.length/4));
+  {const d=new DataView(mfB.buffer,mfB.byteOffset,mfB.length); for(let i=0;i<mFat.length;i++) mFat[i]=d.getUint32(i*4,true);}
+  const mini=root.start<0xFFFFFFFA?readCh(root.start,root.size):new Uint8Array(0);
+  const readMini=(st,size)=>{const o=new Uint8Array(Math.ceil(size/mssz)*mssz);let p=0,s=st,g=0;
+    while(s<0xFFFFFFFA&&g++<400000){o.set(mini.subarray(s*mssz,s*mssz+mssz),p);p+=mssz;s=mFat[s];} return o.subarray(0,size);};
+  const map={};
+  (function walk(id,pre){ if(id>=0xFFFFFFFA||!ents[id])return; const e=ents[id];
+    walk(e.left,pre); const path=pre+e.name;
+    if(e.type===1) walk(e.child,path+'/'); else if(e.type===2) map[path]=e;
+    walk(e.right,pre); })(root.child,'');
+  return {map, read:e=>(e.size<miniCut && mini.length)?readMini(e.start,e.size):readCh(e.start,e.size)};
+}
+const EXT_CTRL=new Set([1,2,3,11,12,14,15,16,17,18,21,22,23]);
+const INL_CTRL=new Set([4,5,6,7,8,19,20]);
+function parseHwp(buf){
+  const {map,read}=readCFB(buf);
+  const fh=map['FileHeader']; if(!fh) throw new Error('한글 파일 형식이 아닙니다.');
+  const h=read(fh), hd=new DataView(h.buffer,h.byteOffset,h.length);
+  const flags=hd.getUint32(36,true);
+  if(flags&2) throw new Error('암호가 걸린 파일입니다. 암호를 푼 뒤 다시 올려주세요.');
+  const compressed=!!(flags&1);
+  const secs=Object.keys(map).filter(k=>/^BodyText\/Section\d+$/.test(k))
+    .sort((a,b)=>(+a.match(/(\d+)$/)[1])-(+b.match(/(\d+)$/)[1]));
+  if(!secs.length) throw new Error('본문(BodyText)을 찾지 못했습니다.');
+  const paras=[];
+  for(const k of secs){
+    let d=read(map[k]);
+    if(compressed){ try{ d=inflateRaw(d); }catch(e){ d=inflateRaw(d.subarray(2)); } }
+    parseHwpRecords(d,paras);
+  }
+  return paras;
+}
+function parseHwpRecords(data,out){
+  const dv=new DataView(data.buffer,data.byteOffset,data.length);
+  let p=0, inTable=false, cols=0, cells=[], buf=null;
+  const closeCell=()=>{ if(buf!==null){ cells.push(buf.join('\n')); buf=null; } };
+  const flushTable=()=>{
+    if(!inTable){ return; }
+    closeCell();
+    const c=cols>0?cols:1, rows=[];
+    for(let i=0;i<cells.length;i+=c) rows.push(cells.slice(i,i+c));
+    if(rows.length) out.push({type:'table',rows,approx:true});
+    inTable=false; cols=0; cells=[]; buf=null;
+  };
+  while(p+4<=data.length){
+    const hdr=dv.getUint32(p,true); p+=4;
+    const tag=hdr&0x3FF, lv=(hdr>>10)&0x3FF; let size=(hdr>>>20)&0xFFF;
+    if(size===0xFFF){ size=dv.getUint32(p,true); p+=4; }
+    const body=p, end=Math.min(p+size,data.length); p=end;
+    if(tag===76){ // HWPTAG_TABLE — 행/열 수
+      flushTable();
+      if(body+8<=end){ inTable=true; cols=dv.getUint16(body+6,true)||0; cells=[]; buf=null; }
+    } else if(tag===72){ // HWPTAG_LIST_HEADER — 셀 시작
+      if(inTable){ closeCell(); buf=[]; }
+    } else if(tag===67){ // HWPTAG_PARA_TEXT
+      const txt=decodeHwpText(dv,body,end);
+      if(inTable && lv>=2){ if(buf===null) buf=[]; buf.push(txt); }
+      else if(lv<2){ flushTable(); out.push({type:'p',text:txt}); }
+    } else if(tag===66 && lv<2){ flushTable(); }
+  }
+  flushTable();
+}
+function decodeHwpText(dv,from,to){
+  let s='';
+  for(let i=from;i+1<to;){
+    const c=dv.getUint16(i,true);
+    if(c<32){
+      if(EXT_CTRL.has(c)||INL_CTRL.has(c)){ i+=16; continue; }
+      if(c===9) s+='\t'; else if(c===10||c===13) s+='\n';
+      i+=2; continue;
+    }
+    if(c===30||c===31){ s+=' '; i+=2; continue; }
+    s+=String.fromCharCode(c); i+=2;
+  }
+  return s;
+}
+
+/* ═══════════════ 항목(제목) 인식 ═══════════════ */
+const KOR='가나다라마바사아자차카타파하';
+const CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+const ROMAN='ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ';
+const PATS=[
+ {lv:1,re:new RegExp('^\\s*([IVXⅠ-Ⅹ]{1,4})\\s*[.)]\\s*(.*)$'),norm:m=>'R'+romanVal(m[1])},
+ {lv:2,re:/^\s*(\d{1,2})\s*[.)]\s*(.*)$/,norm:m=>'N'+(+m[1])},
+ {lv:2,re:/^\s*(\d{1,2})\s*[-.]\s*(\d{1,2})\s*[.)]?\s*(.*)$/,norm:m=>'N'+(+m[1])+'.'+(+m[2]),ti:3},
+ {lv:3,re:new RegExp('^\\s*(['+KOR+'])\\s*[.)]\\s*(.*)$'),norm:m=>'K'+(KOR.indexOf(m[1])+1)},
+ {lv:4,re:/^\s*\((\d{1,2})\)\s*(.*)$/,norm:m=>'P'+(+m[1])},
+ {lv:5,re:new RegExp('^\\s*(['+CIRC+'])\\s*(.*)$'),norm:m=>'C'+(CIRC.indexOf(m[1])+1)},
+];
+function romanVal(s){
+  s=s.toUpperCase(); const idx=ROMAN.indexOf(s); if(idx>=0) return idx+1;
+  const M={I:1,V:5,X:10}; let v=0;
+  for(let i=0;i<s.length;i++){const a=M[s[i]],b=M[s[i+1]]; if(!a) return 0; v+= (b&&b>a)?-a:a;}
+  return v;
+}
+function headOf(text){
+  const t=(text||'').replace(/^[\s□○◎▶■●-]+/,'');
+  if(!t.trim()) return null;
+  for(const P of PATS){
+    const m=t.match(P.re);
+    if(m){
+      const title=(m[P.ti||m.length-1]||'').trim();
+      if(P.lv===2 && /^\d{4}$/.test(m[1])) continue;
+      if(!title || title.length>44) return null;
+      if(/(니다|십시오|하세요|하십시오)\s*[.!?]?$/.test(title)) return null;
+      if(/[.!?]$/.test(title) && title.length>18) return null;
+      return {lv:P.lv, key:P.norm(m), title, raw:t};
+    }
+  }
+  return null;
+}
+function buildItems(paras){
+  const items=[], stack=[], seen=new Set();
+  paras.forEach((p,i)=>{
+    if(p.type!=='p') return;
+    const h=headOf(p.text);
+    if(!h) return;
+    while(stack.length && stack[stack.length-1].lv>=h.lv) stack.pop();
+    const path=[...stack.map(s=>s.key),h.key].join('.');
+    const node={lv:h.lv, key:h.key};
+    if(seen.has(path+'|'+h.title)){ stack.push(node); return; }
+    seen.add(path+'|'+h.title);
+    items.push({id:'it'+items.length, lv:h.lv, key:h.key, path, title:h.title||h.raw, raw:h.raw, at:i, use:h.lv<=2});
+    stack.push(node);
+  });
+  return items;
+}
+
+/* ═══════════════ STEP 1 UI ═══════════════ */
+function wireDrop(dropEl,inputEl,handler,multi){
+  dropEl.onclick=()=>inputEl.click();
+  dropEl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();inputEl.click();}};
+  ['dragenter','dragover'].forEach(t=>dropEl.addEventListener(t,e=>{e.preventDefault();dropEl.classList.add('over');}));
+  ['dragleave','drop'].forEach(t=>dropEl.addEventListener(t,e=>{e.preventDefault();dropEl.classList.remove('over');}));
+  dropEl.addEventListener('drop',e=>handler([...e.dataTransfer.files]));
+  inputEl.onchange=()=>{handler([...inputEl.files]); inputEl.value='';};
+}
+wireDrop($('#dropQ'),$('#fileQ'),async files=>{
+  if(!files.length) return;
+  const f=files[0];
+  $('#qStatus').innerHTML='<span class="badge b-info">읽는 중…</span> '+esc(f.name);
+  try{
+    const r=await readAny(f);
+    S.question={name:f.name,kind:r.kind,paras:r.paras};
+    S.items=buildItems(r.paras);
+    $('#qStatus').innerHTML='<span class="badge b-ok">읽음</span> <b>'+esc(f.name)+'</b> · 문단 '+r.paras.length+'개 · 형식 '+r.kind.toUpperCase()
+      + (r.kind==='hwp'?'<div class="warnbox">.hwp는 글자만 뽑아냅니다. 표 구조는 단순해집니다. 표가 많으면 한글에서 <b>다른 이름으로 저장 → HWPX</b>로 바꿔 올리는 편이 정확합니다.</div>':'');
+    if(!S.items.length){
+      $('#qStatus').innerHTML+='<div class="errbox">번호가 붙은 항목을 찾지 못했습니다. 원문에 <b>1. / 가. / (1) / Ⅰ.</b> 형태의 번호가 있는지 확인하세요.</div>';
+      $('#qItemsPanel').hidden=true; return;
+    }
+    renderItems(); $('#qItemsPanel').hidden=false;
+  }catch(e){
+    $('#qStatus').innerHTML='<div class="errbox">'+esc(e.message)+'</div>';
+  }
+});
+function renderItems(){
+  const rows=S.items.map((it,i)=>`<tr>
+    <td style="width:34px"><input type="checkbox" data-use="${i}" ${it.use?'checked':''}></td>
+    <td class="mono" style="width:70px; color:var(--faint)">${esc(it.path)}</td>
+    <td style="width:46px" class="mono">${it.lv}단계</td>
+    <td><span class="itemno mono">${esc(it.raw.slice(0,it.raw.length-it.title.length).trim())}</span>
+        <input type="text" data-title="${i}" value="${esc(it.title)}" style="width:70%"></td>
+  </tr>`).join('');
+  $('#qTable').innerHTML='<thead><tr><th>사용</th><th>번호키</th><th>단계</th><th>항목명</th></tr></thead><tbody>'+rows+'</tbody>';
+  $('#qCount').textContent='총 '+S.items.length+'개 · 사용 '+S.items.filter(i=>i.use).length+'개';
+  $$('#qTable input[data-use]').forEach(el=>el.onchange=()=>{S.items[+el.dataset.use].use=el.checked;
+    $('#qCount').textContent='총 '+S.items.length+'개 · 사용 '+S.items.filter(i=>i.use).length+'개';});
+  $$('#qTable input[data-title]').forEach(el=>el.oninput=()=>{S.items[+el.dataset.title].title=el.value;});
+}
+$$('[data-lvsel]').forEach(b=>b.onclick=()=>{const lv=+b.dataset.lvsel; S.items.forEach(i=>i.use=i.lv<=lv); renderItems();});
+$('#toStep2').onclick=()=>show(1);
+
+/* ═══════════════ STEP 2 — 부서별 작성분 ═══════════════ */
+wireDrop($('#dropS'),$('#fileS'),async files=>{
+  for(const f of files){
+    const rec={name:f.name,kind:'',paras:[],err:'',color:TAGS[S.sources.length%TAGS.length]};
+    S.sources.push(rec); renderSources();
+    try{ const r=await readAny(f); rec.kind=r.kind; rec.paras=r.paras; }
+    catch(e){ rec.err=e.message; }
+    renderSources();
+  }
+});
+$('#addPaste').onclick=()=>{$('#pastePanel').hidden=false; $('#pasteName').focus();};
+$('#pasteCancel').onclick=()=>{$('#pastePanel').hidden=true;};
+$('#pasteOk').onclick=()=>{
+  const name=$('#pasteName').value.trim()||('붙여넣기 작성분 '+(S.sources.length+1));
+  const body=$('#pasteBody').value;
+  if(!body.trim()){ alert('내용이 비어 있습니다.'); return; }
+  S.sources.push({name,kind:'text',paras:body.split(/\r?\n/).map(t=>({type:'p',text:t})),err:'',color:TAGS[S.sources.length%TAGS.length]});
+  $('#pasteBody').value=''; $('#pasteName').value=''; $('#pastePanel').hidden=true; renderSources();
+};
+function renderSources(){
+  $('#sList').innerHTML=S.sources.map((s,i)=>{
+    const st=s.err?`<span class="badge b-err">${esc(s.err)}</span>`
+      :(s.paras.length?`<span class="badge b-ok">${s.kind.toUpperCase()} · 문단 ${s.paras.length}</span>`:`<span class="badge b-info">읽는 중…</span>`);
+    return `<span class="filechip" style="border-left-color:${s.color}">${esc(s.name)} ${st}
+      <button class="act ghost tiny" data-del="${i}">빼기</button></span>`;
+  }).join('') || '<span class="meta">아직 올린 작성분이 없습니다.</span>';
+  $$('#sList [data-del]').forEach(b=>b.onclick=()=>{S.sources.splice(+b.dataset.del,1);
+    S.sources.forEach((s,i)=>s.color=TAGS[i%TAGS.length]); renderSources();});
+}
+$('#toStep3').onclick=()=>{
+  if(!S.items.length){alert('먼저 원문(질문지)을 올려주세요.');show(0);return;}
+  if(!S.sources.length){alert('부서별 작성분을 한 개 이상 올려주세요.');return;}
+  runAuto(); show(2);
+};
+
+/* ═══════════════ 블록 분해 + 자동 배정 ═══════════════ */
+function 제목같은문단(text){
+  const t=(text||'').replace(/^[\s□○◎▶■●-]+/,'').trim();
+  if(t.length<4 || t.length>44) return null;
+  if(/(니다|십시오|하세요|하십시오)\s*[.!?]?$/.test(t)) return null;
+  let best=null, bs=0;
+  for(const it of S.items){ if(!it.use) continue; const s=dice(it.title,t); if(s>bs){bs=s; best=it;} }
+  return bs>=0.72 ? {lv:best.lv, key:best.key, title:best.title, raw:t} : null;
+}
+function splitBlocks(){
+  S.blocks=[];
+  S.sources.forEach((src,si)=>{
+    if(src.err||!src.paras.length) return;
+    let cur=null;
+    const push=()=>{ if(cur && cur.paras.some(p=>p.type==='table'||p.text.trim())) S.blocks.push(cur); };
+    src.paras.forEach((p,pi)=>{
+      if(p.type==='p'){
+        const h=headOf(p.text) || 제목같은문단(p.text);
+        if(h){ push(); cur={id:'b'+S.blocks.length+'_'+si, si, srcName:src.name, color:src.color, head:h, from:pi, paras:[]}; return; }
+      }
+      if(!cur) cur={id:'b0_'+si, si, srcName:src.name, color:src.color, head:null, from:pi, paras:[]};
+      cur.paras.push(p);
+    });
+    push();
+  });
+  S.blocks.forEach((b,i)=>b.id='blk'+i);
+}
+function bigrams(s){const t=cmpKey(s).replace(/[^\w가-힣]/g,'');const g=new Set();for(let i=0;i<t.length-1;i++)g.add(t.slice(i,i+2));return g;}
+function dice(a,b){const A=bigrams(a),B=bigrams(b); if(!A.size||!B.size) return 0; let c=0; A.forEach(x=>{if(B.has(x))c++;}); return 2*c/(A.size+B.size);}
+function scoreOf(item,blk){
+  let s=0;
+  if(blk.head){
+    if(blk.head.key===item.key) s+=.45;
+    const bp=blk.head.key, ip=item.path;
+    if(ip.endsWith(bp)) s+=.15;
+    s+=.40*dice(item.title,blk.head.title);
+  }
+  const fname=blk.srcName.replace(/\.[^.]+$/,'');
+  s+=.25*dice(item.title,fname);
+  const numInName=fname.match(/(\d{1,2})\s*[-_.]\s*(\d{1,2})|(\d{1,2})/);
+  if(numInName && item.path.includes('N'+(+((numInName[1]||numInName[3])||0)))) s+=.20;
+  return Math.min(s,1);
+}
+function runAuto(){
+  splitBlocks();
+  const 첫덩어리=new Set();
+  S.blocks.forEach(b=>{ if(첫덩어리.has(b.si)) return; 첫덩어리.add(b.si);
+    if(b.head) return;
+    const txt=b.paras.filter(p=>p.type==='p').map(p=>p.text).join(' ').slice(0,80);
+    let bs=0; S.items.forEach(it=>{ if(it.use){ const s=dice(it.title,txt); if(s>bs) bs=s; } });
+    if(bs<0.30) b.isFront=true; });
+  S.assign={};
+  const used=new Set();
+  const targets=S.items.filter(i=>i.use);
+  const pairs=[];
+  targets.forEach(it=>S.blocks.forEach(b=>pairs.push({it,b,sc:scoreOf(it,b)})));
+  pairs.sort((a,b)=>b.sc-a.sc);
+  for(const p of pairs){
+    if(p.sc<0.28) break;
+    if(used.has(p.b.id)) continue;
+    if(!S.assign[p.it.id]) S.assign[p.it.id]=[];
+    if(S.assign[p.it.id].length) continue;
+    S.assign[p.it.id].push({blk:p.b.id, sc:p.sc, mode:'자동'});
+    used.add(p.b.id);
+  }
+  // 한 파일이 통째로 한 항목인 경우: 미배정 항목 수 == 미배정 블록 수 이면 순서대로 채움
+  const openItems=targets.filter(i=>!S.assign[i.id]);
+  const openBlks=S.blocks.filter(b=>!used.has(b.id));
+  if(openItems.length && openBlks.length && openItems.length===openBlks.length){
+    openItems.forEach((it,i)=>{S.assign[it.id]=[{blk:openBlks[i].id, sc:0, mode:'순서'}]; used.add(openBlks[i].id);});
+  }
+  renderRail(); renderOrphans(used);
+}
+$('#reAuto').onclick=runAuto;
+
+function blkLabel(b){
+  const n=b.paras.filter(p=>p.type==='p'&&p.text.trim()).length, t=b.paras.filter(p=>p.type==='table').length;
+  const chars=b.paras.reduce((a,p)=>a+(p.type==='p'?p.text.length:p.rows.flat().join('').length),0);
+  return `문단 ${n}${t?' · 표 '+t:''} · ${chars.toLocaleString()}자`;
+}
+function renderRail(){
+  const targets=S.items.filter(i=>i.use);
+  const opts=['<option value="">— 배정 안 함 —</option>'].concat(
+    S.blocks.map(b=>`<option value="${b.id}">${esc(b.srcName)}${b.head?' ▸ '+esc(b.head.raw.slice(0,28)):''}</option>`)).join('');
+  let html='<div class="rail"><div class="rail-h">원문 항목</div><div class="rail-h"></div><div class="rail-h">배정된 작성분</div>';
+  targets.forEach(it=>{
+    const a=(S.assign[it.id]||[])[0];
+    const b=a?S.blocks.find(x=>x.id===a.blk):null;
+    html+=`<div class="cellL lv${Math.min(it.lv,4)}"><span class="itemno mono">${esc(it.raw.slice(0,it.raw.length-it.title.length).trim())}</span>${esc(it.title)}</div>`;
+    html+=`<div class="link"><svg viewBox="0 0 26 44" preserveAspectRatio="none"><path d="M0 22 H26" stroke="${b?b.color:'#6b7684'}" stroke-width="${b?1.6:1}" stroke-dasharray="${b?'':'3 3'}" fill="none"/></svg></div>`;
+    html+=`<div class="cellR${b?'':' empty'}">
+      <div class="src">
+        ${b?`<span class="srcname" style="border-left-color:${b.color}">${esc(b.srcName)}</span>`:'<span class="meta">비어 있음</span>'}
+        <select data-asg="${it.id}" style="max-width:280px">${opts.replace('value="'+(b?b.id:'@')+'"','value="'+(b?b.id:'@')+'" selected')}</select>
+      </div>
+      ${b?`<div class="meta">${blkLabel(b)} · 매칭 ${a.mode}${a.sc?' '+Math.round(a.sc*100)+'%':''}</div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  $('#railWrap').innerHTML=html;
+  $$('#railWrap [data-asg]').forEach(sel=>sel.onchange=()=>{
+    const id=sel.dataset.asg;
+    if(!sel.value){ delete S.assign[id]; }
+    else {
+      for(const k of Object.keys(S.assign)) if(k!==id && S.assign[k][0]?.blk===sel.value) delete S.assign[k];
+      S.assign[id]=[{blk:sel.value, sc:0, mode:'수동'}];
+    }
+    renderRail(); renderOrphans(new Set(Object.values(S.assign).map(a=>a[0].blk)));
+  });
+  const done=targets.filter(i=>S.assign[i.id]).length;
+  $('#mapStat').innerHTML=`대상 항목 <b>${targets.length}</b>개 · 배정 <b>${done}</b>개 · 미배정 <b>${targets.length-done}</b>개 · 작성분 덩어리 <b>${S.blocks.length}</b>개`;
+}
+function renderOrphans(used){
+  const orph=S.blocks.filter(b=>!used.has(b.id));
+  $('#orphanPanel').hidden=!orph.length;
+  const 본문미배정=orph.filter(b=>!b.isFront).length;
+  $('#orphanCount').textContent=본문미배정+'개'+(orph.length-본문미배정?` · 머리말 ${orph.length-본문미배정}개`:'');
+  const targets=S.items.filter(i=>i.use);
+  $('#orphanTable').innerHTML='<thead><tr><th>출처</th><th>첫 줄</th><th>분량</th><th>항목 지정</th></tr></thead><tbody>'+
+    orph.map(b=>{
+      const first=(b.head?b.head.raw:(b.paras.find(p=>p.type==='p'&&p.text.trim())||{text:'(표만 있음)'}).text).slice(0,60);
+      return `<tr><td><span class="srcname" style="border-left-color:${b.color}">${esc(b.srcName)}</span>${b.isFront?' <span class="badge b-info">머리말 추정</span>':''}</td>
+        <td>${esc(first)}</td><td class="mono">${esc(blkLabel(b))}</td>
+        <td><select data-put="${b.id}"><option value="">선택</option>${targets.map(i=>`<option value="${i.id}">${esc(i.raw.slice(0,40))}</option>`).join('')}</select></td></tr>`;
+    }).join('')+'</tbody>';
+  $$('#orphanTable [data-put]').forEach(sel=>sel.onchange=()=>{
+    if(!sel.value) return;
+    S.assign[sel.value]=[{blk:sel.dataset.put, sc:0, mode:'수동'}];
+    renderRail(); renderOrphans(new Set(Object.values(S.assign).map(a=>a[0].blk)));
+  });
+}
+$('#toStep4').onclick=()=>show(3);
+
+/* ═══════════════ STEP 4 — 서식 규칙 ═══════════════ */
+const CFG={
+  bodyFont:'함초롬바탕', headFont:'맑은 고딕', bodySize:11, headSize:12,
+  lineHeight:160, paraGap:0, indent:10, align:'justify',
+  tableFont:'맑은 고딕', tableSize:10,
+  numMode:'keep', lv1:'Ⅰ.', lv2:'1.', lv3:'가.', lv4:'(1)', lv5:'①',
+  trimSpace:true, halfWidth:false, comma:false, commaKeepYear:true, dateFmt:'none', parenNeg:false,
+  unit:'none', unitDec:'auto', unitLabel:false, usd:'none', usdFmt:'usd'
+};
+const FONTS=['함초롬바탕','함초롬돋움','바탕','굴림','맑은 고딕','나눔고딕','나눔명조','돋움','HY중고딕','Times New Roman'];
+function buildSettings(){
+  const f=(k,label,arr)=>`<div class="frow"><span>${label}</span><select data-cfg="${k}">${arr.map(o=>`<option ${CFG[k]===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  const n=(k,label,min,max,unit)=>`<div class="frow"><span>${label}</span><span><input type="number" data-cfg="${k}" value="${CFG[k]}" min="${min}" max="${max}" style="width:72px"> ${unit}</span></div>`;
+  const c=(k,label)=>`<label class="chk"><input type="checkbox" data-cfg="${k}" ${CFG[k]?'checked':''}> ${label}</label>`;
+  $('#settings').innerHTML=`
+  <div class="fset"><h3>글자</h3>
+    ${f('headFont','제목 글꼴',FONTS)}${n('headSize','제목 크기',7,20,'pt')}
+    ${f('bodyFont','본문 글꼴',FONTS)}${n('bodySize','본문 크기',7,20,'pt')}
+    ${f('tableFont','표 글꼴',FONTS)}${n('tableSize','표 크기',6,16,'pt')}
+  </div>
+  <div class="fset"><h3>문단</h3>
+    ${n('lineHeight','줄 간격',100,250,'%')}${n('paraGap','문단 간격',0,20,'pt')}${n('indent','들여쓰기',0,40,'pt')}
+    <div class="frow"><span>정렬</span><select data-cfg="align">
+      <option value="justify" ${CFG.align==='justify'?'selected':''}>양쪽</option>
+      <option value="left" ${CFG.align==='left'?'selected':''}>왼쪽</option></select></div>
+  </div>
+  <div class="fset"><h3>번호 체계</h3>
+    <div class="frow"><span>번호 방식</span><select data-cfg="numMode">
+      <option value="keep" ${CFG.numMode==='keep'?'selected':''}>원문 번호 그대로(권장)</option>
+      <option value="tree" ${CFG.numMode==='tree'?'selected':''}>계층형 다시 매기기</option>
+      <option value="flat" ${CFG.numMode==='flat'?'selected':''}>연속형 다시 매기기</option>
+    </select></div>
+    <div class="meta" style="margin-bottom:6px">감사 자료는 <b>원문 번호 그대로</b>가 안전합니다. 아래 기호는 다시 매길 때만 쓰입니다.</div>
+    <div class="frow"><span>1단계</span><input type="text" data-cfg="lv1" value="${CFG.lv1}" style="width:70px"></div>
+    <div class="frow"><span>2단계</span><input type="text" data-cfg="lv2" value="${CFG.lv2}" style="width:70px"></div>
+    <div class="frow"><span>3단계</span><input type="text" data-cfg="lv3" value="${CFG.lv3}" style="width:70px"></div>
+    <div class="frow"><span>4단계</span><input type="text" data-cfg="lv4" value="${CFG.lv4}" style="width:70px"></div>
+    <div class="frow"><span>5단계</span><input type="text" data-cfg="lv5" value="${CFG.lv5}" style="width:70px"></div>
+    <div class="meta">제목 줄에만 적용됩니다. 본문 문장은 건드리지 않습니다.</div>
+  </div>
+  <div class="fset"><h3>정리 (내용 무변경)</h3>
+    ${c('trimSpace','연속 공백·앞뒤 공백 정리')}
+    ${c('halfWidth','전각 숫자·영문을 반각으로')}
+    <div class="meta">글자 뜻이 바뀌지 않는 범위입니다.</div>
+  </div>
+  <div class="fset caution"><h3>표기 통일 (글자가 바뀜 · 기본 꺼짐)</h3>
+    ${c('comma','네 자리 이상 숫자에 천 단위 쉼표')}
+    ${c('commaKeepYear','연도(네 자리)는 제외')}
+    ${c('parenNeg','괄호 음수 (123) → △123')}
+    ${c('unitLabel','단위 표기 정리 (백만 원 → 백만원 · US$ → USD)')}
+    <div class="frow"><span>금액 단위</span><select data-cfg="unit">
+      <option value="none" ${CFG.unit==='none'?'selected':''}>바꾸지 않음</option>
+      <option value="원" ${CFG.unit==='원'?'selected':''}>원</option>
+      <option value="천원" ${CFG.unit==='천원'?'selected':''}>천원</option>
+      <option value="백만원" ${CFG.unit==='백만원'?'selected':''}>백만원</option>
+      <option value="억원" ${CFG.unit==='억원'?'selected':''}>억원</option>
+      <option value="조원" ${CFG.unit==='조원'?'selected':''}>조원</option>
+    </select></div>
+    <div class="frow"><span>소수점 자리</span><select data-cfg="unitDec">
+      <option value="auto" ${CFG.unitDec==='auto'?'selected':''}>필요한 만큼(최대 2자리)</option>
+      <option value="0" ${CFG.unitDec==='0'?'selected':''}>0자리</option>
+      <option value="1" ${CFG.unitDec==='1'?'selected':''}>1자리</option>
+      <option value="2" ${CFG.unitDec==='2'?'selected':''}>2자리</option>
+    </select></div>
+    <div class="frow"><span>외화(USD) 단위</span><select data-cfg="usd">
+      <option value="none" ${CFG.usd==='none'?'selected':''}>바꾸지 않음</option>
+      <option value="달러" ${CFG.usd==='달러'?'selected':''}>달러(전액)</option>
+      <option value="천달러" ${CFG.usd==='천달러'?'selected':''}>천달러</option>
+      <option value="백만달러" ${CFG.usd==='백만달러'?'selected':''}>백만달러</option>
+      <option value="억달러" ${CFG.usd==='억달러'?'selected':''}>억달러</option>
+    </select></div>
+    <div class="frow"><span>USD 표기 형식</span><select data-cfg="usdFmt">
+      <option value="usd" ${CFG.usdFmt==='usd'?'selected':''}>USD 120백만</option>
+      <option value="kor" ${CFG.usdFmt==='kor'?'selected':''}>120백만달러</option>
+    </select></div>
+    <div class="meta" style="margin-top:4px">값이 달라지는 환산은 <b>건너뛰고</b> 목록으로 알려 줍니다. 단위어가 붙은 숫자만 바꾸며, 표 머리글의 <b>(단위: 백만원)</b> 표기와 <b>환율</b>은 손대지 않습니다.</div>
+    <div class="frow"><span>날짜 표기</span><select data-cfg="dateFmt">
+      <option value="none" ${CFG.dateFmt==='none'?'selected':''}>바꾸지 않음</option>
+      <option value="dot" ${CFG.dateFmt==='dot'?'selected':''}>2025.06.16</option>
+      <option value="kor" ${CFG.dateFmt==='kor'?'selected':''}>2025년 6월 16일</option>
+    </select></div>
+    <div class="meta">바꾼 곳은 전부 <b>표기 변경 내역</b>에 남습니다.</div>
+  </div>`;
+  $$('#settings [data-cfg]').forEach(el=>{
+    el.oninput=el.onchange=()=>{
+      const k=el.dataset.cfg;
+      CFG[k]= el.type==='checkbox'?el.checked : (el.type==='number'?+el.value:el.value);
+    };
+  });
+}
+buildSettings();
+$('#toStep5').onclick=()=>{buildOutput(); show(4);};
+
+/* ═══════════════ 금액 단위 ═══════════════ */
+const 단위값={'원':1,'천원':1e3,'만원':1e4,'십만원':1e5,'백만원':1e6,'천만원':1e7,'억원':1e8,'조원':1e12};
+const 단위RE=/([△▲▽]?)([0-9][0-9,]*(?:\.[0-9]+)?)\s*(조|억|천만|백만|십만|만|천)?\s*원/g;
+function 단위집계(text, 통계){
+  let m; 단위RE.lastIndex=0;
+  while((m=단위RE.exec(text))){ const u=(m[3]||'')+'원'; if(단위값[u]!==undefined) 통계[u]=(통계[u]||0)+1; }
+}
+function 단위환산(t, 목표, 자리설정, ctx){
+  const 배율=단위값[목표], 자동=(자리설정==='auto'), 자리=자동?2:(parseInt(자리설정,10)||0);
+  return t.replace(단위RE,(m,부호,숫자,u,off,str)=>{
+    const 앞=str.slice(Math.max(0,off-8),off);
+    if(/[0-9]\s*(조|억|천만|백만|십만|만|천)\s*$/.test(앞)){
+      S.unitSkips.push({item:ctx, text:m, why:'복합 단위 표기(예: 1억 2천만원)'}); return m; }
+    const 현재=(u||'')+'원';
+    if(단위값[현재]===undefined || 단위값[현재]===배율) return m;
+    const 원값=parseFloat(숫자.replace(/,/g,''))*단위값[현재];
+    const 변환=Number((원값/배율).toFixed(자리));
+    if(Math.abs(변환*배율-원값)>0.5){
+      S.unitSkips.push({item:ctx, text:m, why:자동?'소수점 2자리로도 값이 달라짐':`소수점 ${자리}자리로는 값이 달라짐`}); return m; }
+    return 부호+변환.toLocaleString('en-US',{minimumFractionDigits:자동?0:자리,maximumFractionDigits:자리})+목표;
+  });
+}
+
+const 외화값={'달러':1,'천달러':1e3,'백만달러':1e6,'억달러':1e8};
+const 외화배수={'달러':'','천달러':'천','백만달러':'백만','억달러':'억'};
+const 배수표={'천':1e3,'만':1e4,'십만':1e5,'백만':1e6,'천만':1e7,'억':1e8,'조':1e12,
+  'thousand':1e3,'k':1e3,'million':1e6,'m':1e6,'mn':1e6,'mm':1e6,
+  'billion':1e9,'bn':1e9,'b':1e9,'trillion':1e12,'tn':1e12};
+const 외화RE=/(US\$|USD|미화|\$)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)(?:\s*(조|억|천만|백만|십만|만|천))?(?:\s*(million|billion|trillion|thousand|mm|mn|bn|tn|m|b|k)(?![A-Za-z]))?(?:\s*(달러|USD|dollars?)(?![A-Za-z]))?(으로|로|은|는|이|가|을|를|와|과)?/gi;
+const 외화표시=/\$|USD|미화|달러|dollar/i;
+function 외화집계(text, 통계){
+  if(!외화표시.test(text)) return;
+  let m; 외화RE.lastIndex=0;
+  while((m=외화RE.exec(text))){
+    if(!m[1] && !m[5]) continue;
+    const 배수=(m[3]||m[4]||'').toLowerCase();
+    통계['USD '+(배수?배수:'전액')]=(통계['USD '+(배수?배수:'전액')]||0)+1;
+  }
+}
+const 조사쌍={'으로':['로','으로'],'로':['로','으로'],'은':['는','은'],'는':['는','은'],
+  '이':['가','이'],'가':['가','이'],'을':['를','을'],'를':['를','을'],'와':['와','과'],'과':['와','과']};
+function 조사보정(앞말, 조사){
+  if(!조사) return '';
+  const 쌍=조사쌍[조사]; if(!쌍) return 조사;
+  const c=앞말.charCodeAt(앞말.length-1);
+  if(c<0xAC00||c>0xD7A3) return 조사;              // 숫자·영문으로 끝나면 원래 조사 유지
+  const 받침=(c-0xAC00)%28;
+  return (받침===0||받침===8) ? 쌍[0] : 쌍[1];      // 받침 없음 또는 ㄹ받침
+}
+function 외화환산(t, 목표, 자리설정, 형식, ctx){
+  if(!외화표시.test(t)) return t;
+  const 배율=외화값[목표], 자동=(자리설정==='auto'), 자리=자동?2:(parseInt(자리설정,10)||0);
+  return t.replace(외화RE,(m,앞통화,숫자,한글배수,영문배수,뒤통화,조사,off,str)=>{
+    if(!앞통화 && !뒤통화) return m;                                   // 통화 표시가 없으면 대상 아님
+    const 앞글자=str.slice(Math.max(0,off-10),off);
+    if(/환율|매매기준율/.test(앞글자) || str.slice(off+m.length,off+m.length+1)==='/'){
+      S.unitSkips.push({item:ctx, text:m.trim(), why:'환율 표기로 보임'}); return m; }
+    if(/[0-9]\s*(조|억|천만|백만|십만|만|천)\s*$/.test(앞글자)){
+      S.unitSkips.push({item:ctx, text:m.trim(), why:'복합 단위 표기'}); return m; }
+    const 배수=배수표[(한글배수||영문배수||'').toLowerCase()]||1;
+    const 원값=parseFloat(숫자.replace(/,/g,''))*배수;
+    if(원값/배율===1 && 목표==='달러' && !한글배수 && !영문배수) return m;
+    const 변환=Number((원값/배율).toFixed(자리));
+    if(Math.abs(변환*배율-원값)>0.5){
+      S.unitSkips.push({item:ctx, text:m.trim(), why:자동?'소수점 2자리로도 값이 달라짐':`소수점 ${자리}자리로는 값이 달라짐`}); return m; }
+    const 수=변환.toLocaleString('en-US',{minimumFractionDigits:자동?0:자리,maximumFractionDigits:자리});
+    const 결과=(형식==='kor') ? 수+외화배수[목표]+'달러' : 'USD '+수+외화배수[목표];
+    return (m.match(/^\s+/)?m.match(/^\s+/)[0]:'')+결과+조사보정(결과,조사);
+  });
+}
+
+/* ═══════════════ 정규화 ═══════════════ */
+function normalize(text, ctx){
+  let t=text, before=text;
+  if(CFG.trimSpace) t=t.replace(/[ \t]{2,}/g,' ').replace(/^[ \t]+|[ \t]+$/g,'');
+  if(CFG.halfWidth) t=t.replace(/[０-９Ａ-Ｚａ-ｚ％（）]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  const soft=t;
+  if(CFG.dateFmt!=='none'){
+    t=t.replace(/(\d{4})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{1,2})\.?(?!\d)/g,(m,y,mo,d)=>
+      CFG.dateFmt==='dot'?`${y}.${String(mo).padStart(2,'0')}.${String(d).padStart(2,'0')}`:`${y}년 ${+mo}월 ${+d}일`);
+  }
+  if(CFG.unitLabel) t=t
+    .replace(/([조억만천])\s+원/g,'$1원')          // 백만 원 → 백만원
+    .replace(/([조억만천])\s+달러/g,'$1달러')      // 백만 달러 → 백만달러
+    .replace(/U\.?S\.?\s*\$/g,'USD ')            // US$ · U.S.$ → USD
+    .replace(/USD(?=[0-9])/g,'USD ')              // USD1,200 → USD 1,200
+    .replace(/USD {2,}/g,'USD ');
+  if(CFG.usd!=='none') t=외화환산(t, CFG.usd, CFG.unitDec, CFG.usdFmt, ctx);
+  if(CFG.unit!=='none') t=단위환산(t, CFG.unit, CFG.unitDec, ctx);
+  if(CFG.parenNeg) t=t.replace(/\((\d[\d,]*\.?\d*)\)/g,'△$1');
+  if(CFG.comma){
+    t=t.replace(/(?<![\d,.])(\d{4,})(?![\d,])/g,(m,num,off,str)=>{
+      if(CFG.commaKeepYear && num.length===4 && /^(19|20)\d{2}$/.test(num)){
+        const after=str.slice(off+num.length,off+num.length+2);
+        if(/^\s*(년|\.|-|\/)/.test(after)||/^\s*$/.test(after)) return num;
+      }
+      return (+num).toLocaleString('en-US');
+    });
+  }
+  if(cmpKey(t)!==cmpKey(soft)) S.logs.push({item:ctx, before:soft, after:t});
+  return t;
+}
+
+/* ═══════════════ 출력 생성 ═══════════════ */
+function numFor(item, counters){
+  const lvKey='lv'+Math.min(item.lv,5);
+  const pat=CFG[lvKey]||'';
+  const n=counters[item.lv];
+  const conv={'Ⅰ':i=>ROMAN[i-1]||i,'1':i=>i,'가':i=>KOR[(i-1)%KOR.length],'①':i=>CIRC[i-1]||i,'A':i=>String.fromCharCode(64+i),'a':i=>String.fromCharCode(96+i)};
+  for(const k of Object.keys(conv)) if(pat.includes(k)) return pat.replace(k,conv[k](n));
+  return pat;
+}
+function buildOutput(){
+  S.logs=[]; S.unitSkips=[]; S.unitStats={};
+  const targets=S.items.filter(i=>i.use);
+  const counters={1:0,2:0,3:0,4:0,5:0};
+  const rows=[]; let ok=0, bad=0;
+  const out=[];
+  targets.forEach(it=>{
+    counters[it.lv]=(counters[it.lv]||0)+1;
+    if(CFG.numMode==='tree') for(let l=it.lv+1;l<=5;l++) counters[l]=0;
+    const num=CFG.numMode==='keep' ? it.raw.slice(0,it.raw.length-it.title.length).trim() : numFor(it,counters);
+    const a=(S.assign[it.id]||[])[0];
+    const blk=a?S.blocks.find(b=>b.id===a.blk):null;
+    out.push({type:'head', lv:it.lv, text:(num?num+' ':'')+it.title});
+    if(blk){
+      let srcChars=0, outChars=0;
+      blk.paras.forEach(p=>{
+        if(p.type==='p'){
+          if(!p.text.trim()) return;
+          단위집계(p.text, S.unitStats); 외화집계(p.text, S.unitStats);
+          srcChars+=cmpKey(p.text).length;
+          const t=normalize(p.text, it.title);
+          outChars+=cmpKey(t).length;
+          out.push({type:'p', text:t, color:blk.color, src:blk.srcName});
+        } else {
+          const rows2=p.rows.map(r=>r.map(c=>{단위집계(c, S.unitStats); 외화집계(c, S.unitStats); srcChars+=cmpKey(c).length; const v=normalize(c,it.title); outChars+=cmpKey(v).length; return v;}));
+          out.push({type:'table', rows:rows2, color:blk.color, src:blk.srcName, approx:!!p.approx});
+        }
+      });
+      const strict=srcChars===outChars;
+      if(strict) ok++; else bad++;
+      rows.push({no:rows.length+1, num, title:it.title, src:blk.srcName, mode:a.mode, sc:a.sc, chars:srcChars, strict});
+    } else {
+      const 하위있음=targets.some(o=>o.path.startsWith(it.path+'.'));
+      if(!하위있음) out.push({type:'missing'});
+      rows.push({no:rows.length+1, num, title:it.title, src:하위있음?'(하위 항목 있음 — 제목만)':'(미배정)',
+                 mode:'-', sc:0, chars:0, strict:true});
+    }
+  });
+  S.out=out; S.mapRows=rows;
+  renderPreview();
+  const 단위목록=Object.entries(S.unitStats).sort((a,b)=>b[1]-a[1]);
+  const 단위요약=단위목록.length ? `<div class="meta" style="margin:8px 0">문서에서 찾은 금액 단위: ${단위목록.map(([u,c])=>`${u} <b>${c}</b>곳`).join(' · ')}</div>` : '';
+  const 건너뜀=S.unitSkips.length ? `<div class="warnbox"><b>단위를 바꾸지 않고 남겨둔 곳 ${S.unitSkips.length}군데.</b> 값이 달라질 수 있어 그대로 두었습니다.<br>${S.unitSkips.slice(0,6).map(s=>`· ${esc(s.text)} — ${s.why}`).join('<br>')}${S.unitSkips.length>6?'<br>…':''}</div>` : '';
+  const changed=S.logs.length;
+  $('#verify').innerHTML = 단위요약 + 건너뜀 + ((s=>s)(changed
+    ? `<div class="warnbox"><b>표기 통일로 ${changed}곳의 글자가 바뀌었습니다.</b> 아래 ‘표기 변경 내역’에서 전부 확인할 수 있습니다. 본문 문장 자체는 그대로입니다.</div>`
+    : `<div class="okbox"><b>본문 무변경 확인.</b> 글꼴·번호·간격만 바꿨고 부서가 쓴 글자는 한 자도 바뀌지 않았습니다. (검증 항목 ${ok}개${bad?', 불일치 '+bad+'개':''})</div>`));
+  $('#logPanel').hidden=!changed;
+  $('#logCount').textContent=changed+'곳';
+  $('#logBox').innerHTML=S.logs.slice(0,400).map(l=>
+    `<div><span class="meta">${esc(l.item)}</span><br><del>${esc(l.before)}</del><br><ins>${esc(l.after)}</ins></div>`).join('');
+}
+function outHTML(withTag,withName){
+  const base=`font-family:'${CFG.bodyFont}'; font-size:${CFG.bodySize}pt; line-height:${CFG.lineHeight}%; text-align:${CFG.align};`;
+  const parts=[];
+  S.out.forEach(o=>{
+    if(o.type==='head'){
+      const sz=CFG.headSize+Math.max(0,(3-o.lv))*0.5;
+      parts.push(`<p style="font-family:'${CFG.headFont}'; font-size:${sz}pt; font-weight:bold; margin:${o.lv<=2?14:10}pt 0 5pt ${(o.lv-1)*12}pt; line-height:${CFG.lineHeight}%">${esc(o.text)}</p>`);
+    } else if(o.type==='p'){
+      const tag=withTag?` class="blk tagged" style="--c:${o.color}"`:' class="blk"';
+      const nm=withName?`<span class="srcmark" style="--c:${o.color}">${esc(o.src)}</span>`:'';
+      parts.push(`<div${tag}><p style="${base} margin:${CFG.paraGap}pt 0 ${CFG.paraGap}pt ${CFG.indent}pt">${esc(o.text).replace(/\n/g,'<br>')}</p>${nm}</div>`);
+    } else if(o.type==='table'){
+      const tag=withTag?` class="blk tagged" style="--c:${o.color}"`:' class="blk"';
+      const t=`<table style="font-family:'${CFG.tableFont}'; font-size:${CFG.tableSize}pt; border-collapse:collapse; width:100%">`+
+        o.rows.map((r,ri)=>'<tr>'+r.map(c=>`<${ri===0?'th':'td'} style="border:1px solid #000; padding:3pt 4pt; text-align:${ri===0?'center':'left'}">${esc(c).replace(/\n/g,'<br>')}</${ri===0?'th':'td'}>`).join('')+'</tr>').join('')+'</table>';
+      parts.push(`<div${tag}>${t}${o.approx?'<div class="approxnote" style="font-size:8pt;color:#a55b00">※ .hwp에서 뽑은 표 — 셀 배치 확인 필요</div>':''}</div>`);
+    } else if(o.type==='missing'){
+      parts.push(`<p class="miss" style="${base} color:#a41f1f; margin-left:${CFG.indent}pt">(작성분 미배정)</p>`);
+    }
+  });
+  return parts.join('\n');
+}
+function renderPreview(){ $('#preview').innerHTML=outHTML($('#showSrc').checked,$('#showSrcName').checked); }
+$('#showSrc').onchange=renderPreview; $('#showSrcName').onchange=renderPreview;
+
+
+/* ═══════════════ 한글 문서(.hwpx) 만들기 ═══════════════
+   hwpx는 한/글 5.0 계열의 공개 표준(OWPML)으로, ZIP 안에 XML이 들어 있는 구조다.
+   .hwp 바이너리는 브라우저에서 만들 수 없어 hwpx로 내보낸다. */
+const CRCT=(()=>{const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRCT[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){
+  const enc=new TextEncoder(), 조각=[], 중앙=[]; let off=0;
+  const d=new Date();
+  const 시각=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF;
+  const 날짜=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  for(const f of files){
+    const 이름=enc.encode(f.name);
+    const 자료=(f.data instanceof Uint8Array)?f.data:enc.encode(f.data);
+    const crc=crc32(자료);
+    const lh=new Uint8Array(30+이름.length), lv=new DataView(lh.buffer);
+    lv.setUint32(0,0x04034b50,true); lv.setUint16(4,20,true); lv.setUint16(6,0,true); lv.setUint16(8,0,true);
+    lv.setUint16(10,시각,true); lv.setUint16(12,날짜,true); lv.setUint32(14,crc,true);
+    lv.setUint32(18,자료.length,true); lv.setUint32(22,자료.length,true);
+    lv.setUint16(26,이름.length,true); lv.setUint16(28,0,true);
+    lh.set(이름,30); 조각.push(lh,자료);
+    const ch=new Uint8Array(46+이름.length), cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+    cv.setUint16(8,0,true); cv.setUint16(10,0,true); cv.setUint16(12,시각,true); cv.setUint16(14,날짜,true);
+    cv.setUint32(16,crc,true); cv.setUint32(20,자료.length,true); cv.setUint32(24,자료.length,true);
+    cv.setUint16(28,이름.length,true); cv.setUint32(42,off,true);
+    ch.set(이름,46); 중앙.push(ch);
+    off+=lh.length+자료.length;
+  }
+  let csz=0; 중앙.forEach(c=>csz+=c.length);
+  const end=new Uint8Array(22), ev=new DataView(end.buffer);
+  ev.setUint32(0,0x06054b50,true); ev.setUint16(8,중앙.length,true); ev.setUint16(10,중앙.length,true);
+  ev.setUint32(12,csz,true); ev.setUint32(16,off,true);
+  const 전부=[...조각,...중앙,end]; let 합=0; 전부.forEach(a=>합+=a.length);
+  const out=new Uint8Array(합); let p=0; 전부.forEach(a=>{out.set(a,p);p+=a.length;});
+  return out;
+}
+const xe=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const PT=v=>Math.round(v*100);                 // 1pt = 100 HWPUNIT
+
+function hwpxFiles(){
+  const 글꼴=[...new Set([CFG.bodyFont, CFG.headFont, CFG.tableFont])];
+  const fid=n=>Math.max(0,글꼴.indexOf(n));
+  const 언어=['HANGUL','LATIN','HANJA','JAPANESE','OTHER','SYMBOL','USER'];
+  const fontfaces=언어.map(l=>
+    '<hh:fontface lang="'+l+'" fontCnt="'+글꼴.length+'">'+
+    글꼴.map((f,i)=>'<hh:font id="'+i+'" face="'+xe(f)+'" type="TTF" isEmbedded="0">'+
+      '<hh:typeInfo familyType="FCAT_UNKNOWN" weight="0" proportion="0" contrast="0" strokeVariation="0"'+
+      ' armStyle="0" letterform="0" midline="0" xHeight="0"/></hh:font>').join('')+
+    '</hh:fontface>').join('');
+  const ref=i=>'<hh:fontRef hangul="'+i+'" latin="'+i+'" hanja="'+i+'" japanese="'+i+'" other="'+i+'" symbol="'+i+'" user="'+i+'"/>';
+  const 부속='<hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>'+
+    '<hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>'+
+    '<hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>'+
+    '<hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>';
+  const charPr=(id,size,f,bold)=>'<hh:charPr id="'+id+'" height="'+PT(size)+'" textColor="#000000" shadeColor="none"'+
+    ' useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2">'+ref(f)+부속+
+    (bold?'<hh:bold/>':'')+'</hh:charPr>';
+  const 정렬={justify:'JUSTIFY',left:'LEFT'}[CFG.align]||'JUSTIFY';
+  const paraPr=(id,align,indent)=>'<hh:paraPr id="'+id+'" tabPrIDRef="0" condense="0" fontLineHeight="0"'+
+    ' snapToGrid="1" suppressLineNumbers="0" checked="0">'+
+    '<hh:align horizontal="'+align+'" vertical="BASELINE"/>'+
+    '<hh:heading type="NONE" idRef="0" level="0"/>'+
+    '<hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0"'+
+    ' keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/>'+
+    '<hh:autoSpacing eAsianEng="0" eAsianNum="0"/>'+
+    '<hh:margin><hc:intent value="'+indent+'" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/>'+
+    '<hc:right value="0" unit="HWPUNIT"/><hc:prev value="'+PT(CFG.paraGap)+'" unit="HWPUNIT"/>'+
+    '<hc:next value="'+PT(CFG.paraGap)+'" unit="HWPUNIT"/></hh:margin>'+
+    '<hh:lineSpacing type="PERCENT" value="'+CFG.lineHeight+'" unit="HWPUNIT"/>'+
+    '<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0"'+
+    ' connect="0" ignoreMargin="0"/></hh:paraPr>';
+
+  const header='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<hh:head xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head"'+
+    ' xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph"'+
+    ' xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" version="1.4" secCnt="1">'+
+    '<hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/>'+
+    '<hh:refList><hh:fontfaces itemCnt="7">'+fontfaces+'</hh:fontfaces>'+
+    '<hh:borderFills itemCnt="2">'+
+    '<hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0">'+
+    '<hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>'+
+    '<hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/>'+
+    '<hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/>'+
+    '<hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill>'+
+    '<hh:borderFill id="2" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0">'+
+    '<hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>'+
+    '<hh:leftBorder type="SOLID" width="0.12 mm" color="#000000"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#000000"/>'+
+    '<hh:topBorder type="SOLID" width="0.12 mm" color="#000000"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#000000"/>'+
+    '<hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill></hh:borderFills>'+
+    '<hh:charProperties itemCnt="4">'+
+    charPr(0,CFG.bodySize,fid(CFG.bodyFont),false)+
+    charPr(1,CFG.headSize,fid(CFG.headFont),true)+
+    charPr(2,CFG.tableSize,fid(CFG.tableFont),false)+
+    charPr(3,CFG.tableSize,fid(CFG.tableFont),true)+
+    '</hh:charProperties>'+
+    '<hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties>'+
+    '<hh:numberings itemCnt="0"/>'+
+    '<hh:paraProperties itemCnt="3">'+
+    paraPr(0,정렬,PT(CFG.indent))+paraPr(1,'LEFT',0)+paraPr(2,'LEFT',0)+
+    '</hh:paraProperties>'+
+    '<hh:styles itemCnt="1"><hh:style id="0" type="PARA" name="바탕글" engName="Normal"'+
+    ' paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/></hh:styles>'+
+    '</hh:refList></hh:head>';
+
+  /* ── 본문 ── */
+  let n=0;
+  const 문단=(text,ppr,cpr)=>'<hp:p id="'+(n++)+'" paraPrIDRef="'+ppr+'" styleIDRef="0" pageBreak="0"'+
+    ' columnBreak="0" merged="0"><hp:run charPrIDRef="'+cpr+'"><hp:t>'+xe(text)+'</hp:t></hp:run></hp:p>';
+  const 표만들기=(rows)=>{
+    const C=Math.max(...rows.map(r=>r.length)), 폭=Math.floor(48000/C);
+    let x='<hp:p id="'+(n++)+'" paraPrIDRef="2" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">'+
+      '<hp:run charPrIDRef="2"><hp:tbl id="'+(n+1000)+'" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM"'+
+      ' textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="'+rows.length+
+      '" colCnt="'+C+'" cellSpacing="0" borderFillIDRef="2" noAdjust="0">'+
+      '<hp:sz width="'+(폭*C)+'" widthRelTo="ABSOLUTE" height="'+(rows.length*1200)+'" heightRelTo="ABSOLUTE" protect="0"/>'+
+      '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0"'+
+      ' vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>'+
+      '<hp:outMargin left="0" right="0" top="0" bottom="0"/>'+
+      '<hp:inMargin left="510" right="510" top="141" bottom="141"/>';
+    rows.forEach((r,ri)=>{
+      x+='<hp:tr>';
+      for(let ci=0;ci<C;ci++){
+        const v=r[ci]!=null?r[ci]:'';
+        x+='<hp:tc name="" header="'+(ri===0?1:0)+'" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="2">'+
+          '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0"'+
+          ' linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">'+
+          String(v).split(/\n/).map(line=>문단(line,2,ri===0?3:2)).join('')+
+          '</hp:subList>'+
+          '<hp:cellAddr colAddr="'+ci+'" rowAddr="'+ri+'"/>'+
+          '<hp:cellSpan colSpan="1" rowSpan="1"/>'+
+          '<hp:cellSz width="'+폭+'" height="1200"/>'+
+          '<hp:cellMargin left="510" right="510" top="141" bottom="141"/></hp:tc>';
+      }
+      x+='</hp:tr>';
+    });
+    return x+'</hp:tbl></hp:run></hp:p>';
+  };
+
+  const secPr='<hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000"'+
+    ' tabStopUnit="HWPUNIT" outlineShapeIDRef="1" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0">'+
+    '<hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0" strtnum="0"/>'+
+    '<hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/>'+
+    '<hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL"'+
+    ' fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/>'+
+    '<hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/>'+
+    '<hp:pagePr landscape="WIDELY" width="59528" height="84188" gutterType="LEFT_ONLY">'+
+    '<hp:margin header="4252" footer="4252" gutter="0" left="5669" right="5669" top="5669" bottom="4252"/>'+
+    '</hp:pagePr>'+
+    '<hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/>'+
+    '<hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/>'+
+    '<hp:noteSpacing betweenNotes="850" belowLine="567" aboveLine="850"/>'+
+    '<hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr>'+
+    '<hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/>'+
+    '<hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/>'+
+    '<hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/>'+
+    '<hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr>'+
+    '<hp:pageBorderFill type="BOTH" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER">'+
+    '<hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill>'+
+    '<hp:pageBorderFill type="EVEN" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER">'+
+    '<hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill>'+
+    '<hp:pageBorderFill type="ODD" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER">'+
+    '<hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill></hp:secPr>';
+
+  let body='<hp:p id="'+(n++)+'" paraPrIDRef="1" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">'+
+    '<hp:run charPrIDRef="0">'+secPr+'</hp:run></hp:p>';
+  S.out.forEach(o=>{
+    if(o.type==='head') body+=문단(o.text,1,1);
+    else if(o.type==='p') o.text.split(/\n/).forEach(l=>{ if(l.trim()) body+=문단(l,0,0); });
+    else if(o.type==='table') body+=표만들기(o.rows);
+    else if(o.type==='missing') body+=문단('(작성분 미배정)',0,0);
+  });
+  const section='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<hs:sec xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section"'+
+    ' xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph"'+
+    ' xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core">'+body+'</hs:sec>';
+
+  const 제목=(S.question&&S.question.name)?S.question.name.replace(/\.[^.]+$/,''):'취합본';
+  return [
+    {name:'mimetype', data:'application/hwp+zip'},
+    {name:'version.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<hv:HCFVersion xmlns:hv="http://www.hancom.co.kr/hwpml/2011/version" tagetApplication="WORDPROCESSOR"'+
+      ' major="5" minor="0" micro="5" buildNumber="0" os="10" xmlVersion="1.4"'+
+      ' application="Hancom Office Hangul" appVersion="10, 0, 0, 0"/>'},
+    {name:'Contents/header.xml', data:header},
+    {name:'Contents/section0.xml', data:section},
+    {name:'Contents/content.hpf', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<opf:package xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app"'+
+      ' xmlns:dc="http://purl.org/dc/elements/1.1/" version="" unique-identifier="" id="">'+
+      '<opf:metadata><opf:title>'+xe(제목)+'</opf:title><opf:language>ko</opf:language></opf:metadata>'+
+      '<opf:manifest>'+
+      '<opf:item id="header" href="Contents/header.xml" media-type="application/xml"/>'+
+      '<opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>'+
+      '</opf:manifest><opf:spine><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>'},
+    {name:'META-INF/container.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container"'+
+      ' xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf"><ocf:rootfiles>'+
+      '<ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwpml-package+xml"/>'+
+      '</ocf:rootfiles></ocf:container>'},
+    {name:'META-INF/manifest.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<odf:manifest xmlns:odf="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" version="1.2">'+
+      '<odf:file-entry odf:full-path="/" odf:media-type="application/hwp+zip"/>'+
+      '<odf:file-entry odf:full-path="Contents/content.hpf" odf:media-type="application/xml"/>'+
+      '<odf:file-entry odf:full-path="Contents/header.xml" odf:media-type="application/xml"/>'+
+      '<odf:file-entry odf:full-path="Contents/section0.xml" odf:media-type="application/xml"/>'+
+      '</odf:manifest>'},
+  ];
+}
+
+/* ═══════════════ 내보내기 ═══════════════ */
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
+const stamp=()=>{const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;};
+$('#btnDoc').onclick=()=>{
+  const body=outHTML(false,$('#showSrcName').checked);
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>취합본</title>
+<style>@page WordSection1{size:595.3pt 841.9pt; margin:56.7pt 56.7pt 56.7pt 56.7pt;} div.WordSection1{page:WordSection1;} p{margin:0}</style>
+</head><body><div class="WordSection1">${body}</div></body></html>`;
+  dl(new Blob(['\ufeff'+html],{type:'application/msword'}), `취합본_${stamp()}.doc`);
+};
+$('#btnHtml').onclick=()=>{
+  const html=`<!doctype html><html lang="ko" data-theme="dark"><head><meta charset="utf-8"><title>취합본</title></head><body style="max-width:19cm;margin:2cm auto">${outHTML($('#showSrc').checked,$('#showSrcName').checked)}</body></html>`;
+  dl(new Blob([html],{type:'text/html'}), `취합본_${stamp()}.html`);
+};
+$('#btnCopy').onclick=async()=>{
+  const html=outHTML(false,false);
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([$('#preview').innerText],{type:'text/plain'})})]);
+    alert('복사했습니다. 한글이나 워드에 붙여넣으세요.');
+  }catch(e){
+    const r=document.createRange(); r.selectNodeContents($('#preview'));
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('copy');
+    alert('복사했습니다. 한글이나 워드에 붙여넣으세요.');
+  }
+};
+$('#btnHwpx').onclick=()=>{
+  try{
+    const z=zipStore(hwpxFiles());
+    dl(new Blob([z],{type:'application/hwp+zip'}), `취합본_${stamp()}.hwpx`);
+  }catch(e){ alert('한글 문서를 만들지 못했습니다: '+e.message); }
+};
+$('#btnMap').onclick=()=>{
+  const head=['순번','항목번호','항목명','출처파일','매칭방식','유사도(%)','원문자수','본문일치'];
+  const lines=[head.join(',')].concat(S.mapRows.map(r=>[r.no,`"${r.num}"`,`"${r.title.replace(/"/g,'""')}"`,`"${r.src}"`,r.mode,Math.round(r.sc*100),r.chars,r.strict?'일치':'변경있음'].join(',')));
+  dl(new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}), `배정내역_${stamp()}.csv`);
+};
+</script>
+</body>
+</html>
