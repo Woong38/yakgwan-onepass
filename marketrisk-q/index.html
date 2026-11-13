@@ -145,6 +145,59 @@ footer.foot{padding:24px 40px 60px;color:var(--text-faint);font-size:11px;border
   .grid.cols-3{grid-template-columns:1fr 1fr;}
   header.top{flex-direction:column;align-items:flex-start;gap:10px;}
 }
+
+/* ---------- 스트레스 시뮬레이션 ---------- */
+.sim-grid{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start;}
+@media(max-width:1020px){.sim-grid{grid-template-columns:1fr;}}
+.sim-panel{background:var(--panel);border:1px solid var(--border);padding:16px 16px 18px;}
+.preset-row{display:flex;flex-wrap:wrap;gap:6px;}
+.preset-row button{font:inherit;font-size:11.5px;padding:5px 9px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;}
+.preset-row button:hover{color:var(--text);border-color:var(--gold-dim);}
+.preset-row button.on{background:var(--gold-dim);border-color:var(--gold);color:#fff;}
+.ctl{margin:11px 0;}
+.ctl .cl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.ctl .cl label{font-size:12px;color:var(--text-dim);}
+.ctl .cl label i{font-style:normal;color:var(--text-faint);font-size:10.5px;}
+.ctl input[type=range]{width:100%;accent-color:var(--gold);margin:3px 0 0;height:14px;}
+.ctl input[type=number]{background:var(--bg-2);border:1px solid var(--border);color:var(--gold);font-family:var(--mono);font-size:12px;padding:3px 6px;width:78px;text-align:right;}
+.ctl select{background:var(--bg-2);border:1px solid var(--border);color:var(--text);font:inherit;font-size:12px;padding:4px 6px;width:100%;margin-top:4px;}
+.sim-sub{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--border-soft);}
+.sim-sub.first{border-top:0;padding-top:0;margin-top:2px;}
+.mul-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;}
+.mul-grid div{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11.5px;color:var(--text-dim);}
+.mul-grid input{background:var(--bg-2);border:1px solid var(--border);color:var(--gold);font-family:var(--mono);font-size:11.5px;padding:3px 4px;width:52px;text-align:right;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr);}}
+.kpi{background:var(--panel);border:1px solid var(--border);padding:13px 14px;}
+.kpi .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);}
+.kpi .v{font-family:var(--serif);font-size:20px;font-weight:600;margin-top:3px;}
+.kpi .d{font-family:var(--mono);font-size:11.5px;margin-top:3px;}
+.up{color:var(--red);} .down{color:var(--teal);} .flat{color:var(--text-faint);}
+.sbar{height:6px;background:var(--panel-3);position:relative;margin-top:6px;}
+.sbar i{position:absolute;left:0;top:0;bottom:0;background:var(--gold);}
+.sbar i.r{background:var(--red);} .sbar i.t{background:var(--teal);}
+.sim-reset{font:inherit;font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border);color:var(--text-faint);cursor:pointer;margin-top:12px;}
+.sim-reset:hover{color:var(--text);border-color:var(--gold-dim);}
+#simOut table.data td,#simOut table.data th{white-space:nowrap;}
+#simOut table.data td:first-child{white-space:normal;min-width:130px;}
+#simOut table.data{font-size:12.5px;}
+
+/* ---------- 도해(이미지 기반 설명) ---------- */
+.dia{background:var(--panel);border:1px solid var(--border);padding:18px 20px 14px;margin-top:14px;}
+.dia h3{margin:0 0 3px;font-size:15px;font-weight:600;}
+.dia h3 em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--gold);letter-spacing:.1em;margin-right:8px;}
+.dia .cap{font-size:12.5px;color:var(--text-dim);margin:0 0 14px;line-height:1.6;}
+.dia svg{width:100%;height:auto;display:block;overflow:visible;}
+.dia .dl{margin-top:12px;text-align:right;}
+.dia .dl button{font:inherit;font-size:11px;padding:4px 10px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;}
+.dia .dl button:hover{color:var(--gold);border-color:var(--gold-dim);}
+.dia-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:11.5px;color:var(--text-dim);}
+.dia-legend span{display:flex;align-items:center;gap:6px;}
+.dia-legend b{width:11px;height:11px;display:inline-block;border-radius:2px;}
+.dia-toc{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 2px;}
+.dia-toc a{font-size:11.5px;padding:5px 10px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);text-decoration:none;}
+.dia-toc a:hover{color:var(--gold);border-color:var(--gold-dim);}
+
 </style>
 </head>
 <body>
@@ -181,6 +234,11 @@ footer.foot{padding:24px 40px 60px;color:var(--text-faint);font-size:11px;border
     <div class="group-label">부도·잔여리스크</div>
     <button data-view="drc"><span class="n">08</span>부도리스크(DRC)</button>
     <button data-view="rrao"><span class="n">09</span>잔여리스크(RRAO)</button>
+    <hr>
+    <div class="group-label">시뮬레이션</div>
+    <button data-view="sim"><span class="n">11</span>스트레스 시뮬레이션</button>
+    <div class="group-label">해설</div>
+    <button data-view="visual"><span class="n">▣</span>그림으로 보는 산출구조</button>
     <hr>
     <div class="group-label">근거</div>
     <button data-view="method"><span class="n">10</span>산출근거·가정</button>
@@ -1350,6 +1408,617 @@ pages.method = () => `
   </div>
 `;
 
+
+// ============================================================================
+// 스트레스 시뮬레이션 모듈
+// 근거: 민감도법 소요자기자본은 민감도(WS)에 대해 1차 동차함수(homogeneous of
+//       degree 1)이므로, 민감도 또는 위험가중치에 승수 m을 적용하면 해당
+//       리스크군 소요자기자본도 정확히 m배가 된다. 따라서 승수 시뮬레이션은
+//       근사가 아닌 정확 산출이다. [44~46조 집계산식]
+// ============================================================================
+const SIM_CLASSES = [
+  {k:'girr', nm:'일반금리(GIRR)', get:()=>classTotal('girr'),   color:'var(--teal)'},
+  {k:'csr',  nm:'신용스프레드(비유동화)', get:()=>classTotal('csr'), color:'var(--teal)'},
+  {k:'sec',  nm:'유동화(비CTP)',  get:()=>R.sec_d.total,        color:'var(--teal)'},
+  {k:'eq',   nm:'주식',           get:()=>classTotal('eq'),     color:'var(--teal)'},
+  {k:'fx',   nm:'외환',           get:()=>classTotal('fx'),     color:'var(--teal)'},
+  {k:'cty',  nm:'일반상품',       get:()=>classTotal('cty'),    color:'var(--teal)'},
+  {k:'drc',  nm:'부도리스크(DRC)',get:()=>TOT.drc,              color:'var(--red)'},
+  {k:'rrao', nm:'잔여리스크(RRAO)',get:()=>R.rrao.total,        color:'var(--violet)'}
+];
+
+// 프리셋 — News Risk Radar 통일 벤치마크 래더와 연계
+const SIM_PRESETS = {
+  base:   {nm:'평시',               idx:10,  bp:0,    sp:0,   eq:0,   fx:0,   cty:0,   vol:0,   mul:1.00, scn:'auto'},
+  cur:    {nm:'금리충격(’26.11월)', idx:50,  bp:30,   sp:10,  eq:-3,  fx:2,   cty:5,   vol:10,  mul:1.05, scn:'auto'},
+  lego:   {nm:'레고랜드형 신용경색', idx:65,  bp:50,   sp:120, eq:-8,  fx:4,   cty:0,   vol:30,  mul:1.20, scn:'high'},
+  carry:  {nm:'엔캐리 청산',        idx:75,  bp:-40,  sp:60,  eq:-12, fx:-6,  cty:-5,  vol:60,  mul:1.30, scn:'high'},
+  svb:    {nm:'SVB형 금리발작',     idx:85,  bp:-80,  sp:90,  eq:-10, fx:3,   cty:-3,  vol:50,  mul:1.30, scn:'high'},
+  covid:  {nm:'코로나형 복합충격',  idx:90,  bp:-100, sp:200, eq:-30, fx:8,   cty:-40, vol:120, mul:1.60, scn:'high'},
+  lehman: {nm:'리먼형 시스템위기',  idx:95,  bp:-150, sp:350, eq:-40, fx:15,  cty:-35, vol:150, mul:1.80, scn:'high'},
+  imf:    {nm:'IMF형 외환위기',     idx:100, bp:600,  sp:500, eq:-45, fx:60,  cty:-20, vol:200, mul:2.00, scn:'high'}
+};
+
+// 커버쳐 2차 기여 산출 시 기준 쇼크 크기(규제 위험가중치 수준)
+const CVR_REF = {girr:170, csr:300, eq:55, fx:15, cty:30};
+
+let SIM = Object.assign({}, SIM_PRESETS.base, {
+  mulBy:{girr:1,csr:1,sec:1,eq:1,fx:1,cty:1,drc:1,rrao:1},
+  ownFund:20e12, otherRWA:180e12, preset:'base'
+});
+
+function simSum(arr, f){ return (arr||[]).reduce((a,x)=>a+(f(x)||0), 0); }
+
+// 상관관계 시나리오 강제 적용값
+function scnVal(res){
+  if(!res) return 0;
+  return (SIM.scn==='auto') ? res.total : (res.all[SIM.scn] != null ? res.all[SIM.scn] : res.total);
+}
+function scnClassTotal(k){
+  return scnVal(R[k+'_d']) + scnVal(R[k+'_v']) + scnVal(R[k+'_c']);
+}
+
+function simCompute(){
+  const m = SIM.mul, mb = SIM.mulBy;
+  const base = {}, str = {};
+  base.girr = classTotal('girr');  str.girr = scnClassTotal('girr') * m * mb.girr;
+  base.csr  = classTotal('csr');   str.csr  = scnClassTotal('csr')  * m * mb.csr;
+  base.sec  = R.sec_d.total;       str.sec  = scnVal(R.sec_d)      * m * mb.sec;
+  base.eq   = classTotal('eq');    str.eq   = scnClassTotal('eq')   * m * mb.eq;
+  base.fx   = classTotal('fx');    str.fx   = scnClassTotal('fx')   * m * mb.fx;
+  base.cty  = classTotal('cty');   str.cty  = scnClassTotal('cty')  * m * mb.cty;
+  base.drc  = TOT.drc;             str.drc  = TOT.drc       * m * mb.drc;   // JTD 승수 = 등급 RW 승수
+  base.rrao = R.rrao.total;        str.rrao = R.rrao.total  * m * mb.rrao;
+
+  const bTot = Object.keys(base).reduce((a,k)=>a+base[k],0);
+  const sTot = Object.keys(str).reduce((a,k)=>a+str[k],0);
+
+  // ── 시장 쇼크에 따른 추정 손익(P&L) ──
+  const ds = dataset, bp = SIM.bp, sp = SIM.sp, eq = SIM.eq, fx = SIM.fx, cty = SIM.cty, vol = SIM.vol;
+  const pnl = {};
+  pnl.girr = (simSum(ds.girrDelta, x=>x.delta) + simSum(ds.girrVega, x=>x.delta)) * (bp/10000);
+  pnl.csr  = (simSum(ds.csrNonSecDelta, x=>x.delta) + simSum(ds.csrVega, x=>x.delta)) * (sp/10000);
+  pnl.sec  = simSum(ds.secNonCTPDelta, x=>x.delta) * (sp/10000);
+  pnl.eq   = (simSum(ds.equityDelta, x=>x.delta) + simSum(ds.eqVega, x=>x.delta)) * (eq/100);
+  pnl.fx   = (simSum(ds.fxDelta, x=>x.delta) + simSum(ds.fxVega, x=>x.delta)) * (fx/100);
+  pnl.cty  = (simSum(ds.commodityDelta, x=>x.delta) + simSum(ds.ctyVega, x=>x.delta)) * (cty/100);
+  pnl.vega = simSum([].concat(ds.girrVega, ds.csrVega, ds.eqVega, ds.fxVega, ds.ctyVega), x=>x.vega) * (vol/100);
+  function cvrPart(items, shock, ref){
+    if(!shock) return 0;
+    const f = Math.min(Math.pow(Math.abs(shock)/ref, 2), 4);
+    return simSum(items, x => shock>0 ? x.cvrUp : x.cvrDown) * f;
+  }
+  pnl.curv = cvrPart(ds.girrVega, bp, CVR_REF.girr) + cvrPart(ds.csrVega, sp, CVR_REF.csr)
+           + cvrPart(ds.eqVega, eq, CVR_REF.eq) + cvrPart(ds.fxVega, fx, CVR_REF.fx)
+           + cvrPart(ds.ctyVega, cty, CVR_REF.cty);
+  pnl.total = Object.keys(pnl).reduce((a,k)=>k==='total'?a:a+pnl[k],0);
+
+  // ── 자기자본비율 영향 ──
+  const rwaB = bTot*12.5, rwaS = sTot*12.5;
+  const bisB = SIM.ownFund/(SIM.otherRWA+rwaB)*100;
+  const bisS = (SIM.ownFund+pnl.total)/(SIM.otherRWA+rwaS)*100;
+
+  return {base, str, bTot, sTot, rwaB, rwaS, pnl, bisB, bisS};
+}
+
+function dpct(a,b){ if(!b) return '–'; const d=(a/b-1)*100; return (d>=0?'+':'')+d.toFixed(1)+'%'; }
+function dcls(a,b){ return a>b*1.0005 ? 'up' : (a<b*0.9995 ? 'down' : 'flat'); }
+
+function simRender(){
+  const C = simCompute();
+  const rows = SIM_CLASSES.map(c=>{
+    const b=C.base[c.k], s=C.str[c.k], dd=s-b;
+    const sh = C.sTot? s/C.sTot*100 : 0;
+    return `<tr>
+      <td>${c.nm}</td>
+      <td class="mono" style="text-align:right">${fmtFull(b)}</td>
+      <td class="mono" style="text-align:right">${fmtFull(s)}</td>
+      <td class="mono ${dcls(s,b)}" style="text-align:right">${(dd>=0?'+':'')+fmtFull(dd)}</td>
+      <td class="mono ${dcls(s,b)}" style="text-align:right">${dpct(s,b)}</td>
+      <td style="width:150px"><div class="sbar"><i style="width:${Math.max(1,sh).toFixed(1)}%"></i></div></td>
+      <td class="mono" style="text-align:right">${sh.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  const PL = [
+    ['일반금리(GIRR) 델타', C.pnl.girr, `금리 ${SIM.bp>=0?'+':''}${SIM.bp}bp`],
+    ['신용스프레드 델타', C.pnl.csr, `스프레드 ${SIM.sp>=0?'+':''}${SIM.sp}bp`],
+    ['유동화 델타', C.pnl.sec, `스프레드 ${SIM.sp>=0?'+':''}${SIM.sp}bp`],
+    ['주식 델타', C.pnl.eq, `주가 ${SIM.eq>=0?'+':''}${SIM.eq}%`],
+    ['외환 델타', C.pnl.fx, `환율 ${SIM.fx>=0?'+':''}${SIM.fx}%`],
+    ['일반상품 델타', C.pnl.cty, `상품가 ${SIM.cty>=0?'+':''}${SIM.cty}%`],
+    ['베가(변동성)', C.pnl.vega, `내재변동성 ${SIM.vol>=0?'+':''}${SIM.vol}%`],
+    ['커버쳐(비선형 2차)', C.pnl.curv, '쇼크² 비례 근사']
+  ];
+  const plRows = PL.map(r=>`<tr><td>${r[0]}</td><td class="mono" style="color:var(--text-faint);font-size:11.5px">${r[2]}</td>
+    <td class="mono ${r[1]<0?'up':(r[1]>0?'down':'flat')}" style="text-align:right">${(r[1]>=0?'+':'')+fmtFull(r[1])}</td></tr>`).join('');
+
+  const bisD = C.bisS - C.bisB;
+
+  document.getElementById('simOut').innerHTML = `
+  <div class="kpi-row">
+    <div class="kpi"><div class="k">기준 소요자기자본</div><div class="v">${fmt(C.bTot)}</div>
+      <div class="d flat">상관계수 자동(최댓값) · 승수 1.00</div></div>
+    <div class="kpi"><div class="k">스트레스 소요자기자본</div><div class="v" style="color:var(--gold)">${fmt(C.sTot)}</div>
+      <div class="d ${dcls(C.sTot,C.bTot)}">${(C.sTot-C.bTot>=0?'+':'')+fmt(C.sTot-C.bTot)} (${dpct(C.sTot,C.bTot)})</div></div>
+    <div class="kpi"><div class="k">스트레스 RWA</div><div class="v">${fmt(C.rwaS)}</div>
+      <div class="d ${dcls(C.rwaS,C.rwaB)}">기준 ${fmt(C.rwaB)} → ${dpct(C.rwaS,C.rwaB)}</div></div>
+    <div class="kpi"><div class="k">추정 손익(P&amp;L)</div><div class="v ${C.pnl.total<0?'up':'down'}">${(C.pnl.total>=0?'+':'')+fmt(C.pnl.total)}</div>
+      <div class="d flat">델타 1차 + 커버쳐 2차 근사</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="lbl">리스크군별 소요자기자본 — 기준 vs 스트레스 ${cite('total')}</div>
+    <table class="data">
+      <tr><th>리스크군</th><th style="text-align:right">기준</th><th style="text-align:right">스트레스</th>
+          <th style="text-align:right">증감액</th><th style="text-align:right">증감률</th><th>구성비</th><th style="text-align:right">%</th></tr>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>합계</td><td class="mono" style="text-align:right">${fmtFull(C.bTot)}</td>
+        <td class="mono" style="text-align:right">${fmtFull(C.sTot)}</td>
+        <td class="mono ${dcls(C.sTot,C.bTot)}" style="text-align:right">${(C.sTot-C.bTot>=0?'+':'')+fmtFull(C.sTot-C.bTot)}</td>
+        <td class="mono ${dcls(C.sTot,C.bTot)}" style="text-align:right">${dpct(C.sTot,C.bTot)}</td><td></td><td class="mono" style="text-align:right">100.0%</td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:14px;">
+    <div class="card">
+      <div class="lbl">시장 쇼크 추정 손익 분해</div>
+      <table class="data">
+        <tr><th>구성요소</th><th>적용 쇼크</th><th style="text-align:right">추정 손익</th></tr>
+        <tbody>${plRows}</tbody>
+        <tfoot><tr><td>합계</td><td></td><td class="mono ${C.pnl.total<0?'up':'down'}" style="text-align:right">${(C.pnl.total>=0?'+':'')+fmtFull(C.pnl.total)}</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="card">
+      <div class="lbl">자기자본비율 영향</div>
+      <table class="data">
+        <tr><th>항목</th><th style="text-align:right">기준</th><th style="text-align:right">스트레스</th></tr>
+        <tbody>
+          <tr><td>자기자본</td><td class="mono" style="text-align:right">${fmt(SIM.ownFund)}</td><td class="mono" style="text-align:right">${fmt(SIM.ownFund+C.pnl.total)}</td></tr>
+          <tr><td>신용·운영 RWA</td><td class="mono" style="text-align:right">${fmt(SIM.otherRWA)}</td><td class="mono" style="text-align:right">${fmt(SIM.otherRWA)}</td></tr>
+          <tr><td>시장 RWA</td><td class="mono" style="text-align:right">${fmt(C.rwaB)}</td><td class="mono" style="text-align:right">${fmt(C.rwaS)}</td></tr>
+          <tr><td><b>총자본비율(BIS)</b></td><td class="mono" style="text-align:right">${C.bisB.toFixed(2)}%</td>
+              <td class="mono ${bisD<0?'up':'down'}" style="text-align:right"><b>${C.bisS.toFixed(2)}%</b></td></tr>
+          <tr><td>증감</td><td></td><td class="mono ${bisD<0?'up':'down'}" style="text-align:right">${(bisD>=0?'+':'')+bisD.toFixed(2)}%p</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:10px 0 0;font-size:11.5px;color:var(--text-faint);">시장 RWA만 스트레스를 반영하며, 신용·운영 RWA는 고정으로 가정합니다. 추정 손익은 전액 자기자본에 반영되는 것으로 단순화했습니다.</p>
+    </div>
+  </div>
+
+  <div class="notice" style="margin-top:14px;">
+    <b>산출 성질</b> — 민감도법 소요자기자본은 민감도(WS)에 대한 1차 동차함수이므로, 승수 적용 결과는 근사가 아닌 <b>정확 산출</b>입니다[44~46조]. 반면 <b>추정 손익</b>은 델타 1차 + 커버쳐 2차 근사이며, 실제 재평가손익과 차이가 발생합니다.
+    민감도 부호 규약: 금리·스프레드 델타는 ∂V/∂r(단위 1.0=10,000bp), 주식·외환·상품 델타는 ∂V/∂P×P(1% 변동 시 손익=델타×0.01) 기준입니다[44조].
+  </div>`;
+}
+
+function simBind(){
+  const ids = ['bp','sp','eq','fx','cty','vol','mul'];
+  ids.forEach(id=>{
+    const r = document.getElementById('sr_'+id), n = document.getElementById('sn_'+id);
+    if(!r||!n) return;
+    const sync = (v)=>{ SIM[id]=parseFloat(v)||0; r.value=SIM[id]; n.value=SIM[id]; simRender(); markPreset(null); };
+    r.addEventListener('input', e=>sync(e.target.value));
+    n.addEventListener('change', e=>sync(e.target.value));
+  });
+  const sc = document.getElementById('sr_scn');
+  if(sc) sc.addEventListener('change', e=>{ SIM.scn=e.target.value; simRender(); markPreset(null); });
+  Object.keys(SIM.mulBy).forEach(k=>{
+    const el = document.getElementById('smb_'+k);
+    if(el) el.addEventListener('change', e=>{ SIM.mulBy[k]=parseFloat(e.target.value)||1; simRender(); markPreset(null); });
+  });
+  ['ownFund','otherRWA'].forEach(k=>{
+    const el = document.getElementById('sf_'+k);
+    if(el) el.addEventListener('change', e=>{ SIM[k]=(parseFloat(e.target.value)||0)*1e12; simRender(); });
+  });
+  document.querySelectorAll('[data-preset]').forEach(b=>{
+    b.addEventListener('click', ()=>applyPreset(b.dataset.preset));
+  });
+  const rs = document.getElementById('simReset');
+  if(rs) rs.addEventListener('click', ()=>applyPreset('base'));
+}
+function markPreset(key){
+  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('on', b.dataset.preset===key));
+}
+function applyPreset(key){
+  const p = SIM_PRESETS[key]; if(!p) return;
+  ['bp','sp','eq','fx','cty','vol','mul','scn'].forEach(f=>SIM[f]=p[f]);
+  SIM.mulBy = {girr:1,csr:1,sec:1,eq:1,fx:1,cty:1,drc:1,rrao:1};
+  SIM.preset = key;
+  render('sim');
+  markPreset(key);
+}
+
+pages.sim = () => {
+  const sl = (id,label,unit,min,max,step)=>`
+    <div class="ctl">
+      <div class="cl"><label>${label} <i>${unit}</i></label><input type="number" id="sn_${id}" value="${SIM[id]}" step="${step}"></div>
+      <input type="range" id="sr_${id}" min="${min}" max="${max}" step="${step}" value="${SIM[id]}">
+    </div>`;
+  const presets = Object.keys(SIM_PRESETS).map(k=>
+    `<button data-preset="${k}" class="${SIM.preset===k?'on':''}">${SIM_PRESETS[k].nm}<br><span style="font-family:var(--mono);font-size:9.5px;opacity:.7">지수 ${SIM_PRESETS[k].idx}</span></button>`).join('');
+  const muls = SIM_CLASSES.map(c=>
+    `<div><span>${c.nm.replace(/\(.*\)/,'')}</span><input type="number" id="smb_${c.k}" value="${SIM.mulBy[c.k]}" step="0.05" min="0"></div>`).join('');
+
+  return `
+  <div class="page-head"><div class="eyebrow">Stress Simulation</div><h2>스트레스 시뮬레이션 ${cite('scn')}</h2>
+  <p>규제 파라미터(민감도·위험가중치 승수, 상관계수 시나리오)와 시장 쇼크(금리·스프레드·주가·환율·상품·변동성)를 동시에 적용해 소요자기자본·RWA·추정 손익·자기자본비율 변화를 산출합니다. 프리셋은 과거 위기 국면의 통일 벤치마크 지수와 연계했습니다.</p></div>
+
+  <div class="sim-grid">
+    <div class="sim-panel">
+      <div class="sim-sub first">프리셋 시나리오</div>
+      <div class="preset-row">${presets}</div>
+
+      <div class="sim-sub">시장 쇼크 (추정 손익 축)</div>
+      ${sl('bp','금리','bp',-300,700,5)}
+      ${sl('sp','신용스프레드','bp',-100,600,5)}
+      ${sl('eq','주가','%',-50,30,1)}
+      ${sl('fx','환율(원화 약세 +)','%',-20,70,1)}
+      ${sl('cty','일반상품','%',-50,50,1)}
+      ${sl('vol','내재변동성','%(상대)',-50,250,5)}
+
+      <div class="sim-sub">규제 파라미터 (자본 축)</div>
+      ${sl('mul','민감도·위험가중치 글로벌 승수','배',0.5,3,0.05)}
+      <div class="ctl"><div class="cl"><label>상관계수 시나리오 <i>46조</i></label></div>
+        <select id="sr_scn">
+          <option value="auto"${SIM.scn==='auto'?' selected':''}>자동 — 3개 시나리오 최댓값 채택</option>
+          <option value="high"${SIM.scn==='high'?' selected':''}>높은 상관관계 고정</option>
+          <option value="medium"${SIM.scn==='medium'?' selected':''}>중간 상관관계 고정</option>
+          <option value="low"${SIM.scn==='low'?' selected':''}>낮은 상관관계 고정</option>
+        </select></div>
+      <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin:14px 0 7px;">리스크군별 추가 승수</div>
+      <div class="mul-grid">${muls}</div>
+
+      <div class="sim-sub">자기자본비율 가정</div>
+      <div class="mul-grid">
+        <div><span>자기자본(조원)</span><input type="number" id="sf_ownFund" value="${(SIM.ownFund/1e12)}" step="1"></div>
+        <div><span>신용·운영RWA(조원)</span><input type="number" id="sf_otherRWA" value="${(SIM.otherRWA/1e12)}" step="10"></div>
+      </div>
+      <button class="sim-reset" id="simReset">전체 초기화(평시)</button>
+    </div>
+    <div id="simOut"></div>
+  </div>`;
+};
+
+// ============================================================================
+// 이미지 기반 설명 모듈 — 산출구조 SVG 도해 (실제 산출값 연동, PNG·SVG 내보내기)
+// ============================================================================
+const DC = {bg:'#0B0F17',pnl:'#182035',pnl3:'#1D2740',bd:'#2A3550',tx:'#E7ECF5',dim:'#93A0B8',faint:'#6C779A',
+            gold:'#D3AE4E',teal:'#4FB3AC',red:'#D2694F',vio:'#9C8FE0'};
+
+function svgStyle(){
+  return `<style>
+    text{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;}
+    .t1{font-size:13px;fill:${DC.tx};font-weight:600;}
+    .t2{font-size:11px;fill:${DC.dim};}
+    .t3{font-size:10px;fill:${DC.faint};}
+    .num{font-size:12.5px;fill:${DC.gold};font-family:'SF Mono',Consolas,monospace;font-weight:600;}
+    .nums{font-size:10.5px;fill:${DC.gold};font-family:'SF Mono',Consolas,monospace;}
+    .fml{font-size:11px;fill:${DC.teal};font-family:'SF Mono',Consolas,monospace;}
+  </style>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="${DC.faint}"/></marker></defs>`;
+}
+function rect(x,y,w,h,fill,stroke,rx){
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx||3}" fill="${fill}" stroke="${stroke||DC.bd}" stroke-width="1"/>`;
+}
+function arrow(x1,y1,x2,y2){
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${DC.faint}" stroke-width="1.2" marker-end="url(#ar)"/>`;
+}
+function diaWrap(id,no,title,cap,vb,body,legend){
+  return `<div class="dia" id="anchor_${id}">
+    <h3><em>FIG ${no}</em>${title}</h3>
+    <p class="cap">${cap}</p>
+    <svg id="${id}" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${svgStyle()}
+      <rect x="0" y="0" width="100%" height="100%" fill="${DC.bg}"/>
+      ${body}
+    </svg>
+    ${legend?`<div class="dia-legend">${legend}</div>`:''}
+    <div class="dl"><button onclick="__diaPNG('${id}','${id}')">PNG 내보내기</button>
+    <button onclick="__diaSVG('${id}','${id}')" style="margin-left:6px">SVG 내보내기</button></div>
+  </div>`;
+}
+
+window.__diaSVG = function(id,name){
+  const svg=document.getElementById(id);
+  const s=new XMLSerializer().serializeToString(svg);
+  const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+s],{type:'image/svg+xml'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+'.svg';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+window.__diaPNG = function(id,name){
+  const svg=document.getElementById(id);
+  const vb=svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  const s=new XMLSerializer().serializeToString(svg);
+  const img=new Image();
+  img.onload=function(){
+    const sc=2, c=document.createElement('canvas');
+    c.width=vb[2]*sc; c.height=vb[3]*sc;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle=DC.bg; ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(img,0,0,c.width,c.height);
+    c.toBlob(function(b){
+      const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name+'.png';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    },'image/png');
+  };
+  img.onerror=function(){ alert('PNG 변환에 실패했습니다. SVG 내보내기를 사용하십시오.'); };
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
+};
+
+// ── FIG 1 : 전체 산출 구조도 ─────────────────────────────────
+function fig1(){
+  const dT = R.girr_d.total+R.csr_d.total+R.sec_d.total+R.eq_d.total+R.fx_d.total+R.cty_d.total;
+  const vT = R.girr_v.total+R.csr_v.total+R.eq_v.total+R.fx_v.total+R.cty_v.total;
+  const cT = R.girr_c.total+R.csr_c.total+R.eq_c.total+R.fx_c.total+R.cty_c.total;
+  const cls = [['GIRR',classTotal('girr')],['CSR 비유동화',classTotal('csr')],['유동화',R.sec_d.total],
+               ['주식',classTotal('eq')],['외환',classTotal('fx')],['일반상품',classTotal('cty')]];
+  let chips='';
+  cls.forEach((c,i)=>{
+    const x=34+(i%3)*152, y=182+Math.floor(i/3)*40;
+    chips += rect(x,y,142,32,DC.pnl3)+
+      `<text class="t3" x="${x+8}" y="${y+13}">${c[0]}</text>`+
+      `<text class="nums" x="${x+134}" y="${y+26}" text-anchor="end">${fmt(c[1])}</text>`;
+  });
+  const comp=(x,label,val,art)=>rect(x,106,142,58,DC.pnl,DC.bd)+
+    `<text class="t1" x="${x+71}" y="${126}" text-anchor="middle">${label}</text>`+
+    `<text class="num" x="${x+71}" y="${146}" text-anchor="middle">${fmt(val)}</text>`+
+    `<text class="t3" x="${x+71}" y="${159}" text-anchor="middle">${art}</text>`;
+  return diaWrap('fig1','1','표준방법 소요자기자본 산출 구조',
+    '트레이딩계정 포지션에서 출발해 민감도법(SBM)·부도리스크(DRC)·잔여리스크(RRAO)를 각각 산출한 뒤 단순 합산하고, 여기에 12.5를 곱해 시장위험가중자산(RWA)을 산출한다[39조]. 표시된 금액은 현재 적재된 포지션 기준 실제 산출값이다.',
+    '0 0 900 440',
+    rect(20,14,860,34,DC.pnl3)+
+    `<text class="t1" x="34" y="36">트레이딩계정 포지션 — 민감도(델타·베가·커버쳐) · 총JTD · 명목원금</text>`+
+    arrow(250,48,250,68)+arrow(600,48,600,68)+arrow(790,48,790,68)+
+    rect(20,68,480,200,'none',DC.gold)+
+    `<text class="t1" x="34" y="90" fill="${DC.gold}">민감도법(SBM) · 44~72조</text>`+
+    comp(34,'델타',dT,'44·47~61조')+comp(186,'베가',vT,'62·71조')+comp(338,'커버쳐',cT,'45·63·72조')+
+    `<text class="t3" x="34" y="176">리스크군별 내역</text>`+chips+
+    rect(520,68,170,200,'none',DC.red)+
+    `<text class="t1" x="534" y="90" fill="${DC.red}">부도리스크(DRC)</text>`+
+    `<text class="t3" x="534" y="106">76~92조</text>`+
+    rect(534,120,142,46,DC.pnl)+`<text class="t2" x="605" y="138" text-anchor="middle">비유동화</text>`+
+    `<text class="nums" x="605" y="156" text-anchor="middle">${fmt(R.drc_ns.total)}</text>`+
+    rect(534,174,142,46,DC.pnl)+`<text class="t2" x="605" y="192" text-anchor="middle">유동화(CTP)</text>`+
+    `<text class="nums" x="605" y="210" text-anchor="middle">${fmt(R.drc_ctp.total)}</text>`+
+    `<text class="num" x="605" y="248" text-anchor="middle">${fmt(TOT.drc)}</text>`+
+    rect(710,68,170,200,'none',DC.vio)+
+    `<text class="t1" x="724" y="90" fill="${DC.vio}">잔여리스크(RRAO)</text>`+
+    `<text class="t3" x="724" y="106">93~96조</text>`+
+    rect(724,120,142,46,DC.pnl)+`<text class="t2" x="795" y="138" text-anchor="middle">비정형 1.0%</text>`+
+    rect(724,174,142,46,DC.pnl)+`<text class="t2" x="795" y="192" text-anchor="middle">기타 0.1%</text>`+
+    `<text class="num" x="795" y="248" text-anchor="middle">${fmt(R.rrao.total)}</text>`+
+    arrow(260,268,260,296)+arrow(605,268,605,296)+arrow(795,268,795,296)+
+    rect(20,296,860,52,DC.pnl,DC.gold)+
+    `<text class="t1" x="40" y="320">총 소요자기자본 = SBM + DRC + RRAO</text>`+
+    `<text class="t3" x="40" y="337">39조 · 단순 합산(분산효과 불인정)</text>`+
+    `<text class="num" x="860" y="328" text-anchor="end" style="font-size:17px">${fmt(TOT.capital)}</text>`+
+    arrow(450,348,450,376)+
+    `<text class="fml" x="462" y="366">× 12.5</text>`+
+    rect(20,376,860,52,DC.pnl3,DC.gold)+
+    `<text class="t1" x="40" y="400">시장위험가중자산(RWA)</text>`+
+    `<text class="t3" x="40" y="417">39조.나 · 소요자기자본 × 12.5</text>`+
+    `<text class="num" x="860" y="408" text-anchor="end" style="font-size:17px">${fmt(TOT.rwa)}</text>`,
+    `<span><b style="background:${DC.gold}"></b>민감도법(SBM)</span><span><b style="background:${DC.red}"></b>부도리스크(DRC)</span><span><b style="background:${DC.vio}"></b>잔여리스크(RRAO)</span>`);
+}
+
+// ── FIG 2 : 민감도법 3단 집계 구조 ────────────────────────────
+function fig2(){
+  let leaves='';
+  for(let i=0;i<5;i++){
+    const x=46+i*96;
+    leaves += rect(x,56,80,38,DC.pnl3)+
+      `<text class="t3" x="${x+40}" y="72" text-anchor="middle">리스크요소</text>`+
+      `<text class="fml" x="${x+40}" y="87" text-anchor="middle">WS${i+1}</text>`;
+  }
+  let bks='';
+  for(let i=0;i<3;i++){
+    const x=46+i*176;
+    bks += rect(x,152,160,46,DC.pnl,DC.teal)+
+      `<text class="t2" x="${x+80}" y="170" text-anchor="middle">버킷 ${i+1}</text>`+
+      `<text class="fml" x="${x+80}" y="188" text-anchor="middle">Kb${i+1} · Sb${i+1}</text>`;
+  }
+  return diaWrap('fig2','2','민감도법 3단 집계 구조 — 리스크요소 → 버킷 → 리스크군',
+    '각 리스크요소의 가중민감도(WS = 민감도 × 위험가중치)를 버킷 내 상관계수 ρ로 합산해 버킷 소요자기자본 Kb를 구하고, 버킷 간 상관계수 γ로 다시 합산해 리스크군 소요자기자본을 산출한다. 버킷 간 합산값이 음수가 되는 경우 대체산식을 적용한다[44조].',
+    '0 0 900 320',
+    `<text class="t1" x="20" y="34">1단계 — 가중민감도 산출</text>`+
+    `<text class="t3" x="190" y="34">WS = 민감도(s) × 위험가중치(RW)</text>`+
+    leaves+
+    arrow(126,94,126,146)+arrow(302,94,302,146)+arrow(478,94,478,146)+
+    `<text class="t1" x="20" y="130">2단계 — 버킷 내 합산</text>`+
+    `<text class="fml" x="190" y="130">Kb = √( Σ WS² + ΣΣ ρ·WSk·WSl )</text>`+
+    bks+
+    `<text class="t3" x="574" y="176">ρ = 버킷 내</text><text class="t3" x="574" y="190">상관계수</text>`+
+    arrow(126,198,400,238)+arrow(302,198,400,238)+arrow(478,198,400,238)+
+    `<text class="t1" x="20" y="232">3단계 — 버킷 간 합산</text>`+
+    rect(220,238,460,52,DC.pnl,DC.gold)+
+    `<text class="t2" x="450" y="258" text-anchor="middle">리스크군 소요자기자본</text>`+
+    `<text class="fml" x="450" y="277" text-anchor="middle">√( Σ Kb² + ΣΣ γbc·Sb·Sc )</text>`+
+    `<text class="t3" x="700" y="262">γ = 버킷 간 상관계수</text>`+
+    `<text class="t3" x="700" y="277">Sb = max(min(ΣWS, Kb), −Kb)</text>`,
+    `<span><b style="background:${DC.teal}"></b>버킷 단위 집계</span><span><b style="background:${DC.gold}"></b>리스크군 단위 집계</span>`);
+}
+
+// ── FIG 3 : 상관계수 시나리오 3종 ────────────────────────────
+function fig3(){
+  const sets = [['일반금리 델타',R.girr_d],['신용스프레드 델타',R.csr_d],['주식 델타',R.eq_d],['외환 델타',R.fx_d],['일반상품 델타',R.cty_d]];
+  const gmax = Math.max.apply(null, sets.map(s=>Math.max(s[1].all.high,s[1].all.medium,s[1].all.low)))||1;
+  let body='';
+  sets.forEach((s,i)=>{
+    const y=56+i*56;
+    body += `<text class="t2" x="20" y="${y+22}">${s[0]}</text>`;
+    SCN.forEach((sc,j)=>{
+      const v=s[1].all[sc], w=Math.max(2, v/gmax*300);
+      const yy=y+j*15;
+      const on = s[1].scenario===sc;
+      body += rect(190,yy, w, 12, on?DC.gold:DC.pnl3, on?DC.gold:DC.bd, 2)+
+        `<text class="t3" x="${190+w+8}" y="${yy+10}" ${on?`fill="${DC.gold}"`:''}>${SCN_LABEL[sc]} ${fmt(v)}${on?' ◀ 채택':''}</text>`;
+    });
+  });
+  return diaWrap('fig3','3','상관계수 시나리오 3종과 채택 결과',
+    '모든 리스크군에서 높음·중간·낮음 3개 상관계수 시나리오를 각각 계산하고 소요자기자본이 가장 큰 시나리오를 채택한다. 중간은 원값, 높음은 min(2ρ,1), 낮음은 max(2ρ−1, 0.75ρ)를 적용한다[46조]. 금색 막대가 현재 채택된 시나리오다.',
+    '0 0 900 '+(56+sets.length*56+20),
+    `<text class="t1" x="20" y="34">리스크군별 시나리오 비교 — 최댓값 채택 원칙</text>`+body,
+    `<span><b style="background:${DC.gold}"></b>채택 시나리오(최댓값)</span><span><b style="background:${DC.pnl3}"></b>미채택</span>`);
+}
+
+// ── FIG 4 : 커버쳐리스크 산출 도해 ───────────────────────────
+function fig4(){
+  const cx=300, cy=160, sx=2.2, A=0.5, B=0.006;
+  let curve='M';
+  for(let i=-110;i<=110;i+=5){
+    const x=cx+i*sx;
+    const y=cy - (A*i - B*i*i);
+    curve += (i===-110?'':' L')+x.toFixed(1)+','+y.toFixed(1);
+  }
+  const tan=`M${cx-110*sx},${cy+110*A} L${cx+110*sx},${cy-110*A}`;
+  return diaWrap('fig4','4','커버쳐리스크(비선형) 산출 개념',
+    '옵션 등 비선형 상품은 델타(접선)만으로 가치변동을 포착하지 못한다. 기초자산에 커버쳐 위험가중치만큼 상방·하방 쇼크를 주고 재평가한 손익에서 델타로 설명되는 부분을 차감한 값이 CVR(상방·하방)이며, 두 값 중 큰 손실을 커버쳐 소요자기자본으로 채택한다[45·63·72조].',
+    '0 0 900 350',
+    `<line x1="60" y1="${cy}" x2="690" y2="${cy}" stroke="${DC.bd}"/>`+
+    `<line x1="${cx}" y1="30" x2="${cx}" y2="300" stroke="${DC.bd}" stroke-dasharray="3 3"/>`+
+    `<text class="t3" x="690" y="${cy-10}" text-anchor="end">기초자산 가격 →</text>`+
+    `<text class="t3" x="${cx+8}" y="40">↑ 포지션 가치</text>`+
+    `<path d="${tan}" stroke="${DC.teal}" stroke-width="1.4" stroke-dasharray="5 4" fill="none"/>`+
+    `<path d="${curve}" stroke="${DC.gold}" stroke-width="2.2" fill="none"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="4" fill="${DC.gold}"/>`+
+    `<line x1="${cx+110*sx}" y1="${cy-110*A}" x2="${cx+110*sx}" y2="${cy-(A*110-B*110*110)}" stroke="${DC.red}" stroke-width="2.5"/>`+
+    `<line x1="${cx-110*sx}" y1="${cy+110*A}" x2="${cx-110*sx}" y2="${cy-(A*-110-B*110*110)}" stroke="${DC.red}" stroke-width="2.5"/>`+
+    `<text class="t3" x="${cx+110*sx+10}" y="${cy-30}" fill="${DC.red}">CVR 상방</text>`+
+    `<text class="t3" x="${cx-110*sx+10}" y="${cy+148}" fill="${DC.red}">CVR 하방</text>`+
+    `<text class="t3" x="${cx+70}" y="${cy+26}" fill="${DC.teal}">델타(접선) — 선형 근사</text>`+
+    `<text class="t3" x="${cx-110*sx}" y="325" text-anchor="middle">− RW 쇼크</text>`+
+    `<text class="t3" x="${cx+110*sx}" y="325" text-anchor="middle">+ RW 쇼크</text>`+
+    rect(715,60,165,180,DC.pnl,DC.bd)+
+    `<text class="t1" x="731" y="82">산출 순서</text>`+
+    `<text class="t3" x="731" y="104">① 상·하방 재평가</text>`+
+    `<text class="t3" x="731" y="122">② 델타 설명분 차감</text>`+
+    `<text class="t3" x="731" y="140">③ CVR 상방·하방 산출</text>`+
+    `<text class="t3" x="731" y="158">④ 큰 손실 채택</text>`+
+    `<text class="t3" x="731" y="176">⑤ ρ² 로 버킷 합산</text>`+
+    `<text class="t2" x="731" y="204">현재 커버쳐 합계</text>`+
+    `<text class="nums" x="731" y="222">${fmt(R.girr_c.total+R.csr_c.total+R.eq_c.total+R.fx_c.total+R.cty_c.total)}</text>`,
+    `<span><b style="background:${DC.gold}"></b>실제 가치곡선</span><span><b style="background:${DC.teal}"></b>델타(선형 근사)</span><span><b style="background:${DC.red}"></b>CVR = 비선형 차이</span>`);
+}
+
+// ── FIG 5 : DRC 산출 흐름 ────────────────────────────────────
+function fig5(){
+  const steps=[
+    ['① 총JTD 산출','LGD×명목 + 평가손익','82.가'],
+    ['② 동일차주 상쇄','매입·매도 상계','79조'],
+    ['③ 순JTD','만기<1년 비례조정','80조'],
+    ['④ 등급 위험가중치','AAA 0.5% ~ D 100%','82.나'],
+    ['⑤ 헤지효과율(HBR)','순공매도 ÷ 총공매도','82.다'],
+    ['⑥ 버킷 단순합산','기업·정부·지방정부','83조']
+  ];
+  let body='';
+  steps.forEach((s,i)=>{
+    const x=20+i*146;
+    body += rect(x,70,130,92,DC.pnl,i===5?DC.gold:DC.bd)+
+      `<text class="t1" x="${x+12}" y="${94}" style="font-size:12px">${s[0]}</text>`+
+      `<text class="t3" x="${x+12}" y="${114}">${s[1]}</text>`+
+      `<text class="t3" x="${x+12}" y="${150}" fill="${DC.teal}">${s[2]}</text>`;
+    if(i<5) body += arrow(x+130,116,x+146,116);
+  });
+  const rows = R.drc_ns.buckets.map((b,i)=>{
+    const y=214+i*26;
+    return `<text class="t2" x="34" y="${y}">${b.bucket}</text>`+
+      `<text class="nums" x="420" y="${y}" text-anchor="end">${fmtFull(b.longSum)}</text>`+
+      `<text class="nums" x="590" y="${y}" text-anchor="end">${fmtFull(b.shortSum)}</text>`+
+      `<text class="nums" x="760" y="${y}" text-anchor="end">${fmtFull(b.Kb)}</text>`;
+  }).join('');
+  return diaWrap('fig5','5','부도리스크(DRC) 산출 흐름과 버킷별 결과',
+    '익스포져별 총JTD를 산출해 동일 차주 내에서 매입·매도를 상계하고, 잔존만기 1년 미만은 비례조정한다. 순JTD에 신용등급별 위험가중치를 적용한 뒤 헤지효과율을 반영하고, 버킷 간에는 분산효과를 인정하지 않고 단순 합산한다[76~84조].',
+    '0 0 900 '+(214+R.drc_ns.buckets.length*26+30),
+    `<text class="t1" x="20" y="44">산출 6단계</text>`+body+
+    `<text class="t1" x="20" y="196">비유동화 버킷별 산출 결과</text>`+
+    `<text class="t3" x="420" y="196" text-anchor="end">매입 가중JTD</text>`+
+    `<text class="t3" x="590" y="196" text-anchor="end">매도 가중JTD</text>`+
+    `<text class="t3" x="760" y="196" text-anchor="end">버킷 Kb</text>`+
+    `<line x1="20" y1="202" x2="880" y2="202" stroke="${DC.bd}"/>`+rows,
+    `<span><b style="background:${DC.gold}"></b>최종 합산 단계</span>`);
+}
+
+// ── FIG 6 : GIRR 만기 버킷 민감도 프로파일 ───────────────────
+function fig6(){
+  const TEN=[0.25,0.5,1,2,3,5,10,15,20,30];
+  const agg={};
+  (dataset.girrDelta||[]).forEach(p=>{ const t=p.tenor; agg[t]=(agg[t]||0)+p.delta; });
+  (dataset.girrVega||[]).forEach(p=>{ if(p.delta){ const t=p.optTenor; agg[t]=(agg[t]||0)+p.delta; } });
+  const keys=TEN.filter(t=>agg[t]!=null);
+  const mx=Math.max.apply(null,keys.map(t=>Math.abs(agg[t])))||1;
+  const x0=70, w=760, zy=170, hh=110;
+  let bars='', axis='';
+  keys.forEach((t,i)=>{
+    const bw=Math.min(54, w/keys.length-10);
+    const x=x0+i*(w/keys.length)+((w/keys.length)-bw)/2;
+    const v=agg[t], h=Math.abs(v)/mx*hh;
+    const y=v>=0? zy-h : zy;
+    bars += rect(x,y,bw,Math.max(2,h), v>=0?DC.teal:DC.red, 'none', 2)+
+      `<text class="t3" x="${x+bw/2}" y="${v>=0? y-6 : y+h+14}" text-anchor="middle">${fmt(v)}</text>`;
+    axis += `<text class="t3" x="${x+bw/2}" y="300" text-anchor="middle">${t}Y</text>`;
+  });
+  return diaWrap('fig6','6','일반금리(GIRR) 만기 버킷별 순민감도 프로파일',
+    '현재 적재된 포지션의 통화 통합 만기별 금리 순민감도다. 양(+)은 금리 상승 시 이익, 음(−)은 손실을 뜻한다. 만기 간 상관계수는 지수감쇠식(θ=3%, 최저 40%)으로 산출되므로, 인접 만기에 반대 부호가 몰리면 상쇄효과가 제한되어 소요자기자본이 커진다[47조].',
+    '0 0 900 320',
+    `<text class="t1" x="20" y="34">만기별 순민감도 (∂V/∂r, 통화 통합)</text>`+
+    `<line x1="${x0-10}" y1="${zy}" x2="${x0+w}" y2="${zy}" stroke="${DC.bd}" stroke-width="1.2"/>`+
+    `<text class="t3" x="${x0-16}" y="${zy+4}" text-anchor="end">0</text>`+
+    bars+axis+
+    `<text class="t3" x="${x0+w}" y="${300}" text-anchor="end">만기 버킷</text>`,
+    `<span><b style="background:${DC.teal}"></b>양(+) — 금리 상승 시 이익</span><span><b style="background:${DC.red}"></b>음(−) — 금리 상승 시 손실</span>`);
+}
+
+// ── FIG 7 : 리스크군별 위험가중치 비교 ───────────────────────
+function fig7(){
+  const items=[
+    ['일반금리(GIRR)',1.1,1.7,'만기별 1.1~1.7%','47조'],
+    ['신용스프레드(비유동화)',0.5,12.0,'버킷·신용도별 0.5~12%','58조'],
+    ['유동화(비CTP)',1.5,42.5,'상품·신용도별','66조'],
+    ['주식',25,70,'시가총액·경제수준별','59조'],
+    ['외환',15,15,'전 통화쌍 단일 15%','60조'],
+    ['일반상품',20,45,'종류별 11개 버킷','61조'],
+    ['부도리스크(DRC)',0.5,100,'등급 AAA 0.5% ~ D 100%','82.나']
+  ];
+  const x0=215, w=560, mx=100;
+  const sc=v=>Math.log10(v*10+1)/Math.log10(mx*10+1)*w;
+  let body='';
+  items.forEach((it,i)=>{
+    const y=60+i*40;
+    const a=sc(it[1]), b=sc(it[2]);
+    body += `<text class="t2" x="20" y="${y+16}">${it[0]}</text>`+
+      `<text class="t3" x="20" y="${y+30}" fill="${DC.teal}">${it[4]}</text>`+
+      `<line x1="${x0}" y1="${y+12}" x2="${x0+w}" y2="${y+12}" stroke="${DC.pnl3}" stroke-width="7"/>`+
+      rect(x0+a,y+6,Math.max(4,b-a),13,DC.gold,'none',2)+
+      (b > w*0.78
+        ? `<text class="t3" x="${x0+a-10}" y="${y+17}" text-anchor="end">${it[3]}</text>`
+        : `<text class="t3" x="${x0+b+10}" y="${y+17}">${it[3]}</text>`);
+  });
+  let ticks='';
+  [0.5,1,5,10,50,100].forEach(v=>{
+    ticks += `<text class="t3" x="${x0+sc(v)}" y="${60+items.length*40+18}" text-anchor="middle">${v}%</text>`+
+      `<line x1="${x0+sc(v)}" y1="50" x2="${x0+sc(v)}" y2="${60+items.length*40}" stroke="${DC.bd}" stroke-dasharray="2 4"/>`;
+  });
+  return diaWrap('fig7','7','리스크군별 규제 위험가중치 비교 (로그 스케일)',
+    '동일한 민감도 1원이라도 리스크군에 따라 소요자기자본 기여가 수십 배 차이 난다. 금리는 1% 내외인 반면 주식은 25~70%, 투기등급 신용은 12%까지 적용된다. 포지션 배분 시 자본 효율을 가늠하는 기준이 된다.',
+    '0 0 900 '+(60+items.length*40+40),
+    `<text class="t1" x="20" y="34">위험가중치 적용 범위</text>`+ticks+body,
+    `<span><b style="background:${DC.gold}"></b>위험가중치 적용 구간</span>`);
+}
+
+pages.visual = () => {
+  const toc = [['fig1','전체 산출 구조'],['fig2','3단 집계 구조'],['fig3','상관계수 시나리오'],
+               ['fig4','커버쳐 개념'],['fig5','DRC 흐름'],['fig6','금리 민감도 프로파일'],['fig7','위험가중치 비교']];
+  return `
+  <div class="page-head"><div class="eyebrow">Visual Explainer</div><h2>그림으로 보는 산출구조</h2>
+  <p>표준방법 산출 논리를 7개 도해로 설명합니다. 모든 도해는 현재 적재된 포지션의 <b>실제 산출값과 연동</b>되며, PNG·SVG 파일로 내보내 보고서·교육자료에 바로 붙일 수 있습니다.</p></div>
+  <div class="dia-toc">${toc.map(t=>`<a href="#anchor_${t[0]}">${t[1]}</a>`).join('')}</div>
+  ${fig1()}${fig2()}${fig3()}${fig4()}${fig5()}${fig6()}${fig7()}
+  <div class="notice" style="margin-top:14px;">
+    <b>내보내기</b> — PNG는 가로 2배 해상도로 생성되며 배경이 포함됩니다. 슬라이드·문서 삽입용으로는 SVG(벡터)를 권장합니다.
+  </div>`;
+};
+
 // ---------------- 네비게이션/렌더 ----------------
 const main = document.getElementById('main');
 const rail = document.getElementById('rail');
@@ -1357,6 +2026,7 @@ function render(view){
   main.innerHTML = pages[view] ? pages[view]() : '<p>준비 중입니다.</p>';
   rail.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   if(view==='qna') renderQnaResults('');
+  if(view==='sim'){ simRender(); simBind(); }
 }
 rail.addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-view]');
